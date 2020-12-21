@@ -18,6 +18,12 @@ module.exports = {
       };
     }
 
+    if (!isServer) {
+      config.node = {
+        canvas: "empty",
+      };
+    }
+
     return config;
   },
 };

@@ -1,0 +1,53 @@
+---
+title: Hello World
+date: "2020-04-02"
+description: "hello world"
+---
+
+なんとなく気が向いたので、shuymn.me を改装してみた。
+ついでに Markdown でブログもかけるようにしてみた。
+
+Qiita の騒動とかあって、なんとなく個人でブログを持ってみるかという気持ちになったというのと、最近技術系のインプットが座学が多くて、とりあえず手を動かすみたいなのをやりたい気持ちが思っていた以上に高まっていたっぽい。
+
+技術スタックは以下の通り。
+
+- Gatsby
+- Netlify
+
+大したことはしてないけど、Gatsby も Netlify も使うのが初めてでいい勉強になった。
+気が向いたらデザイン面もう少しいじってみたいなという気持ちだけはある。
+
+### FE
+
+あと FE の勉強もぼちぼちやってて、まずは参考書を流し読みするのをやってる。
+
+本当は、要点をノートにまとめたり、練習問題を解いたりしたほうが良いんだろうけど、別に資格がほしいわけじゃなくて知識がほしいだけなのでという言い訳をして、非効率な勉強をしてる。
+
+勉強を継続してやることは得意じゃないし、モチベーションが続かなければ元も子もないので、今の自分のレベルではやりたいようにやるのがいいんじゃないかなと思う。
+
+## IIDX
+
+- 新規ハード
+  - IX(SPA)
+- 新規エクハ
+  - GENE(SPA)
+
+<blockquote class="twitter-tweet" data-theme="light"><p lang="ja" dir="ltr">IX ハード <a href="https://t.co/oLtQmQCBBg">pic.twitter.com/oLtQmQCBBg</a></p>&mdash; ͏ (@shuymn) <a href="https://twitter.com/shuymn/status/1245378889037144065?ref_src=twsrc%5Etfw">April 1, 2020</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+IX は割とすんなり着いた。定期的に狙っていて、粘着しなくてもコロッと付くだろうなーと思っていたらやっぱりそうだった。多分地力は足りていて、あとはハズレじゃない配置と集中力のツモり待ちっていう感じだったんだと思う。
+配置が 1P 割れで、多分当たっていたというのもあっさり着いた要因としてはあると思う。
+
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">うおーーGENE EXH <a href="https://t.co/ww8qKafrf0">pic.twitter.com/ww8qKafrf0</a></p>&mdash; ͏ (@shuymn) <a href="https://twitter.com/shuymn/status/1245369996877762560?ref_src=twsrc%5Etfw">April 1, 2020</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+GENE は曲が好きで譜面難易度的にもギリギリ EXH 圏内という感じだったので、いけそうだと思ったときかなり緊張した。地味に 2200 ノーツ近くあって、重めなんだよなあ。本当に良曲良譜面。
+
+最近は CPI や IST にデータ反映させたりするのが日課になってるけど、ちょっとめんどくさいので AWS Lambda + puppeteer とかで自動化させても良いかなーと思ったりしてる。
+
+### 近況
+
+あとは生活的なこととしては、世間を騒がせている例のウイルスの影響でリモートワークが始まった。
+自分は前職でリモートワーク経験があったり、そもそも自宅でモクモクと作業するのが好きな人間なのでそこまで苦ではないけど、普段オフラインでの会話で仕事を進めることに慣れてる人は大変だろうなーと思う。
+
+Slack で雑談の文化がない人が一切気配を消してしまう問題とか色々あって、悩ましいところ。
+
+そんなかんじ。

@@ -12,7 +12,7 @@ module.exports = {
     if (isServer && !dev) {
       const originalEntry = config.entry;
       config.entry = async () => {
-        const entries = { ...config(await originalEntry()) };
+        const entries = { ...(await originalEntry()) };
         entries["./scripts/generate-rss"] = "./scripts/generate-rss.ts";
         return entries;
       };

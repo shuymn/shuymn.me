@@ -16,7 +16,7 @@ export const markdownToHtml = async (content: string): Promise<string> => {
     .use(remark2rehype, { allowDangerousHtml: true })
     .use(raw)
     .use(katex)
-    .use(figure, { className: "text-center" })
+    .use(figure, { className: "text-center text-base" })
     .use(stringify)
     .process(content);
 

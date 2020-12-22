@@ -1,3 +1,4 @@
+import figure from "rehype-figure";
 import katex from "rehype-katex";
 import raw from "rehype-raw";
 import stringify from "rehype-stringify";
@@ -15,6 +16,7 @@ export const markdownToHtml = async (content: string): Promise<string> => {
     .use(remark2rehype, { allowDangerousHtml: true })
     .use(raw)
     .use(katex)
+    .use(figure, { className: "text-center" })
     .use(stringify)
     .process(content);
 

@@ -20,7 +20,7 @@ module.exports = {
 
     if (!isServer) {
       config.node = {
-        canvas: "empty",
+        fs: "empty",
       };
     }
 

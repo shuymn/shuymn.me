@@ -1,5 +1,8 @@
 module.exports = {
-  purge: ["./src/pages/**/*.tsx", "./src/components/**/*.tsx"],
+  purge: {
+    content: ["./src/pages/**/*.tsx", "./src/components/**/*.tsx"],
+    options: { safelist: ["text-center", "text-base"] },
+  },
   darkMode: false, // or 'media' or 'class'
   theme: {
     extend: {},

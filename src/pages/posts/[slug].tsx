@@ -5,6 +5,7 @@ import { getAllPosts, getPostBySlug, Post } from "src/lib/posts";
 import tw from "twin.macro";
 
 import "katex/dist/katex.min.css";
+import { title } from "process";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const posts = await getAllPosts();
@@ -24,19 +25,20 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps<Post, { slug: string }> = async ({
   params,
 }) => {
-  const post = await getPostBySlug((params || {}).slug as string);
+  const slug = (params || {}).slug as string;
+  const post = await getPostBySlug(slug);
   const content = await markdownToHtml(post.content || "");
 
-  return { props: { ...post, content } };
+  return { props: { ...post, content, slug } };
 };
 
 const Article = tw.article`prose lg:prose-xl mx-auto mt-4 mb-32`;
 
 type PostProps = InferGetStaticPropsType<typeof getStaticProps>;
 
-const PostPage: React.FC<PostProps> = ({ meta, content }) => {
+const PostPage: React.FC<PostProps> = ({ meta, content, slug }) => {
   return (
-    <Layout props={meta}>
+    <Layout props={{ ...meta, slug }}>
       <Article>
         <section>
           <small>{meta.date.replace(/-/g, ".")}</small>

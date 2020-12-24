@@ -16,9 +16,8 @@ export const Layout: React.FC<Props> = ({
   children,
   props: { title, description, slug, cardImage },
 }) => {
-  const twitterCard = cardImage === "" ? "summary" : "summary_large_image";
-  const url =
-    slug === "" ? "https://shuymn.me" : `https://shuymn.me/posts/${slug}`;
+  const twitterCard = cardImage ? "summary_large_image" : "summary";
+  const url = slug ? `https://shuymn.me/posts/${slug}` : "https://shuymn.me";
 
   title = title || WEBSITE_NAME;
   cardImage = cardImage || "https://shuymn.me/default_og_image.jpg";

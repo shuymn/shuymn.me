@@ -5,7 +5,6 @@ import { getAllPosts, getPostBySlug, Post } from "src/lib/posts";
 import tw from "twin.macro";
 
 import "katex/dist/katex.min.css";
-import { title } from "process";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const posts = await getAllPosts();

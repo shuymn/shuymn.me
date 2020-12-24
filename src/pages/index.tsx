@@ -59,7 +59,9 @@ const IndexPage = ({
   posts,
 }: InferGetStaticPropsType<typeof getStaticProps>) => {
   return (
-    <Layout props={{ title: "", description: "shuymn.me", cardImage: "" }}>
+    <Layout
+      props={{ title: "", description: "shuymn.me", slug: "", cardImage: "" }}
+    >
       <About />
       <section>
         {posts.map((post) => (

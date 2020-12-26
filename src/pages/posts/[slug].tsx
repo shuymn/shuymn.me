@@ -31,7 +31,7 @@ export const getStaticProps: GetStaticProps<Post, { slug: string }> = async ({
   return { props: { ...post, content, slug } };
 };
 
-const Article = tw.article`prose lg:prose-xl mx-auto mt-4 mb-32`;
+const Article = tw.article`prose lg:prose-lg mx-auto mt-4 mb-32`;
 
 type PostProps = InferGetStaticPropsType<typeof getStaticProps>;
 

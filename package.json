@@ -27,7 +27,7 @@
     "rss": "^1.2.2",
     "styled-components": "^5.2.1",
     "tailwindcss": "^2.0.2",
-    "twin.macro": "^2.1.0",
+    "twin.macro": "^2.2.0",
     "unified": "^9.2.0"
   },
   "devDependencies": {

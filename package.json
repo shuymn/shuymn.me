@@ -12,7 +12,7 @@
     "autoprefixer": "^10.2.4",
     "gray-matter": "^4.0.2",
     "next": "10.0.6",
-    "postcss": "^8.2.4",
+    "postcss": "^8.2.5",
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "rehype-figure": "^1.0.1",

@@ -26,7 +26,7 @@
     "remark-rehype": "^8.0.0",
     "rss": "^1.2.2",
     "styled-components": "^5.2.1",
-    "tailwindcss": "^2.0.3",
+    "tailwindcss": "^2.0.4",
     "twin.macro": "^2.3.0",
     "unified": "^9.2.1"
   },

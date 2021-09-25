@@ -1,10 +1,10 @@
+import "katex/dist/katex.min.css";
 import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
+import React from "react";
 import { Layout } from "src/components/Layout";
 import { markdownToHtml } from "src/lib/markdown";
 import { getAllPosts, getPostBySlug, Post } from "src/lib/posts";
 import tw from "twin.macro";
-
-import "katex/dist/katex.min.css";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const posts = await getAllPosts();

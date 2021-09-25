@@ -1,6 +1,6 @@
-import "twin.macro";
 import styledImport from "styled-components";
+import "twin.macro";
 
 declare module "twin.macro" {
-  const styled: typeof styledImport;
+  export const styled: typeof styledImport;
 }

@@ -1,5 +1,6 @@
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import Link from "next/link";
+import React from "react";
 import { Layout } from "src/components/Layout";
 import { getAllPostsSortByDate, Post } from "src/lib/posts";
 import tw from "twin.macro";
@@ -48,7 +49,7 @@ const PostLink: React.FC<{
   return (
     <div className="mb-6">
       <p className="text-sm text-gray-800">{date.replace(/-/g, ".")}</p>
-      <Link href="/posts/[slug]" as={`/posts/${slug}`}>
+      <Link href="/posts/[slug]" as={`/posts/${slug}`} passHref>
         <PostAnchor>{title}</PostAnchor>
       </Link>
     </div>

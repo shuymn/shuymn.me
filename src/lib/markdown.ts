@@ -7,7 +7,7 @@ import math from "remark-math";
 import markdown from "remark-parse";
 import prism from "remark-prism";
 import remark2rehype from "remark-rehype";
-import unified from "unified";
+import { unified } from "unified";
 
 export const markdownToHtml = async (content: string): Promise<string> => {
   const result = await unified()

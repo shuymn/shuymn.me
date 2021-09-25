@@ -1,5 +1,6 @@
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import Link from "next/link";
+import React from "react";
 import { Layout } from "src/components/Layout";
 import { getAllPostsSortByDate, Post } from "src/lib/posts";
 import tw from "twin.macro";

@@ -30,7 +30,7 @@
     "styled-components": "^5.3.3",
     "tailwindcss": "^2.2.19",
     "twin.macro": "^2.8.2",
-    "unified": "^10.1.1"
+    "unified": "^10.1.2"
   },
   "devDependencies": {
     "@types/node": "^16.11.22",

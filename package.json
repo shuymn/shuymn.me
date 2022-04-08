@@ -44,7 +44,7 @@
     "prettier": "^2.6.2",
     "stylelint": "^14.6.1",
     "stylelint-config-property-sort-order-smacss": "^8.0.0",
-    "stylelint-config-recommended": "^6.0.0",
+    "stylelint-config-recommended": "^7.0.0",
     "stylelint-config-styled-components": "^0.1.1",
     "stylelint-processor-styled-components": "^1.10.0",
     "textlint": "^12.1.1",

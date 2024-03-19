@@ -33,7 +33,7 @@
     "unified": "^10.1.2"
   },
   "devDependencies": {
-    "@types/node": "^16.11.22",
+    "@types/node": "^16.18.91",
     "@types/react": "^17.0.47",
     "@types/react-dom": "^17.0.17",
     "@types/styled-components": "^5.1.25",

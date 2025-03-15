@@ -12,6 +12,12 @@ ENVIRONMENT = "development"
 MICROCMS_SERVICE_DOMAIN = ""
 MICROCMS_API_KEY = ""
 
+# KVストア設定
+# ID値は実際のCloudflareダッシュボードで作成したKV名前空間IDに置き換えてください
+kv_namespaces = [
+  { binding = "BLOG_CACHE", id = "YOUR_KV_NAMESPACE_ID_HERE", preview_id = "YOUR_KV_NAMESPACE_PREVIEW_ID_HERE" }
+]
+
 # 環境別の設定
 [env.development]
 # 開発環境用の設定

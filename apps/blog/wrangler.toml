@@ -1,0 +1,23 @@
+name = "blog-frontend"
+main = "dist/server/entry.server.js"
+compatibility_date = "2023-10-30"
+
+# 静的アセットの設定
+assets = [
+  { pattern = "dist/client/**/*", path = "/assets" }
+]
+
+# 環境変数設定
+[vars]
+API_URL = "https://api.shuymn.me"
+
+[env.development]
+vars = { API_URL = "http://localhost:8787" }
+
+[env.production]
+vars = { API_URL = "https://api.shuymn.me" }
+
+# Custom domain設定
+[[routes]]
+pattern = "shuymn.me/*"
+zone_name = "shuymn.me"

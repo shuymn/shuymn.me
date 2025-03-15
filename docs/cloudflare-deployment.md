@@ -2,19 +2,19 @@
 
 ## 概要
 
-ブログサイトの新しいスタックでは、Cloudflareのサービス群を活用してホスティングとAPIを実装します。具体的には、フロントエンドをCloudflare Pagesに、バックエンドAPIをCloudflare Workersにデプロイします。
+ブログサイトの新しいスタックでは、Cloudflareのサービス群を活用してホスティングとAPIを実装します。具体的には、フロントエンドをCloudflare Workers Assetsに、バックエンドAPIをCloudflare Workersにデプロイします。
 
 ## Cloudflareサービス利用計画
 
-### 1. Cloudflare Pages
+### 1. Cloudflare Workers Assets
 
-ReactベースのSPAをホスティングするために使用します。主な特徴：
+Reactベースのフロントエンドをホスティングするために使用します。主な特徴：
 
-- 無料枠があり、個人ブログには十分
-- 自動ビルド・デプロイ機能（GitHub連携）
-- グローバルCDN
-- カスタムドメイン対応
-- SSL対応
+- Workersと静的アセットを1つのプロジェクトとして管理可能
+- 単一のワークフローでSSRとアセット配信が可能
+- 静的アセットはリクエスト制限にカウントされない
+- グローバルエッジでの高速配信
+- カスタマイズ性が高い
 
 ### 2. Cloudflare Workers
 
@@ -35,27 +35,40 @@ APIレスポンスのキャッシュに使用します。主な特徴：
 
 ## デプロイ設定
 
-### Cloudflare Pages設定
+### Cloudflare Workers Assets設定 (フロントエンド)
 
 ```toml
-# .cloudflare/pages.toml
-[build]
-command = "cd ../.. && pnpm run --filter=blog build"
-output_directory = "dist"
+# apps/blog/wrangler.toml
+name = "blog-frontend"
+main = "dist/server/entry.server.js"
+compatibility_date = "2023-10-30"
 
-[site]
-bucket = "./dist"
-entry-point = "."
+# 静的アセットの設定
+assets = [
+  { pattern = "dist/client/**/*", path = "/assets" }
+]
+
+# 環境変数設定
+[vars]
+API_URL = "https://api.shuymn.me"
+
+[env.development]
+vars = { API_URL = "http://localhost:8787" }
 
 [env.production]
-VITE_API_BASE_URL = "https://api.shuymn.me"
+vars = { API_URL = "https://api.shuymn.me" }
+
+# Custom domain設定
+[[routes]]
+pattern = "shuymn.me/*"
+zone_name = "shuymn.me"
 ```
 
-### GitHub Actions設定
+### GitHub Actions設定 (フロントエンド)
 
 ```yaml
-# .github/workflows/deploy-pages.yml
-name: Deploy to Cloudflare Pages
+# .github/workflows/deploy-worker-assets.yml
+name: Deploy to Cloudflare Workers Assets
 
 on:
   push:
@@ -77,16 +90,14 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install
       - run: pnpm run --filter=blog build
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: blog
-          directory: apps/blog/dist
+      - name: Deploy to Cloudflare Workers
+        run: pnpm run --filter=blog deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 ```
 
-### Cloudflare Workers設定
+### Cloudflare Workers設定 (バックエンド)
 
 ```toml
 # api/blog/wrangler.toml
@@ -96,7 +107,7 @@ compatibility_date = "2023-01-01"
 
 # KVストア設定
 kv_namespaces = [
-  { binding = "BLOG_CACHE", id = "xxxx", preview_id = "xxxx" }
+  { binding = "BLOG_CACHE", id = "${KV_BLOG_CACHE_ID}", preview_id = "${KV_BLOG_CACHE_PREVIEW_ID}" }
 ]
 
 [env.production]
@@ -140,6 +151,9 @@ jobs:
         run: pnpm run --filter=blog-api deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_BLOG_CACHE_ID: ${{ secrets.KV_BLOG_CACHE_ID }}
+          KV_BLOG_CACHE_PREVIEW_ID: ${{ secrets.KV_BLOG_CACHE_PREVIEW_ID }}
 ```
 
 ## ドメイン設定
@@ -152,7 +166,7 @@ jobs:
 DNSレコード設定：
 
 ```
-shuymn.me.            CNAME    <Cloudflare-Pages-URL>
+shuymn.me.            CNAME    <Cloudflare-Workers-URL>
 api.shuymn.me.        CNAME    <Cloudflare-Workers-URL>
 ```
 
@@ -196,22 +210,47 @@ export const cacheMiddleware = (options: {
 };
 ```
 
-### フロントエンドのTanstack Query設定
+### フロントエンドのReact Router設定
+
+フロントエンドでは、React Router v7のサーバーサイドレンダリング機能とローダーを使用してデータ取得とキャッシュを管理します。
 
 ```typescript
-// apps/blog/src/main.tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// apps/blog/src/routes.tsx
+import { RouteObject } from 'react-router-dom';
+import RootLayout from './routes/RootLayout';
+import Home from './routes/Home';
+import Post from './routes/Post';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5分間のキャッシュ
-      cacheTime: 1000 * 60 * 30, // 30分間のキャッシュ保持
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
+export const routes: RouteObject[] = [
+  {
+    path: '/',
+    element: <RootLayout />,
+    children: [
+      {
+        index: true,
+        element: <Home />,
+        loader: async () => {
+          const response = await fetch(`${API_URL}/api/posts`);
+          if (!response.ok) {
+            throw new Response('記事一覧の取得に失敗しました', { status: response.status });
+          }
+          return response.json();
+        },
+      },
+      {
+        path: 'posts/:slug',
+        element: <Post />,
+        loader: async ({ params }) => {
+          const response = await fetch(`${API_URL}/api/posts/${params.slug}`);
+          if (!response.ok) {
+            throw new Response('記事が見つかりませんでした', { status: 404 });
+          }
+          return response.json();
+        },
+      },
+    ],
   },
-});
+];
 ```
 
 ## セキュリティ設定
@@ -235,19 +274,24 @@ export const corsMiddleware = (app: Hono) => {
 ### Content Security Policy
 
 ```typescript
-// apps/blog/src/routes/root.tsx
-import { Helmet } from 'react-helmet-async';
-
-export default function Root() {
-  return (
-    <>
-      <Helmet>
-        <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' https://images.microcms-assets.io; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.shuymn.me;" />
-      </Helmet>
-      {/* ... */}
-    </>
-  );
-}
+// apps/blog/src/entry.server.tsx内で設定
+// HTMLレスポンス生成時にCSPヘッダーを設定
+return c.html(html`
+  <!DOCTYPE html>
+  <html lang="ja">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' https://images.microcms-assets.io; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.shuymn.me;" />
+      <title>Blog | shuymn.me</title>
+      <link rel="stylesheet" href="${STYLE_PATH}" />
+    </head>
+    <body>
+      <div id="root">${appHtml}</div>
+      <script type="module" src="${SCRIPT_PATH}"></script>
+    </body>
+  </html>
+`);
 ```
 
 ## 監視とエラーハンドリング
@@ -263,41 +307,25 @@ Cloudflare Dashboardで以下を設定：
 ### フロントエンドエラー処理
 
 ```typescript
-// apps/blog/src/components/ui/ErrorBoundary.tsx
-import React, { ErrorInfo, Component } from 'react';
-import { ErrorPage } from './ErrorPage';
+// React Routerのエラーハンドリング
+// apps/blog/src/routes/NotFound.tsx
+import React from 'react';
+import { Link, useRouteError } from 'react-router-dom';
 
-type Props = {
-  children: React.ReactNode;
-};
-
-type State = {
-  hasError: boolean;
-  error?: Error;
-};
-
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by ErrorBoundary:', error, errorInfo);
-    // ここにエラー追跡サービスへの送信コードを追加可能
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return <ErrorPage error={this.state.error} />;
-    }
-
-    return this.props.children;
-  }
+export default function NotFound() {
+  const error = useRouteError() as any;
+  const status = error?.status || 404;
+  const message = error?.statusText || error?.message || 'ページが見つかりませんでした';
+  
+  return (
+    <div className="flex flex-col items-center justify-center py-12">
+      <h1 className="text-4xl font-bold mb-4">エラー {status}</h1>
+      <p className="text-xl text-gray-600 mb-8">{message}</p>
+      <Link to="/" className="text-blue-600 hover:underline">
+        ホームに戻る
+      </Link>
+    </div>
+  );
 }
 ```
 
@@ -309,21 +337,20 @@ Cloudflare Dashboardで以下を設定：
 
 1. Auto Minifyの有効化（HTML, CSS, JavaScript）
 2. Brotli圧縮の有効化
-3. キャッシュルールの設定
-   - 静的アセット: 1週間キャッシュ
-   - API応答: 5分キャッシュ
+3. Workers KVでのキャッシュの活用
 
 ### フロントエンド最適化
 
-- 画像最適化（WebP形式使用）
-- コード分割
-- 遅延ローディング
+- バンドルサイズの最適化（Code Splitting）
+- 画像最適化
+- SSRとクライアントサイドハイドレーション
+- 遅延ローディングの活用
 
 ## デプロイワークフロー
 
 1. 開発者がコードをGitHubにプッシュ
 2. GitHub Actionsが自動的にビルドを実行
-3. ビルド成功後、Cloudflare PagesとCloudflare Workersに自動デプロイ
+3. ビルド成功後、フロントエンドをCloudflare Workers Assetsに、バックエンドをCloudflare Workersに自動デプロイ
 4. デプロイ後、自動テストを実行（オプション）
 
 ## 移行プロセス
@@ -336,6 +363,7 @@ Cloudflare Dashboardで以下を設定：
 2. KVネームスペースの作成
    - `BLOG_CACHE`ネームスペースを作成
    - 本番用とプレビュー用のIDを取得
+   - 環境変数に設定
 
 3. Workersプロジェクトの作成
    - Wranglerを使用してプロジェクト初期化
@@ -343,10 +371,10 @@ Cloudflare Dashboardで以下を設定：
    - キャッシュミドルウェアの実装
    - デプロイ設定の構成
 
-4. Pagesプロジェクトの作成
-   - GitHubリポジトリの連携
+4. Workers Assetsプロジェクトの作成
+   - React Router v7を使ったSSRフロントエンドの実装
+   - Wrangler設定ファイルでアセット設定
    - ビルド設定の構成
-   - 環境変数の設定
 
 5. CI/CDパイプラインの設定
    - GitHub Secrets設定
@@ -369,19 +397,20 @@ Cloudflare Dashboardで以下を設定：
 
 Cloudflareの無料枠を利用する場合：
 
-- Cloudflare Pages: 無料枠（月間500ビルド、帯域制限なし）
 - Cloudflare Workers: 無料枠（1日100,000リクエスト）
+- Cloudflare Workers Assets: Workers無料枠に含まれる
 - Cloudflare KV: 無料枠（1,000ペア、1日100,000読み取り、1日1,000書き込み）
 
 個人ブログの一般的なトラフィックであれば、無料枠内で運用可能です。
 
 ## 利点とメリット
 
-1. **グローバルパフォーマンス**: Cloudflareのグローバルエッジネットワークによる高速レスポンス
-2. **低コスト**: 小〜中規模サイトなら無料枠内で運用可能
-3. **スケーラビリティ**: トラフィック増加時も自動スケール
-4. **セキュリティ**: DDoS保護、WAF機能などCloudflareのセキュリティ機能
-5. **開発効率**: GitHub連携による簡単なCI/CD
+1. **統合管理**: 静的アセットとサーバーサイドロジックを一元管理
+2. **グローバルパフォーマンス**: Cloudflareのグローバルエッジネットワークによる高速レスポンス
+3. **低コスト**: 小〜中規模サイトなら無料枠内で運用可能
+4. **スケーラビリティ**: トラフィック増加時も自動スケール
+5. **セキュリティ**: DDoS保護、WAF機能などCloudflareのセキュリティ機能
+6. **柔軟性**: より柔軟なカスタマイズが可能
 
 ## 課題と対策
 

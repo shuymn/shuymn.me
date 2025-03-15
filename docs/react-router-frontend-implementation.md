@@ -611,13 +611,13 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install
       - run: pnpm run --filter=blog build
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: blog
-          directory: apps/blog/dist
+      - name: Deploy to Cloudflare Workers Assets
+        run: pnpm run --filter=blog deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_BLOG_CACHE_ID: ${{ secrets.KV_BLOG_CACHE_ID }}
+          KV_BLOG_CACHE_PREVIEW_ID: ${{ secrets.KV_BLOG_CACHE_PREVIEW_ID }}
 ```
 
 ## 課題と対策

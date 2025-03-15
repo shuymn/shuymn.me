@@ -7,15 +7,9 @@ compatibility_date = "2023-01-01"
 # 非機密情報はここに直接設定可能
 ENVIRONMENT = "development"
 
-# 機密情報は空の状態で宣言
-# デプロイ時に wrangler secret コマンドまたはダッシュボードで設定します
-MICROCMS_SERVICE_DOMAIN = ""
-MICROCMS_API_KEY = ""
-
 # KVストア設定
-# ID値は実際のCloudflareダッシュボードで作成したKV名前空間IDに置き換えてください
 kv_namespaces = [
-  { binding = "BLOG_CACHE", id = "YOUR_KV_NAMESPACE_ID_HERE", preview_id = "YOUR_KV_NAMESPACE_PREVIEW_ID_HERE" }
+    { binding = "BLOG_CACHE", id = "${KV_BLOG_CACHE_ID}", preview_id = "${KV_BLOG_CACHE_PREVIEW_ID}" },
 ]
 
 # 環境別の設定

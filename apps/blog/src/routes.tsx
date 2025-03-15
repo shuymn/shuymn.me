@@ -1,3 +1,4 @@
+import type { RouteObject } from 'react-router-dom';
 import { createBrowserRouter } from 'react-router-dom';
 
 import RootLayout from './routes/RootLayout';
@@ -5,7 +6,7 @@ import Home from './routes/Home';
 import Post from './routes/Post';
 import NotFound from './routes/NotFound';
 
-export const routes = [
+export const routes: RouteObject[] = [
   {
     path: '/',
     element: <RootLayout />,
@@ -23,4 +24,7 @@ export const routes = [
   },
 ];
 
-export const router = createBrowserRouter(routes);
+// クライアントサイドでのみ使用される
+export const createRouter = () => {
+  return createBrowserRouter(routes);
+};

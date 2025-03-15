@@ -24,6 +24,22 @@ posts.get('/', zValidator('query', getPostsSchema), cacheControl({ maxAge: 60 })
   }
 });
 
+// タグに紐づく記事一覧を取得 - 順序が重要：これを/:slugより先に定義
+posts.get('/tag/:tagId', zValidator('param', getPostsByTagSchema), cacheControl({ maxAge: 300 }), cache({
+  cacheName: 'BLOG_CACHE',
+  cacheControl: 'max-age=300, s-maxage=600',
+}), async (c) => {
+  try {
+    const { tagId } = c.req.valid('param');
+    const queries = c.req.valid('query');
+    const response = await getPostsByTag(tagId, queries);
+    return c.json(response);
+  } catch (error) {
+    console.error(`Error fetching posts for tag '${c.req.param('tagId')}':`, error);
+    throw new HTTPException(500, { message: 'Failed to fetch posts by tag' });
+  }
+});
+
 // 特定の記事をslugで取得
 posts.get('/:slug', zValidator('param', getPostSchema), cacheControl({ maxAge: 3600 }), cache({
   cacheName: 'BLOG_CACHE',
@@ -40,22 +56,6 @@ posts.get('/:slug', zValidator('param', getPostSchema), cacheControl({ maxAge: 3
       throw new HTTPException(404, { message: `Post with slug '${c.req.param('slug')}' not found` });
     }
     throw new HTTPException(500, { message: 'Failed to fetch post' });
-  }
-});
-
-// タグに紐づく記事一覧を取得
-posts.get('/tag/:tagId', zValidator('param', getPostsByTagSchema), cacheControl({ maxAge: 300 }), cache({
-  cacheName: 'BLOG_CACHE',
-  cacheControl: 'max-age=300, s-maxage=600',
-}), async (c) => {
-  try {
-    const { tagId } = c.req.valid('param');
-    const queries = c.req.valid('query');
-    const response = await getPostsByTag(tagId, queries);
-    return c.json(response);
-  } catch (error) {
-    console.error(`Error fetching posts for tag '${c.req.param('tagId')}':`, error);
-    throw new HTTPException(500, { message: 'Failed to fetch posts by tag' });
   }
 });
 

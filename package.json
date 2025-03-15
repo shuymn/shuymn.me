@@ -14,5 +14,11 @@
   "devDependencies": {
     "@biomejs/biome": "^1.6.1",
     "turbo": "^1.12.5"
+  },
+  "dependencies": {
+    "@alloc/quick-lru": "^5.2.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "esbuild": "^0.25.1",
+    "vite": "^4.5.9"
   }
 }

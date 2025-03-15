@@ -1,0 +1,7 @@
+{
+  "extends": "tsconfig-shuymn/react-lib.json",
+  "include": ["src"],
+  "compilerOptions": {
+    "outDir": "dist"
+  }
+}

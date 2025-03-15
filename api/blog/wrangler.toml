@@ -1,0 +1,11 @@
+name = "blog-api"
+main = "src/index.ts"
+compatibility_date = "2023-01-01"
+
+[vars]
+MICROCMS_SERVICE_DOMAIN = ""
+MICROCMS_API_KEY = ""
+
+[[routes]]
+pattern = "api.shuymn.me/*"
+zone_name = "shuymn.me"

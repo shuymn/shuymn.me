@@ -17,7 +17,7 @@ Next.jsで構築された現在のブログサイトを、より効率的で現�
 │
 ├── packages/
 │   ├── ui/                 # 共有UIコンポーネント
-│   ├── eslint-config/      # 共有ESLint設定
+│   ├── biome-config/       # 共有Biome設定
 │   └── tsconfig/           # 共有TypeScript設定
 │
 └── api/

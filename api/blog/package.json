@@ -6,7 +6,8 @@
     "dev": "wrangler dev src/index.ts",
     "build": "wrangler build",
     "deploy": "wrangler publish",
-    "lint": "eslint .",
+    "lint": "biome lint ./src",
+    "format": "biome format --write ./src",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -17,7 +18,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "eslint-config-shuymn": "workspace:*",
+    "biome-config-shuymn": "workspace:*",
     "tsconfig-shuymn": "workspace:*",
     "typescript": "^5.0.0",
     "wrangler": "^3.0.0"

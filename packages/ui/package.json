@@ -11,7 +11,8 @@
   "scripts": {
     "build": "tsup src/index.tsx --format esm,cjs --dts --external react",
     "dev": "tsup src/index.tsx --format esm,cjs --watch --dts --external react",
-    "lint": "eslint \"src/**/*.ts*\"",
+    "lint": "biome lint ./src",
+    "format": "biome format --write ./src",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -19,8 +20,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
-    "eslint": "^8.45.0",
-    "eslint-config-shuymn": "workspace:*",
+    "biome-config-shuymn": "workspace:*",
     "tsconfig-shuymn": "workspace:*",
     "tsup": "^7.1.0",
     "typescript": "^5.1.6"

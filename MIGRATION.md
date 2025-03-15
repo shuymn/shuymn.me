@@ -37,7 +37,6 @@ Next.jsで構築された現在のブログサイトを、より効率的で現�
 ### フェーズ2: バックエンド実装（2週間）
 
 - [ ] microCMSスキーマ設計
-- [ ] 既存コンテンツのmicroCMSへの移行スクリプト作成
 - [ ] Hono APIの基本実装
   - [ ] 記事一覧取得API
   - [ ] 記事詳細取得API
@@ -56,21 +55,17 @@ Next.jsで構築された現在のブログサイトを、より効率的で現�
 
 ### フェーズ4: デプロイと検証（1週間）
 
-- [ ] Cloudflare Pagesデプロイ設定
+- [ ] Cloudflare Workers/Workers Assetsデプロイ設定
 - [ ] パフォーマンステスト
 - [ ] SEO確認
 - [ ] クロスブラウザテスト
-
-### フェーズ5: 切り替え（1日）
-
-- [ ] DNS切り替え
-- [ ] リダイレクト設定
 
 ## 4. 技術スタック詳細
 
 ### フロントエンド
 
 - **フレームワーク**: React + React Router
+- **ホスティング**: Cloudflare Workers Assets
 - **スタイリング**: TailwindCSS
 - **ビルドツール**: Vite
 - **言語**: TypeScript
@@ -85,7 +80,7 @@ Next.jsで構築された現在のブログサイトを、より効率的で現�
 ### インフラ
 
 - **CI/CD**: GitHub Actions
-- **ホスティング**: Cloudflare Pages
+- **ホスティング**: Cloudflare Workers
 - **パッケージマネージャ**: pnpm
 - **モノレポツール**: Turborepo
 
@@ -117,8 +112,3 @@ Next.jsで構築された現在のブログサイトを、より効率的で現�
 - Web Vitals モニタリング
 - クロスブラウザテスト
 - モバイル対応検証
-
-## 7. ロールバック計画
-
-- DNS設定変更で即時ロールバック可能
-- 既存Next.jsアプリは維持

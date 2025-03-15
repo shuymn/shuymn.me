@@ -2,9 +2,24 @@ name = "blog-api"
 main = "src/index.ts"
 compatibility_date = "2023-01-01"
 
+# 変数の宣言のみ行い、実際の値は.dev.varsまたはシークレットで設定します
 [vars]
+# 非機密情報はここに直接設定可能
+ENVIRONMENT = "development"
+
+# 機密情報は空の状態で宣言
+# デプロイ時に wrangler secret コマンドまたはダッシュボードで設定します
 MICROCMS_SERVICE_DOMAIN = ""
 MICROCMS_API_KEY = ""
+
+# 環境別の設定
+[env.development]
+# 開発環境用の設定
+vars = { ENVIRONMENT = "development" }
+
+[env.production]
+# 本番環境用の設定
+vars = { ENVIRONMENT = "production" }
 
 [[routes]]
 pattern = "api.shuymn.me/*"

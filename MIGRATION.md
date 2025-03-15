@@ -20,8 +20,18 @@ Next.jsで構築された現在のブログサイトを、より効率的で現�
 │   ├── biome-config/       # 共有Biome設定
 │   └── tsconfig/           # 共有TypeScript設定
 │
-└── api/
-    └── blog/               # HonoベースのバックエンドAPI
+├── api/
+│   └── blog/               # HonoベースのバックエンドAPI
+│
+└── docs/                   # ドキュメント
+    ├── cloudflare/         # Cloudflare関連のドキュメント
+    ├── hono/               # Hono関連のドキュメント
+    ├── react-router/       # React Router関連のドキュメント
+    ├── cloudflare-deployment.md           # Cloudflareデプロイ手順
+    ├── hono-backend-implementation.md     # バックエンド実装ガイド
+    ├── microcms-implementation.md         # microCMS設定・使用方法
+    ├── pnpm-migration.md                  # pnpm移行手順
+    └── react-router-frontend-implementation.md  # フロントエンド実装ガイド
 ```
 
 ## 3. 移行フェーズ
@@ -36,25 +46,27 @@ Next.jsで構築された現在のブログサイトを、より効率的で現�
 
 ### フェーズ2: バックエンド実装（2週間）
 
-- [ ] microCMSスキーマ設計
-- [ ] Hono APIの基本実装
-  - [ ] 記事一覧取得API
-  - [ ] 記事詳細取得API
+- [x] microCMSスキーマ設計
+- [x] Hono APIの基本実装
+  - [x] 記事一覧取得API
+  - [x] 記事詳細取得API
+  - [x] タグ関連API
 - [ ] Cloudflare Workersデプロイ設定
 
 ### フェーズ3: フロントエンド実装（2週間）
 
-- [ ] React Router構成
-- [ ] TailwindCSS設定
-- [ ] 共通コンポーネント実装
-  - [ ] レイアウト
-  - [ ] ヘッダー
-  - [ ] 記事リスト
-  - [ ] 記事詳細
-- [ ] APIクライアント実装
+- [x] React Router構成
+- [x] TailwindCSS設定
+- [x] 共通コンポーネント実装
+  - [x] レイアウト
+  - [x] ヘッダー
+  - [x] 記事リスト
+  - [x] 記事詳細
+- [x] APIクライアント実装
 
 ### フェーズ4: デプロイと検証（1週間）
 
+- [ ] microCMSへの既存コンテンツ移行
 - [ ] Cloudflare Workers/Workers Assetsデプロイ設定
 - [ ] パフォーマンステスト
 - [ ] SEO確認
@@ -112,3 +124,46 @@ Next.jsで構築された現在のブログサイトを、より効率的で現�
 - Web Vitals モニタリング
 - クロスブラウザテスト
 - モバイル対応検証
+
+## 7. 実装済みの機能
+
+### バックエンド実装
+- [x] microCMSスキーマ設計（Post, Tagモデル）
+- [x] Hono APIの基本実装
+  - [x] 記事一覧取得API
+  - [x] 記事詳細取得API
+  - [x] タグ一覧取得API
+  - [x] タグ詳細取得API
+  - [x] タグに紐づく記事一覧取得API
+- [x] API検証とエラーハンドリング
+- [x] キャッシュ管理（KVストア設定）
+
+### フロントエンド実装
+- [x] React Router構成
+- [x] TailwindCSS設定
+- [x] 共通コンポーネント実装
+  - [x] レイアウト
+  - [x] ヘッダー
+  - [x] 記事リスト
+  - [x] 記事詳細
+  - [x] 404ページ
+- [x] APIクライアント実装
+- [x] SSR対応（Hono + React Router）
+
+## 8. 残りのタスク
+
+### 優先度高
+- [ ] microCMSの実際のスキーマ作成
+- [ ] テストデータ入力
+- [ ] APIテスト
+- [ ] Cloudflareへのデプロイ設定
+- [ ] 既存記事のmicroCMSへの移行スクリプト作成
+
+### 優先度中
+- [ ] SEO対策（metaタグ、OGP設定）
+- [ ] パフォーマンス最適化
+- [ ] クロスブラウザテスト
+
+### 優先度低
+- [ ] GitHub Actionsによる自動デプロイ設定
+- [ ] コード品質向上（テスト追加）

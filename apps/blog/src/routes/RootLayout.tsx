@@ -1,25 +1,53 @@
-import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 
 export default function RootLayout() {
   return (
-    <div className="container mx-auto px-4 max-w-3xl">
-      <header className="py-6 mb-8 border-b">
-        <nav className="flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold">shuymn.me</Link>
-          <ul className="flex space-x-4">
-            <li><Link to="/" className="hover:underline">ホーム</Link></li>
-            <li><a href="https://github.com/shuymn" className="hover:underline" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-          </ul>
-        </nav>
+    <div className="flex flex-col min-h-screen">
+      <header className="py-4 border-b border-gray-200 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <Link to="/" className="text-2xl font-bold text-gray-900">
+              shuymn.me
+            </Link>
+            <nav className="space-x-6">
+              <Link to="/" className="text-gray-600 hover:text-gray-900">
+                Home
+              </Link>
+              <a 
+                href="https://github.com/shuymn" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-gray-600 hover:text-gray-900"
+              >
+                GitHub
+              </a>
+            </nav>
+          </div>
+        </div>
       </header>
       
-      <main className="min-h-screen pb-12">
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>
       
-      <footer className="py-6 mt-12 border-t text-center text-gray-500">
-        <p>&copy; {new Date().getFullYear()} shuymn. All rights reserved.</p>
+      <footer className="py-6 border-t border-gray-200 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center">
+            <div className="text-gray-500 text-sm">
+              © {new Date().getFullYear()} shuymn. All rights reserved.
+            </div>
+            <div className="mt-4 sm:mt-0">
+              <a 
+                href="https://github.com/shuymn/shuymn.me" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-gray-500 hover:text-gray-900"
+              >
+                Source on GitHub
+              </a>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );

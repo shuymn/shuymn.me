@@ -8,6 +8,7 @@ export default function Page() {
   return (
     <main>
       <About />
+      <hr className="my-8 h-1 border-gray-300" />
       <section>
         {posts.map((post) => (
           <PostLink

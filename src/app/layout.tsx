@@ -48,6 +48,7 @@ export default function RootLayout({
         className={`${notoSans.variable} ${notoMono.variable} max-w-3xl px-8 my-8 mx-auto`}
       >
         <Header title={WEBSITE_NAME} />
+        <hr className="h-1 border-gray-300" />
         {children}
       </body>
     </html>

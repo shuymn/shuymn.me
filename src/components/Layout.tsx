@@ -11,6 +11,7 @@ type Props = {
     slug: string
     cardImage: string
   }
+  children: React.ReactNode
 }
 
 export const Layout: React.FC<Props> = ({

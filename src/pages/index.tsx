@@ -4,7 +4,6 @@ import type React from 'react'
 import { Layout } from 'src/components/Layout'
 import type { Post } from 'src/lib/posts'
 import { getAllPostsSortByDate } from 'src/lib/posts'
-import tw from 'twin.macro'
 
 export const getStaticProps: GetStaticProps<{
   posts: Post[]
@@ -12,8 +11,6 @@ export const getStaticProps: GetStaticProps<{
   const posts = await getAllPostsSortByDate()
   return { props: { posts } }
 }
-
-const AboutAnchor = tw.a`no-underline text-blue-600 visited:text-purple-600 cursor-pointer`
 
 const About: React.FC = () => {
   return (
@@ -27,22 +24,20 @@ const About: React.FC = () => {
       </div>
       <ul className="mt-4 flex space-x-2">
         <li>
-          <AboutAnchor href="https://twitter.com/shuymn">Twitter</AboutAnchor>
+          <a href="https://twitter.com/shuymn" className="no-underline text-blue-600 visited:text-purple-600 cursor-pointer">Twitter</a>
         </li>
         <li>/</li>
         <li>
-          <AboutAnchor href="https://github.com/shuymn">GitHub</AboutAnchor>
+          <a href="https://github.com/shuymn" className="no-underline text-blue-600 visited:text-purple-600 cursor-pointer">GitHub</a>
         </li>
         <li>/</li>
         <li>
-          <AboutAnchor href="mailto:mail@shuymn.me">mail</AboutAnchor>
+          <a href="mailto:mail@shuymn.me" className="no-underline text-blue-600 visited:text-purple-600 cursor-pointer">mail</a>
         </li>
       </ul>
     </section>
   )
 }
-
-const PostAnchor = tw.a`text-xl no-underline text-blue-600 visited:text-purple-600 cursor-pointer`
 
 const PostLink: React.FC<{
   props: { slug: string; date: string; title: string }
@@ -50,8 +45,8 @@ const PostLink: React.FC<{
   return (
     <div className="mb-6">
       <p className="text-sm text-gray-800">{date.replace(/-/g, '.')}</p>
-      <Link href="/posts/[slug]" as={`/posts/${slug}`} passHref>
-        <PostAnchor>{title}</PostAnchor>
+      <Link href={`/posts/${slug}`} className="text-xl no-underline text-blue-600 visited:text-purple-600 cursor-pointer">
+        {title}
       </Link>
     </div>
   )

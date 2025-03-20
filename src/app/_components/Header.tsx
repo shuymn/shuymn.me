@@ -5,7 +5,7 @@ type Props = {
   title: string
 }
 
-export const Header: React.FC<Props> = ({ title }) => {
+const Header: React.FC<Props> = ({ title }) => {
   return (
     <>
       <nav>
@@ -15,7 +15,10 @@ export const Header: React.FC<Props> = ({ title }) => {
           </Link>
           <ul className="flex justify-between items-center space-x-4">
             <li>
-              <a href="https://google.com/search?q=site:shuymn.me" className="cursor-pointer">
+              <a
+                href="https://google.com/search?q=site:shuymn.me"
+                className="cursor-pointer"
+              >
                 Search
               </a>
             </li>
@@ -25,3 +28,5 @@ export const Header: React.FC<Props> = ({ title }) => {
     </>
   )
 }
+
+export default Header

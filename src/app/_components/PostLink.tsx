@@ -9,7 +9,7 @@ const PostLink: React.FC<{
       <p className="text-sm text-gray-800">{date.replace(/-/g, '.')}</p>
       <Link
         href={`/posts/${slug}`}
-        className="text-xl no-underline text-blue-600 visited:text-purple-600 cursor-pointer"
+        className="text-lg no-underline text-blue-600 visited:text-purple-600 cursor-pointer"
       >
         {title}
       </Link>

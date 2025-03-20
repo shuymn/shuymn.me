@@ -1,27 +1,27 @@
-import Head from "next/head";
-import React from "react";
-import { Header } from "./Header";
+import Head from 'next/head'
+import type React from 'react'
+import { Header } from './Header'
 
-const WEBSITE_NAME = "shuymn.me";
+const WEBSITE_NAME = 'shuymn.me'
 
 type Props = {
   props: {
-    title: string;
-    description: string;
-    slug: string;
-    cardImage: string;
-  };
-};
+    title: string
+    description: string
+    slug: string
+    cardImage: string
+  }
+}
 
 export const Layout: React.FC<Props> = ({
   children,
   props: { title, description, slug, cardImage },
 }) => {
-  const twitterCard = cardImage ? "summary_large_image" : "summary";
-  const url = slug ? `https://shuymn.me/posts/${slug}` : "https://shuymn.me";
+  const twitterCard = cardImage ? 'summary_large_image' : 'summary'
+  const url = slug ? `https://shuymn.me/posts/${slug}` : 'https://shuymn.me'
 
-  title = title || WEBSITE_NAME;
-  cardImage = cardImage || "https://shuymn.me/default_og_image.jpg";
+  title = title || WEBSITE_NAME
+  cardImage = cardImage || 'https://shuymn.me/default_og_image.jpg'
 
   return (
     <>
@@ -48,5 +48,5 @@ export const Layout: React.FC<Props> = ({
       <Header title={WEBSITE_NAME} />
       <main>{children}</main>
     </>
-  );
-};
+  )
+}

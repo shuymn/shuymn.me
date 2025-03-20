@@ -1,5 +1,5 @@
+import Markdown from '@/app/_components/Markdown'
 import { DEFAULT_OG_IMAGE, WEBSITE_NAME } from '@/lib/constants'
-import { markdownToHtml } from '@/lib/markdown'
 import { getAllPosts, getPostBySlug } from '@/lib/posts'
 import type { Metadata } from 'next'
 
@@ -16,7 +16,6 @@ type Params = {
 export default async function Page(props: Params) {
   const { slug } = await props.params
   const { meta, content } = getPostBySlug(slug)
-  const contentHtml = await markdownToHtml(content || '')
 
   return (
     <main>
@@ -25,8 +24,7 @@ export default async function Page(props: Params) {
           <small>{meta.date.replace(/-/g, '.')}</small>
           <h1>{meta.title}</h1>
         </section>
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: TODO: migrate to react-markdown */}
-        <section dangerouslySetInnerHTML={{ __html: contentHtml }} />
+        <Markdown content={content || ''} />
       </article>
     </main>
   )

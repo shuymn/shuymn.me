@@ -13,16 +13,6 @@ const Header: React.FC<Props> = ({ title }) => {
           <Link href="/" className="no-underline font-semibold text-xl">
             <h1>{title}</h1>
           </Link>
-          <ul className="flex justify-between items-center space-x-4">
-            <li>
-              <a
-                href="https://google.com/search?q=site:shuymn.me"
-                className="cursor-pointer"
-              >
-                Search
-              </a>
-            </li>
-          </ul>
         </div>
       </nav>
     </>

@@ -7,7 +7,8 @@ import type {
 import type React from 'react'
 import { Layout } from 'src/components/Layout'
 import { markdownToHtml } from 'src/lib/markdown'
-import { type Post, getAllPosts, getPostBySlug } from 'src/lib/posts'
+import { getAllPosts, getPostBySlug } from 'src/lib/posts'
+import type { Post } from 'src/lib/posts'
 import tw from 'twin.macro'
 
 export const getStaticPaths: GetStaticPaths = async () => {

@@ -2,8 +2,8 @@ import type React from 'react'
 
 const About: React.FC = () => {
   return (
-    <section className="mt-8 mb-16">
-      <div className="text-lg">
+    <section className="mt-8 mb-8">
+      <div>
         <p>
           日常的なことやプログラミングに関する個人的な記事を投稿しています。
         </p>

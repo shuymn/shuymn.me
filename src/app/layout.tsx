@@ -45,9 +45,10 @@ export default function RootLayout({
         <meta property="og:site_name" content={WEBSITE_NAME} />
       </head>
       <body
-        className={`${notoSans.variable} ${notoMono.variable} bg-gray-100 max-w-prose lg:max-w-3xl px-8 my-8 mx-auto`}
+        className={`${notoSans.variable} ${notoMono.variable} max-w-3xl px-8 my-8 mx-auto`}
       >
         <Header title={WEBSITE_NAME} />
+        <hr className="h-1 border-gray-300" />
         {children}
       </body>
     </html>

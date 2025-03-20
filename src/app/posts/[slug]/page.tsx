@@ -19,7 +19,7 @@ export default async function Page(props: Params) {
 
   return (
     <main>
-      <article className="prose lg:prose-lg mx-auto mt-4 mb-32">
+      <article className="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32">
         <section>
           <small>{meta.date.replace(/-/g, '.')}</small>
           <h1>{meta.title}</h1>

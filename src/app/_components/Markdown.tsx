@@ -7,7 +7,7 @@ import rehypeShikiFromHighlighter from '@shikijs/rehype/core'
 import { createOnigurumaEngine } from 'shiki'
 
 const highlighter = await createHighlighterCore({
-  themes: [import('@shikijs/themes/github-light')],
+  themes: [import('@shikijs/themes/github-dark')],
   langs: [import('@shikijs/langs/bash')],
   engine: createOnigurumaEngine(() => import('shiki/wasm')),
 })
@@ -23,7 +23,7 @@ export default async function Markdown({ content }: MarkdownProps) {
       rehypePlugins={[
         rehypeRaw,
         [rehypeFigure, { className: 'text-center text-base' }],
-        [rehypeShikiFromHighlighter, highlighter, { theme: 'github-light' }],
+        [rehypeShikiFromHighlighter, highlighter, { theme: 'github-dark' }],
       ]}
     >
       {content}

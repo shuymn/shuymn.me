@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme inline {
+  --font-sans: var(--font-noto-sans);
+  --font-mono: var(--font-noto-mono);
+}

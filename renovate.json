@@ -26,7 +26,7 @@
   },
   "packageRules": [
     {
-      "depTypeList": [
+      "matchDepTypes": [
         "engines",
         "peerDependencies"
       ],

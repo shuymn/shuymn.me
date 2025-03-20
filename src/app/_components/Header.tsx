@@ -10,7 +10,7 @@ const Header: React.FC<Props> = ({ title }) => {
     <>
       <nav>
         <div className="flex justify-between items-center py-8 mx-auto">
-          <Link href="/" className="no-underline font-semibold text-xl">
+          <Link href="/" className="no-underline font-bold text-xl">
             <h1>{title}</h1>
           </Link>
         </div>

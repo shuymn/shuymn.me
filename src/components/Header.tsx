@@ -1,20 +1,20 @@
-import Link from "next/link";
-import React from "react";
-import tw from "twin.macro";
+import Link from 'next/link'
+import type React from 'react'
+import tw from 'twin.macro'
 
 type Props = {
-  title: string;
-};
+  title: string
+}
 
-const Anchor = tw.a`cursor-pointer`;
+const Anchor = tw.a`cursor-pointer`
 
 export const Header: React.FC<Props> = ({ title }) => {
   return (
     <>
       <nav>
         <div className="flex justify-between items-center py-8 mx-auto">
-          <Link href="/">
-            <a className="no-underline font-semibold text-xl">
+          <Link href="/" passHref>
+            <a href="/" className="no-underline font-semibold text-xl">
               <h1>{title}</h1>
             </a>
           </Link>
@@ -28,5 +28,5 @@ export const Header: React.FC<Props> = ({ title }) => {
         </div>
       </nav>
     </>
-  );
-};
+  )
+}

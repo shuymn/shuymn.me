@@ -1,5 +1,5 @@
-declare module "remark-prism" {
-  import { Plugin } from "unified";
-  const remarkPrism: Plugin<[]>;
-  export = remarkPrism;
+declare module 'remark-prism' {
+  import type { Plugin } from 'unified'
+  const remarkPrism: Plugin<[]>
+  export = remarkPrism
 }

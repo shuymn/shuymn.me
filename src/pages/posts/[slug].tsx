@@ -1,13 +1,18 @@
-import "katex/dist/katex.min.css";
-import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
-import React from "react";
-import { Layout } from "src/components/Layout";
-import { markdownToHtml } from "src/lib/markdown";
-import { getAllPosts, getPostBySlug, Post } from "src/lib/posts";
-import tw from "twin.macro";
+import 'katex/dist/katex.min.css'
+import type {
+  GetStaticPaths,
+  GetStaticProps,
+  InferGetStaticPropsType,
+} from 'next'
+import type React from 'react'
+import { Layout } from 'src/components/Layout'
+import { markdownToHtml } from 'src/lib/markdown'
+import { getAllPosts, getPostBySlug } from 'src/lib/posts'
+import type { Post } from 'src/lib/posts'
+import tw from 'twin.macro'
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const posts = await getAllPosts();
+  const posts = await getAllPosts()
 
   return {
     paths: posts.map((post) => {
@@ -15,38 +20,39 @@ export const getStaticPaths: GetStaticPaths = async () => {
         params: {
           slug: post.slug,
         },
-      };
+      }
     }),
     fallback: false,
-  };
-};
+  }
+}
 
 export const getStaticProps: GetStaticProps<Post, { slug: string }> = async ({
   params,
 }) => {
-  const slug = (params || {}).slug as string;
-  const post = await getPostBySlug(slug);
-  const content = await markdownToHtml(post.content || "");
+  const slug = params?.slug as string
+  const post = await getPostBySlug(slug)
+  const content = await markdownToHtml(post.content || '')
 
-  return { props: { ...post, content, slug } };
-};
+  return { props: { ...post, content, slug } }
+}
 
-const Article = tw.article`prose lg:prose-lg mx-auto mt-4 mb-32`;
+const Article = tw.article`prose lg:prose-lg mx-auto mt-4 mb-32`
 
-type PostProps = InferGetStaticPropsType<typeof getStaticProps>;
+type PostProps = InferGetStaticPropsType<typeof getStaticProps>
 
 const PostPage: React.FC<PostProps> = ({ meta, content, slug }) => {
   return (
     <Layout props={{ ...meta, slug }}>
       <Article>
         <section>
-          <small>{meta.date.replace(/-/g, ".")}</small>
+          <small>{meta.date.replace(/-/g, '.')}</small>
           <h1>{meta.title}</h1>
         </section>
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: TODO: migrate to react-markdown */}
         <section dangerouslySetInnerHTML={{ __html: content }} />
       </Article>
     </Layout>
-  );
-};
+  )
+}
 
-export default PostPage;
+export default PostPage

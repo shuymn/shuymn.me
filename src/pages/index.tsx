@@ -1,18 +1,19 @@
-import { GetStaticProps, InferGetStaticPropsType } from "next";
-import Link from "next/link";
-import React from "react";
-import { Layout } from "src/components/Layout";
-import { getAllPostsSortByDate, Post } from "src/lib/posts";
-import tw from "twin.macro";
+import type { GetStaticProps, InferGetStaticPropsType } from 'next'
+import Link from 'next/link'
+import type React from 'react'
+import { Layout } from 'src/components/Layout'
+import type { Post } from 'src/lib/posts'
+import { getAllPostsSortByDate } from 'src/lib/posts'
+import tw from 'twin.macro'
 
 export const getStaticProps: GetStaticProps<{
-  posts: Post[];
+  posts: Post[]
 }> = async () => {
-  const posts = await getAllPostsSortByDate();
-  return { props: { posts } };
-};
+  const posts = await getAllPostsSortByDate()
+  return { props: { posts } }
+}
 
-const AboutAnchor = tw.a`no-underline text-blue-600 visited:text-purple-600 cursor-pointer`;
+const AboutAnchor = tw.a`no-underline text-blue-600 visited:text-purple-600 cursor-pointer`
 
 const About: React.FC = () => {
   return (
@@ -38,30 +39,30 @@ const About: React.FC = () => {
         </li>
       </ul>
     </section>
-  );
-};
+  )
+}
 
-const PostAnchor = tw.a`text-xl no-underline text-blue-600 visited:text-purple-600 cursor-pointer`;
+const PostAnchor = tw.a`text-xl no-underline text-blue-600 visited:text-purple-600 cursor-pointer`
 
 const PostLink: React.FC<{
-  props: { slug: string; date: string; title: string };
+  props: { slug: string; date: string; title: string }
 }> = ({ props: { slug, date, title } }) => {
   return (
     <div className="mb-6">
-      <p className="text-sm text-gray-800">{date.replace(/-/g, ".")}</p>
+      <p className="text-sm text-gray-800">{date.replace(/-/g, '.')}</p>
       <Link href="/posts/[slug]" as={`/posts/${slug}`} passHref>
         <PostAnchor>{title}</PostAnchor>
       </Link>
     </div>
-  );
-};
+  )
+}
 
 const IndexPage = ({
   posts,
 }: InferGetStaticPropsType<typeof getStaticProps>) => {
   return (
     <Layout
-      props={{ title: "", description: "shuymn.me", slug: "", cardImage: "" }}
+      props={{ title: '', description: 'shuymn.me', slug: '', cardImage: '' }}
     >
       <About />
       <section>
@@ -77,7 +78,7 @@ const IndexPage = ({
         ))}
       </section>
     </Layout>
-  );
-};
+  )
+}
 
-export default IndexPage;
+export default IndexPage

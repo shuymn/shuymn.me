@@ -12,7 +12,7 @@
     "fmt:fix": "biome format --write ."
   },
   "dependencies": {
-    "@shikijs/rehype": "^3.2.1",
+    "@shikijs/rehype": "^3.7.0",
     "gray-matter": "^4.0.3",
     "next": "15.2.4",
     "react": "^19.0.0",

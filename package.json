@@ -9,7 +9,8 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "fmt": "biome format .",
-    "fmt:fix": "biome format --write ."
+    "fmt:fix": "biome format --write .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@shikijs/rehype": "^3.8.1",

@@ -1,14 +1,14 @@
-import { getAllPostsSortByDate } from '@/lib/posts'
-import About from './_components/About'
-import PostLink from './_components/PostLink'
+import { getAllPostsSortByDate } from "@/lib/posts";
+import About from "./_components/About";
+import PostLink from "./_components/PostLink";
 
 export default function Page() {
-  const posts = getAllPostsSortByDate()
+  const posts = getAllPostsSortByDate();
 
   return (
     <main>
       <About />
-      <hr className="my-8 h-1 border-gray-300" />
+      <hr className="my-8 h-1 border-border" />
       <section>
         {posts.map((post) => (
           <PostLink
@@ -22,5 +22,5 @@ export default function Page() {
         ))}
       </section>
     </main>
-  )
+  );
 }

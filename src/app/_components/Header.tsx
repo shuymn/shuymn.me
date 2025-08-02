@@ -1,9 +1,10 @@
-import Link from 'next/link'
-import type React from 'react'
+import Link from "next/link";
+import type React from "react";
+import ThemeToggle from "./ThemeToggle";
 
 type Props = {
-  title: string
-}
+  title: string;
+};
 
 const Header: React.FC<Props> = ({ title }) => {
   return (
@@ -13,10 +14,11 @@ const Header: React.FC<Props> = ({ title }) => {
           <Link href="/" className="no-underline font-bold text-xl">
             <h1>{title}</h1>
           </Link>
+          <ThemeToggle />
         </div>
       </nav>
     </>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

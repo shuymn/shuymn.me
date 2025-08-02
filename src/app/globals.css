@@ -1,7 +1,37 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-@theme inline {
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
   --font-sans: var(--font-noto-sans);
   --font-mono: var(--font-noto-mono);
+
+  /* Custom color palette */
+  --color-background: #ffffff;
+  --color-foreground: #111827;
+  --color-muted: #6b7280;
+  --color-border: #d1d5db;
+  --color-primary: #2563eb;
+  --color-accent: #7c3aed;
+  --color-surface: #f3f4f6;
+  --color-hover: #e5e7eb;
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Dark mode color overrides */
+  --color-background: #111827;
+  --color-foreground: #f3f4f6;
+  --color-muted: #9ca3af;
+  --color-border: #374151;
+  --color-primary: #60a5fa;
+  --color-accent: #a78bfa;
+  --color-surface: #1f2937;
+  --color-hover: #374151;
 }

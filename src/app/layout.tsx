@@ -1,24 +1,25 @@
-import type { Metadata } from 'next'
-import { Noto_Sans_JP, Noto_Sans_Mono } from 'next/font/google'
-import { BASE_URL, DEFAULT_OG_IMAGE, WEBSITE_NAME } from '@/lib/constants'
-import Header from './_components/Header'
-import './globals.css'
+import type { Metadata } from "next";
+import { Noto_Sans_JP, Noto_Sans_Mono } from "next/font/google";
+import { ThemeProvider } from "next-themes";
+import { BASE_URL, DEFAULT_OG_IMAGE, WEBSITE_NAME } from "@/lib/constants";
+import Header from "./_components/Header";
+import "./globals.css";
 
 const notoSans = Noto_Sans_JP({
-  variable: '--font-noto-sans',
-  weight: ['400', '700'],
-  subsets: ['latin'],
-  display: 'swap',
+  variable: "--font-noto-sans",
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  display: "swap",
   preload: false,
-})
+});
 
 const notoMono = Noto_Sans_Mono({
-  variable: '--font-noto-mono',
-  weight: ['400', '700'],
-  subsets: ['latin'],
-  display: 'swap',
+  variable: "--font-noto-mono",
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  display: "swap",
   preload: false,
-})
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -26,15 +27,15 @@ export const metadata: Metadata = {
   openGraph: {
     images: [DEFAULT_OG_IMAGE],
   },
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta content="IE=edge" httpEquiv="X-UA-Compatible" />
@@ -45,12 +46,14 @@ export default function RootLayout({
         <meta property="og:site_name" content={WEBSITE_NAME} />
       </head>
       <body
-        className={`${notoSans.variable} ${notoMono.variable} max-w-3xl px-8 my-8 mx-auto`}
+        className={`${notoSans.variable} ${notoMono.variable} max-w-3xl px-8 my-8 mx-auto bg-background text-foreground`}
       >
-        <Header title={WEBSITE_NAME} />
-        <hr className="h-1 border-gray-300" />
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Header title={WEBSITE_NAME} />
+          <hr className="h-1 border-border" />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }

@@ -29,7 +29,7 @@
     "@biomejs/biome": "2.2.6",
     "@commitlint/cli": "20.1.0",
     "@commitlint/config-conventional": "20.0.0",
-    "@tailwindcss/postcss": "4.1.14",
+    "@tailwindcss/postcss": "4.1.15",
     "@tailwindcss/typography": "0.5.19",
     "@tsconfig/next": "2.0.3",
     "@types/node": "24.8.0",
@@ -38,7 +38,7 @@
     "eslint": "9.37.0",
     "eslint-config-next": "15.5.5",
     "lefthook": "1.13.6",
-    "tailwindcss": "4.1.14",
+    "tailwindcss": "4.1.15",
     "textlint": "15.2.3",
     "textlint-rule-preset-ja-technical-writing": "12.0.2",
     "typescript": "5.9.3"

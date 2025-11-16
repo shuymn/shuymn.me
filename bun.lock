@@ -23,7 +23,7 @@
         "@commitlint/config-conventional": "20.0.0",
         "@tailwindcss/postcss": "4.1.17",
         "@tailwindcss/typography": "0.5.19",
-        "@tsconfig/next": "2.0.3",
+        "@tsconfig/next": "2.0.4",
         "@types/node": "24.9.1",
         "@types/react": "19.2.4",
         "@types/react-dom": "19.2.3",
@@ -324,7 +324,7 @@
 
     "@textlint/utils": ["@textlint/utils@15.3.0", "", {}, "sha512-S9d9bu4hAOyHqsSTAkfhADHIu1csvPu47DseLgL6RIN+x1+UDnnTTULHDiWHfztxlQxMSwoupkRlxyH5O2/LGA=="],
 
-    "@tsconfig/next": ["@tsconfig/next@2.0.3", "", {}, "sha512-b4aKvmdWnv9aUy+NStUFlefirk3SItW20OJtbi5/ue9oMRaQtUYbN5zsr7OmV3rlx6Gp6h7A82gPoCXhrNGVPQ=="],
+    "@tsconfig/next": ["@tsconfig/next@2.0.4", "", {}, "sha512-2myr9SPuy7iSauxOtnqehvnCyidgW8WlZQZ2MSohMvT39AglIbHtZP32lSMBC1Xs1T7hpBO5crATB+5m5mPs5w=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.9.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-6+7nlbMVX/PVDCwaIQ8nTOPveOcFLSt8GcXdx8hD0bt39uWxYT88uXzqTd4fTvqta7oeUJqudepapKNt2DYJFw=="],
 

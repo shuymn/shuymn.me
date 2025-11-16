@@ -31,7 +31,7 @@
     "@commitlint/config-conventional": "20.0.0",
     "@tailwindcss/postcss": "4.1.17",
     "@tailwindcss/typography": "0.5.19",
-    "@tsconfig/next": "2.0.3",
+    "@tsconfig/next": "2.0.4",
     "@types/node": "24.9.1",
     "@types/react": "19.2.4",
     "@types/react-dom": "19.2.3",

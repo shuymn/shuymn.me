@@ -36,7 +36,7 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.2",
-    "eslint-config-next": "15.5.7",
+    "eslint-config-next": "15.5.9",
     "lefthook": "2.0.12",
     "tailwindcss": "4.1.17",
     "textlint": "15.5.0",

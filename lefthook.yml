@@ -3,7 +3,7 @@ pre-commit:
   commands:
     lint:
       glob: "*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}"
-      run: bun run lint:fix -- --file {staged_files}
+      run: bun run lint:fix -- {staged_files}
       stage_fixed: true
     format:
       glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"

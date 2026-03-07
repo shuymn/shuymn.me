@@ -39,7 +39,7 @@
     "eslint-config-next": "16.1.6",
     "lefthook": "2.1.2",
     "tailwindcss": "4.2.0",
-    "textlint": "15.5.1",
+    "textlint": "15.5.2",
     "textlint-rule-preset-ja-technical-writing": "12.0.2",
     "typescript": "5.9.3"
   },

@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@shikijs/rehype": "^3.12.0",
+    "@shikijs/rehype": "^4.0.0",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.577.0",
     "next": "16.2.0",

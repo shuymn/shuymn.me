@@ -7,13 +7,8 @@ import { useTheme } from "next-themes";
 function ThemeToggleInner() {
   const { resolvedTheme, setTheme } = useTheme();
 
-  // This is the standard pattern recommended by next-themes
   if (!resolvedTheme) {
-    return (
-      <button type="button" className="p-2 rounded-lg transition-colors" aria-label="Toggle theme" disabled>
-        <div className="w-5 h-5" />
-      </button>
-    );
+    return <ThemeToggleLoading />;
   }
 
   const nextTheme = resolvedTheme === "light" ? "dark" : "light";

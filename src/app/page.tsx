@@ -7,7 +7,9 @@ export default function Page() {
 
   return (
     <main>
-      <About />
+      <section className="mt-8 mb-8" aria-label="プロフィールとサイトについて">
+        <About />
+      </section>
       <hr className="my-8 h-1 border-border" />
       <section>
         {posts.map((post) => (

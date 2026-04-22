@@ -2,9 +2,12 @@ import type React from "react";
 
 const About: React.FC = () => {
   return (
-    <section className="mt-8 mb-8">
+    <div className="mt-6">
       <div>
-        <p>日常的なことやプログラミングに関する個人的な記事を投稿しています。</p>
+        <p>ソフトウェアエンジニア。主にバックエンド領域を主戦場としています。</p>
+        <p>SNSキュレーション事業会社、VTuber運営会社を経て現在はBtoBのSaaS企業に在籍。</p>
+        <br />
+        <p>このサイトは自分のための備忘録であり、内容の正確性は保証しません。</p>
         <p>投稿は全て個人の意見であり、所属する組織の意見ではありません。</p>
         <p>お問い合わせの際は、下記のリンク先からご連絡ください。</p>
       </div>
@@ -36,7 +39,7 @@ const About: React.FC = () => {
           </a>
         </li>
       </ul>
-    </section>
+    </div>
   );
 };
 

@@ -1,25 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices",
-    ":timezone(Asia/Tokyo)",
-    "schedule:weekends"
-  ],
-  "labels": ["dependencies"],
-  "lockFileMaintenance": {
-    "enabled": true,
-    "automerge": true
-  },
-  "prHourlyLimit": 0,
-  "minimumReleaseAge": "3 days",
-  "internalChecksAsSuccess": true,
-  "reviewersFromCodeOwners": true,
-  "assignAutomerge": true,
-  "packageRules": [
-    {
-      "matchUpdateTypes": ["minor", "patch"],
-      "matchCurrentVersion": ">=1.0.0",
-      "automerge": true
-    }
-  ]
+  "extends": ["github>shuymn/github-actions#main"]
 }

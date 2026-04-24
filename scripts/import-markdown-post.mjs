@@ -201,22 +201,21 @@ function isTableRow(line) {
   return line.trim().startsWith("|") && line.trim().endsWith("|");
 }
 
-function splitTableRow(line) {
+export function splitTableRow(line) {
   const trimmed = line.trim();
   const withoutEdges = trimmed.slice(1, -1);
   const cells = [];
   let current = "";
-  let escaping = false;
 
-  for (const char of withoutEdges) {
-    if (escaping) {
-      current += char;
-      escaping = false;
-      continue;
-    }
-
+  for (let index = 0; index < withoutEdges.length; index += 1) {
+    const char = withoutEdges[index];
     if (char === "\\") {
-      escaping = true;
+      if (withoutEdges[index + 1] === "|") {
+        current += "|";
+        index += 1;
+      } else {
+        current += char;
+      }
       continue;
     }
 

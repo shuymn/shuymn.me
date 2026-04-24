@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { assertOwnerApplied, parseArgs, selectOwnerUser } from "./import-markdown-post.mjs";
+import { assertOwnerApplied, parseArgs, selectOwnerUser, splitTableRow } from "./import-markdown-post.mjs";
 
 test("parseArgs accepts an owner lookup value", () => {
   const args = parseArgs(["--file", "_posts/2026-04-25-example.md", "--owner", "owner@example.com"]);
@@ -53,4 +53,12 @@ test("selectOwnerUser rejects ambiguous display-name matches", () => {
 
 test("assertOwnerApplied rejects an unchanged owner", () => {
   assert.throws(() => assertOwnerApplied({ authorId: "dev" }, "user_123"), /Could not set EmDash owner/);
+});
+
+test("splitTableRow only treats backslash as escape before a pipe", () => {
+  assert.deepEqual(splitTableRow("| path\\name | left \\| right | c:\\temp |"), [
+    "path\\name",
+    "left | right",
+    "c:\\temp",
+  ]);
 });

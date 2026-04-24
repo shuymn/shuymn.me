@@ -73,7 +73,10 @@ const pageCtx = createPublicPageContext({
       (function () {
         var storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
         var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        document.documentElement.dataset.theme = storedTheme === DARK_THEME || (!storedTheme && prefersDark) ? DARK_THEME : LIGHT_THEME;
+        document.documentElement.dataset.theme =
+          storedTheme === DARK_THEME || (storedTheme !== LIGHT_THEME && prefersDark)
+            ? DARK_THEME
+            : LIGHT_THEME;
       })();
     </script>
   </head>

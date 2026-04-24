@@ -1,0 +1,45 @@
+---
+import { decodeSlug, getEmDashEntry } from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../layouts/Base.astro";
+import { formatDate, getCurrentLocale, getPostPath } from "../lib/i18n";
+
+const slug = decodeSlug(Astro.params.slug);
+const locale = getCurrentLocale(Astro.currentLocale);
+
+if (!slug) {
+    return Astro.redirect("/404");
+}
+
+const { entry: post } = await getEmDashEntry("posts", slug, { locale });
+
+if (!post) {
+    return Astro.redirect("/404");
+}
+
+const publishedIso = post.data.publishedAt?.toISOString() ?? null;
+const modifiedIso = post.data.updatedAt?.toISOString() ?? null;
+---
+
+<Base
+  title={post.data.title}
+  description={post.data.description}
+  type="article"
+  publishedTime={publishedIso}
+  modifiedTime={modifiedIso}
+  content={{ collection: "posts", id: post.data.id, slug }}
+  path={getPostPath(slug)}
+>
+  <main>
+    <article class="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32 dark:prose-invert prose-pre:bg-surface">
+      <header>
+        {post.data.publishedAt && <small>{formatDate(post.data.publishedAt)}</small>}
+        <h1>{post.data.title}</h1>
+        {post.data.description && <p>{post.data.description}</p>}
+      </header>
+      <div>
+        {post.data.content ? <PortableText value={post.data.content} /> : null}
+      </div>
+    </article>
+  </main>
+</Base>

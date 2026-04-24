@@ -1,0 +1,88 @@
+{
+  "$schema": "https://emdashcms.com/seed.schema.json",
+  "version": "1",
+  "meta": {
+    "name": "shuymn.me",
+    "description": "Local EmDash schema for shuymn.me",
+    "author": "shuymn"
+  },
+  "settings": {
+    "title": "shuymn.me"
+  },
+  "collections": [
+    {
+      "slug": "posts",
+      "label": "Posts",
+      "labelSingular": "Post",
+      "supports": ["drafts", "revisions", "search", "seo"],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "description",
+          "label": "Description",
+          "type": "text",
+          "searchable": true
+        },
+        {
+          "slug": "content",
+          "label": "Content",
+          "type": "portableText",
+          "searchable": true
+        }
+      ]
+    },
+    {
+      "slug": "site_sections",
+      "label": "Site Sections",
+      "labelSingular": "Site Section",
+      "description": "Reusable site-level sections rendered outside post content.",
+      "supports": ["drafts", "revisions", "preview"],
+      "urlPattern": "/",
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true
+        },
+        {
+          "slug": "content",
+          "label": "Content",
+          "type": "portableText",
+          "required": true
+        },
+        {
+          "slug": "links",
+          "label": "Links",
+          "type": "repeater",
+          "validation": {
+            "subFields": [
+              {
+                "slug": "label",
+                "label": "Label",
+                "type": "string",
+                "required": true
+              },
+              {
+                "slug": "url",
+                "label": "URL",
+                "type": "string",
+                "required": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "content": {
+    "posts": [],
+    "site_sections": []
+  }
+}

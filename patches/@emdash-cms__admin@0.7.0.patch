@@ -1,0 +1,136 @@
+diff --git a/dist/index.js b/dist/index.js
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -6002,8 +6002,8 @@
+ 				markDefs: markDefs.length > 0 ? markDefs : void 0
+ 			};
+ 		}
+-		case "bulletList": return convertList(node.content || [], "bullet");
+-		case "orderedList": return convertList(node.content || [], "number");
++		case "bulletList": return convertList(node.content || [], "bullet", 1);
++		case "orderedList": return convertList(node.content || [], "number", 1);
+ 		case "blockquote": {
+ 			const blocks = [];
+ 			const blockquoteContent = node.content || [];
+@@ -6066,7 +6066,7 @@
+ 		default: return null;
+ 	}
+ }
+-function convertList(items, listItem) {
++function convertList(items, listItem, level) {
+ 	const blocks = [];
+ 	const typedItems = items;
+ 	for (const item of typedItems) if (item.type === "listItem") {
+@@ -6078,11 +6078,15 @@
+ 				_key: generateKey(),
+ 				style: "normal",
+ 				listItem,
+-				level: 1,
++				level,
+ 				children,
+ 				markDefs: markDefs.length > 0 ? markDefs : void 0
+ 			});
+ 		}
++		else if (child.type === "bulletList")
++			blocks.push(...convertList(child.content || [], "bullet", level + 1));
++		else if (child.type === "orderedList")
++			blocks.push(...convertList(child.content || [], "number", level + 1));
+ 	}
+ 	return blocks;
+ }
+@@ -6168,15 +6172,14 @@
+ 		const block = blocks[i];
+ 		if (isTextBlock(block) && block.listItem) {
+ 			const listBlocks = [];
+-			const listType = block.listItem;
+ 			while (i < blocks.length) {
+ 				const current = blocks[i];
+-				if (isTextBlock(current) && current.listItem === listType) {
++				if (isTextBlock(current) && current.listItem) {
+ 					listBlocks.push(current);
+ 					i++;
+ 				} else break;
+ 			}
+-			content.push(convertPTList(listBlocks, listType));
++			content.push(...convertPTList(listBlocks));
+ 		} else {
+ 			const converted = convertPTBlock(block);
+ 			if (converted) content.push(converted);
+@@ -6272,21 +6275,64 @@
+ 		}
+ 	}
+ }
+-function convertPTList(items, listType) {
+-	const listItems = items.map((item) => {
+-		const pmContent = convertPTSpans(item.children, item.markDefs || []);
+-		return {
+-			type: "listItem",
+-			content: [{
++function convertPTList(items) {
++	const [nodes] = convertPTListLevel(items, 0, getListLevel(items[0]));
++	return nodes;
++}
++function convertPTListLevel(items, startIndex, level) {
++	const lists = [];
++	let index = startIndex;
++	while (index < items.length) {
++		const item = items[index];
++		if (!item) break;
++		const itemLevel = getListLevel(item);
++		if (itemLevel < level) break;
++		if (itemLevel > level) {
++			const [nested, nextIndex] = convertPTListLevel(items, index, itemLevel);
++			lists.push(...nested);
++			index = nextIndex;
++			continue;
++		}
++		const listType = item.listItem ?? "bullet";
++		const listItems = [];
++		while (index < items.length) {
++			const current = items[index];
++			if (!current) break;
++			if (getListLevel(current) !== level || current.listItem !== listType) break;
++			const pmContent = convertPTSpans(current.children, current.markDefs || []);
++			const listItemContent = [{
+ 				type: "paragraph",
+ 				content: pmContent.length > 0 ? pmContent : void 0
+-			}]
+-		};
+-	});
+-	return {
+-		type: listType === "bullet" ? "bulletList" : "orderedList",
+-		content: listItems
+-	};
++			}];
++			index++;
++			while (index < items.length) {
++				const nested = items[index];
++				if (!nested || getListLevel(nested) <= level) break;
++				const [nestedNodes, nextIndex] = convertPTListLevel(
++					items,
++					index,
++					getListLevel(nested)
++				);
++				listItemContent.push(...nestedNodes);
++				index = nextIndex;
++			}
++			listItems.push({
++				type: "listItem",
++				content: listItemContent
++			});
++		}
++		if (listItems.length > 0) {
++			lists.push({
++				type: listType === "number" ? "orderedList" : "bulletList",
++				content: listItems
++			});
++		}
++	}
++	return [lists, index];
++}
++function getListLevel(item) {
++	const level = item?.level;
++	return typeof level === "number" && Number.isFinite(level) && level > 0 ? Math.floor(level) : 1;
+ }
+ function convertPTSpans(spans, markDefs) {
+ 	const nodes = [];

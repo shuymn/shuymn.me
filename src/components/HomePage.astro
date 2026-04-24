@@ -1,0 +1,76 @@
+---
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { getEmDashCollection, getEmDashEntry } from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../layouts/Base.astro";
+import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText, HOME_ABOUT_SLUG } from "../lib/i18n";
+
+type ProfileLink = {
+    label: string;
+    url: string;
+};
+
+const locale = getCurrentLocale(Astro.currentLocale);
+const [{ entry: about }, { entries: posts }] = await Promise.all([
+    getEmDashEntry("site_sections", HOME_ABOUT_SLUG, { locale }),
+    getEmDashCollection("posts", { locale, status: "published" }),
+]);
+
+const sortedPosts = posts.toSorted((a, b) => {
+    const dateA = a.data.publishedAt?.getTime() ?? 0;
+    const dateB = b.data.publishedAt?.getTime() ?? 0;
+    return dateB - dateA;
+});
+
+function isProfileLink(value: unknown): value is ProfileLink {
+    if (!value || typeof value !== "object") return false;
+    const link = value as Record<string, unknown>;
+    return typeof link.label === "string" && typeof link.url === "string";
+}
+
+const profileLinks = Array.isArray(about?.data.links) ? about.data.links.filter(isProfileLink) : [];
+const publicText = getPublicText(locale);
+---
+
+<Base title="shuymn.me" path={getHomePath()}>
+  <main>
+    {
+      about && (
+        <section class="about" aria-label={publicText.aboutLabel}>
+          {about.data.content ? <PortableText value={about.data.content} /> : null}
+          {
+            profileLinks.length > 0 && (
+              <ul class="profile-links">
+                {profileLinks.map((link) => (
+                  <li>
+                    <a href={link.url}>{link.label}</a>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        </section>
+      )
+    }
+    {
+      about && (
+        <hr class="site-rule page-rule" />
+      )
+    }
+    <section aria-label={publicText.postsLabel}>
+      {
+        sortedPosts.length === 0 ? (
+          <p class="empty-posts">{publicText.emptyPosts}</p>
+        ) : (
+          sortedPosts.map((post) => (
+            <article class="post-link">
+              <p class="post-date">{formatDate(post.data.publishedAt)}</p>
+              <a href={getRelativeLocaleUrl(locale, getPostPath(post.id))}>{post.data.title}</a>
+              {post.data.description && <p class="post-description">{post.data.description}</p>}
+            </article>
+          ))
+        )
+      }
+    </section>
+  </main>
+</Base>

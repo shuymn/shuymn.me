@@ -1,0 +1,153 @@
+diff --git a/src/components/InlinePortableTextEditor.tsx b/src/components/InlinePortableTextEditor.tsx
+index 04721c4..d1b1b64 100644
+--- a/src/components/InlinePortableTextEditor.tsx
++++ b/src/components/InlinePortableTextEditor.tsx
+@@ -148,9 +148,9 @@ function convertPMNode(node: PMNode): PTBlock | PTBlock[] | null {
+ 			};
+ 		}
+ 		case "bulletList":
+-			return convertPMList(node.content || [], "bullet");
++			return convertPMList(node.content || [], "bullet", 1);
+ 		case "orderedList":
+-			return convertPMList(node.content || [], "number");
++			return convertPMList(node.content || [], "number", 1);
+ 		case "blockquote": {
+ 			const blocks: PTTextBlock[] = [];
+ 			for (const child of node.content || []) {
+@@ -213,7 +213,11 @@ function convertPMNode(node: PMNode): PTBlock | PTBlock[] | null {
+ 	}
+ }
+ 
+-function convertPMList(items: PMNode[], listItem: "bullet" | "number"): PTTextBlock[] {
++function convertPMList(
++	items: PMNode[],
++	listItem: "bullet" | "number",
++	level: number,
++): PTTextBlock[] {
+ 	const blocks: PTTextBlock[] = [];
+ 	for (const item of items) {
+ 		if (item.type === "listItem") {
+@@ -226,11 +230,15 @@ function convertPMList(items: PMNode[], listItem: "bullet" | "number"): PTTextBl
+ 							_key: k(),
+ 							style: "normal",
+ 							listItem,
+-							level: 1,
++							level,
+ 							children,
+ 							markDefs: markDefs.length > 0 ? markDefs : undefined,
+ 						});
+ 					}
++				} else if (child.type === "bulletList") {
++					blocks.push(...convertPMList(child.content || [], "bullet", level + 1));
++				} else if (child.type === "orderedList") {
++					blocks.push(...convertPMList(child.content || [], "number", level + 1));
+ 				}
+ 			}
+ 		}
+@@ -325,15 +333,14 @@ function portableTextToPM(blocks: PTBlock[]): JSONContent {
+ 		}
+ 		if (isPTTextBlock(block) && block.listItem) {
+ 			const listBlocks: PTTextBlock[] = [];
+-			const listType = block.listItem;
+ 			while (i < blocks.length) {
+ 				const cur = blocks[i];
+-				if (cur && isPTTextBlock(cur) && cur.listItem === listType) {
++				if (cur && isPTTextBlock(cur) && cur.listItem) {
+ 					listBlocks.push(cur);
+ 					i++;
+ 				} else break;
+ 			}
+-			content.push(convertPTList(listBlocks, listType));
++			content.push(...convertPTList(listBlocks));
+ 		} else {
+ 			const c = convertPTBlock(block);
+ 			if (c) content.push(c);
+@@ -430,19 +437,78 @@ function convertPTBlock(block: PTBlock): JSONContent | null {
+ 	};
+ }
+ 
+-function convertPTList(items: PTTextBlock[], listType: "bullet" | "number"): JSONContent {
+-	return {
+-		type: listType === "bullet" ? "bulletList" : "orderedList",
+-		content: items.map((item) => ({
+-			type: "listItem",
+-			content: [
++function convertPTList(items: PTTextBlock[]): JSONContent[] {
++	const [nodes] = convertPTListLevel(items, 0, getListLevel(items[0]));
++	return nodes;
++}
++
++function convertPTListLevel(
++	items: PTTextBlock[],
++	startIndex: number,
++	level: number,
++): [JSONContent[], number] {
++	const lists: JSONContent[] = [];
++	let index = startIndex;
++
++	while (index < items.length) {
++		const item = items[index];
++		if (!item) break;
++
++		const itemLevel = getListLevel(item);
++		if (itemLevel < level) break;
++		if (itemLevel > level) {
++			const [nested, nextIndex] = convertPTListLevel(items, index, itemLevel);
++			lists.push(...nested);
++			index = nextIndex;
++			continue;
++		}
++
++		const listType = item.listItem ?? "bullet";
++		const listItems: JSONContent[] = [];
++
++		while (index < items.length) {
++			const current = items[index];
++			if (!current) break;
++			if (getListLevel(current) !== level || current.listItem !== listType) break;
++
++			const listItemContent: JSONContent[] = [
+ 				{
+ 					type: "paragraph",
+-					content: convertPTSpans(item.children, item.markDefs || []),
++					content: convertPTSpans(current.children, current.markDefs || []),
+ 				},
+-			],
+-		})),
+-	};
++			];
++			index++;
++
++			while (index < items.length) {
++				const nested = items[index];
++				if (!nested || getListLevel(nested) <= level) break;
++				const [nestedNodes, nextIndex] = convertPTListLevel(items, index, getListLevel(nested));
++				listItemContent.push(...nestedNodes);
++				index = nextIndex;
++			}
++
++			listItems.push({
++				type: "listItem",
++				content: listItemContent,
++			});
++		}
++
++		if (listItems.length > 0) {
++			lists.push({
++				type: listType === "number" ? "orderedList" : "bulletList",
++				content: listItems,
++			});
++		}
++	}
++
++	return [lists, index];
++}
++
++function getListLevel(item: PTTextBlock | undefined): number {
++	const level = item?.level;
++	return typeof level === "number" && Number.isFinite(level) && level > 0
++		? Math.floor(level)
++		: 1;
+ }
+ 
+ function convertPTSpans(spans: PTSpan[], markDefs: PTMarkDef[]): JSONContent[] {

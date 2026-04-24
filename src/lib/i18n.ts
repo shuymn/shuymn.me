@@ -34,23 +34,50 @@ export const PUBLIC_TEXT_BY_LOCALE = {
 
 export const HOME_ABOUT_SLUG = "home-about";
 
+export type PublicText = (typeof PUBLIC_TEXT_BY_LOCALE)[Locale];
+
 export function getCurrentLocale(locale: string | undefined): Locale {
   return (SUPPORTED_LOCALES as readonly string[]).includes(locale ?? "") ? (locale as Locale) : DEFAULT_LOCALE;
 }
 
-export function getPublicText(locale: string | undefined) {
+export function getPublicText(locale: string | undefined): PublicText {
   return PUBLIC_TEXT_BY_LOCALE[getCurrentLocale(locale)];
 }
 
-export function getHomePath(): string {
-  return "/";
+export function localizePath(path: string, locale?: string): string {
+  const currentLocale = getCurrentLocale(locale);
+  const normalizedPath = stripLocalePrefix(normalizeAbsolutePath(path));
+  if (currentLocale === DEFAULT_LOCALE) return normalizedPath;
+  if (normalizedPath === "/") return `/${currentLocale}`;
+  return `/${currentLocale}${normalizedPath}`;
 }
 
-export function getPostPath(slug: string): string {
-  return `/posts/${slug}`;
+export function getHomePath(locale?: string): string {
+  return localizePath("/", locale);
+}
+
+export function getPostPath(slug: string, locale?: string): string {
+  const normalizedSlug = slug.replace(/^\/+|\/+$/g, "");
+  return localizePath(`/posts/${normalizedSlug}`, locale);
 }
 
 export function formatDate(date: Date | null | undefined): string {
   if (!date) return "";
   return date.toISOString().slice(0, 10).replace(/-/g, ".");
+}
+
+function normalizeAbsolutePath(path: string): string {
+  if (!path) return "/";
+  const absolutePath = path.startsWith("/") ? path : `/${path}`;
+  return absolutePath.replace(/\/{2,}/g, "/");
+}
+
+function stripLocalePrefix(path: string): string {
+  for (const locale of SUPPORTED_LOCALES) {
+    if (locale === DEFAULT_LOCALE) continue;
+    const prefix = `/${locale}`;
+    if (path === prefix) return "/";
+    if (path.startsWith(`${prefix}/`)) return path.slice(prefix.length);
+  }
+  return path;
 }

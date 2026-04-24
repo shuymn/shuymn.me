@@ -1,14 +1,13 @@
 ---
-import { getRelativeLocaleUrl } from "astro:i18n";
 import Base from "../layouts/Base.astro";
 import { getCurrentLocale, getHomePath, getPublicText } from "../lib/i18n";
 
 const locale = getCurrentLocale(Astro.currentLocale);
 const publicText = getPublicText(locale);
-const homeUrl = getRelativeLocaleUrl(locale, getHomePath());
+const homeUrl = getHomePath(locale);
 ---
 
-<Base title={publicText.notFoundTitle}>
+<Base title={publicText.notFoundTitle} path={homeUrl}>
   <main>
     <section class="not-found">
       <h1>{publicText.notFoundTitle}</h1>

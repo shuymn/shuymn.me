@@ -1,10 +1,16 @@
 ---
-import { getRelativeLocaleUrl } from "astro:i18n";
 import { getSiteSettings } from "emdash";
 import { createPublicPageContext } from "emdash/page";
 import { EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
 import ThemeToggle from "../components/ThemeToggle";
-import { getCurrentLocale, getHomePath, getPublicText, LOCALE_LABELS, SUPPORTED_LOCALES } from "../lib/i18n";
+import {
+    getCurrentLocale,
+    getHomePath,
+    getPublicText,
+    LOCALE_LABELS,
+    localizePath,
+    SUPPORTED_LOCALES,
+} from "../lib/i18n";
 import { DARK_THEME, LIGHT_THEME, THEME_STORAGE_KEY } from "../lib/theme";
 import "../styles/site.css";
 
@@ -27,15 +33,16 @@ const {
     publishedTime = null,
     modifiedTime = null,
     content,
-    path = getHomePath(),
+    path,
 } = Astro.props;
 const fullTitle = title === siteTitle ? siteTitle : `${title} | ${siteTitle}`;
 const currentLocale = getCurrentLocale(Astro.currentLocale);
-const homeUrl = getRelativeLocaleUrl(currentLocale, getHomePath());
+const currentPath = path ?? getHomePath(currentLocale);
+const homeUrl = getHomePath(currentLocale);
 const languageLinks = SUPPORTED_LOCALES.map((locale) => ({
     locale,
     label: LOCALE_LABELS[locale],
-    href: getRelativeLocaleUrl(locale, path),
+    href: localizePath(currentPath, locale),
 }));
 const publicText = getPublicText(currentLocale);
 

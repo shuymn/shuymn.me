@@ -1,5 +1,4 @@
 ---
-import { getRelativeLocaleUrl } from "astro:i18n";
 import { getEmDashCollection, getEmDashEntry } from "emdash";
 import { PortableText } from "emdash/ui";
 import Base from "../layouts/Base.astro";
@@ -32,7 +31,7 @@ const profileLinks = Array.isArray(about?.data.links) ? about.data.links.filter(
 const publicText = getPublicText(locale);
 ---
 
-<Base title="shuymn.me" path={getHomePath()}>
+<Base title="shuymn.me" path={getHomePath(locale)}>
   <main>
     {
       about && (
@@ -65,7 +64,7 @@ const publicText = getPublicText(locale);
           sortedPosts.map((post) => (
             <article class="post-link">
               <p class="post-date">{formatDate(post.data.publishedAt)}</p>
-              <a href={getRelativeLocaleUrl(locale, getPostPath(post.id))}>{post.data.title}</a>
+              <a href={getPostPath(post.id, locale)}>{post.data.title}</a>
               {post.data.description && <p class="post-description">{post.data.description}</p>}
             </article>
           ))

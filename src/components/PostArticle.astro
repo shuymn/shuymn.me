@@ -42,8 +42,8 @@ if (isNotFound) {
       type="article"
       publishedTime={publishedIso}
       modifiedTime={modifiedIso}
-      content={{ collection: "posts", id: post.data.id, slug }}
-      path={getPostPath(slug, locale)}
+      content={{ collection: "posts", id: post.data.id, slug: post.id }}
+      path={getPostPath(post.id, locale)}
     >
       <main>
         <article class="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32 dark:prose-invert prose-pre:bg-surface">

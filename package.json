@@ -2,46 +2,64 @@
   "name": "shuymn.me",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.26.1",
+  "type": "module",
+  "emdash": {
+    "seed": "seed/seed.json"
+  },
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
+    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
+    "start": "node ./dist/server/entry.mjs",
+    "bootstrap": "emdash init && emdash seed --on-conflict update && node scripts/clear-emdash-manifest-cache.mjs",
+    "seed": "emdash seed --on-conflict update && node scripts/clear-emdash-manifest-cache.mjs",
+    "lint": "biome lint --error-on-warnings .",
+    "lint:fix": "biome lint --write .",
     "fmt": "biome format .",
     "fmt:fix": "biome format --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check"
   },
   "dependencies": {
-    "@shikijs/rehype": "^4.0.0",
-    "gray-matter": "^4.0.3",
+    "@astrojs/cloudflare": "^13.1.7",
+    "@astrojs/node": "^10.0.0",
+    "@astrojs/react": "^5.0.0",
+    "@emdash-cms/cloudflare": "^0.7.0",
+    "astro": "^6.0.1",
+    "better-sqlite3": "^12.8.0",
+    "emdash": "^0.7.0",
     "lucide-react": "^1.0.0",
-    "next": "16.2.4",
-    "next-themes": "^0.4.6",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-markdown": "^10.1.0",
-    "rehype-figure": "^1.0.1",
-    "rehype-raw": "^7.0.0",
-    "remark-gfm": "^4.0.1"
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "use-sync-external-store": "^1.6.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.7",
     "@biomejs/biome": "2.4.12",
+    "@cloudflare/workers-types": "^4.20260305.1",
     "@commitlint/cli": "20.5.0",
     "@commitlint/config-conventional": "20.5.0",
-    "@tailwindcss/postcss": "4.2.2",
-    "@tailwindcss/typography": "0.5.19",
-    "@tsconfig/next": "2.0.6",
-    "@types/node": "25.6.0",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tailwindcss/vite": "^4.2.4",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "eslint": "9.39.4",
-    "eslint-config-next": "16.2.4",
     "lefthook": "2.1.6",
-    "tailwindcss": "4.2.2",
+    "tailwindcss": "^4.2.4",
     "textlint": "15.5.4",
     "textlint-rule-preset-ja-technical-writing": "12.0.2",
-    "typescript": "6.0.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.80.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "workerd"
+    ],
+    "patchedDependencies": {
+      "@emdash-cms/admin@0.7.0": "patches/@emdash-cms__admin@0.7.0.patch",
+      "emdash@0.7.0": "patches/emdash@0.7.0.patch"
+    }
   },
   "engines": {
     "node": "24.x"

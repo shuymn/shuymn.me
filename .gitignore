@@ -1,44 +1,42 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+/node_modules/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Package manager
+.pnpm-store/
+.pnpm-debug.log*
 
-# testing
-/coverage
+# Astro / EmDash build output
+/.astro/
+/dist/
 
-# next.js
-/.next/
-/out/
+# EmDash local runtime
+/data.db
+/data.db-*
+/uploads/
 
-# production
-/build
+# Cloudflare local runtime
+/.wrangler/
+.dev.vars
+.dev.vars.*
 
-# misc
-.DS_Store
-*.pem
+# Test and coverage output
+/coverage/
 
-# debug
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
 
-# vercel
-.vercel
-
-# typescript
+# OS and editor noise
+.DS_Store
 *.tsbuildinfo
-next-env.d.ts
 
-# MCP
+# Local agent/tool state
 /.serena/
+/.claude/settings.local.json

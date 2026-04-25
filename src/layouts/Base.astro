@@ -1,0 +1,110 @@
+---
+import { getSiteSettings } from "emdash";
+import { createPublicPageContext } from "emdash/page";
+import { EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
+import ThemeToggle from "../components/ThemeToggle";
+import {
+    getCurrentLocale,
+    getHomePath,
+    getPublicText,
+    LOCALE_LABELS,
+    localizePath,
+    SUPPORTED_LOCALES,
+} from "../lib/i18n";
+import { DARK_THEME, LIGHT_THEME, THEME_STORAGE_KEY } from "../lib/theme";
+import "../styles/site.css";
+
+interface Props {
+    title?: string;
+    description?: string | null;
+    type?: "website" | "article";
+    publishedTime?: string | null;
+    modifiedTime?: string | null;
+    content?: { collection: string; id: string; slug?: string | null };
+    path?: string;
+}
+
+const siteSettings = await getSiteSettings();
+const siteTitle = typeof siteSettings.title === "string" ? siteSettings.title : "shuymn.me";
+const {
+    title = siteTitle,
+    description = null,
+    type = "website",
+    publishedTime = null,
+    modifiedTime = null,
+    content,
+    path,
+} = Astro.props;
+const fullTitle = title === siteTitle ? siteTitle : `${title} | ${siteTitle}`;
+const currentLocale = getCurrentLocale(Astro.currentLocale);
+const currentPath = path ?? getHomePath(currentLocale);
+const homeUrl = getHomePath(currentLocale);
+const languageLinks = SUPPORTED_LOCALES.map((locale) => ({
+    locale,
+    label: LOCALE_LABELS[locale],
+    href: localizePath(currentPath, locale),
+}));
+const publicText = getPublicText(currentLocale);
+
+const pageCtx = createPublicPageContext({
+    Astro,
+    kind: content ? "content" : "custom",
+    pageType: type,
+    title: fullTitle,
+    pageTitle: title,
+    description,
+    articleMeta: { publishedTime, modifiedTime },
+    content,
+    siteName: siteTitle,
+});
+---
+
+<!doctype html>
+<html lang={currentLocale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="follow, index" />
+    <title>{fullTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <EmDashHead page={pageCtx} />
+    <script is:inline define:vars={{ THEME_STORAGE_KEY, DARK_THEME, LIGHT_THEME }}>
+      (function () {
+        var storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme =
+          storedTheme === DARK_THEME || (storedTheme !== LIGHT_THEME && prefersDark)
+            ? DARK_THEME
+            : LIGHT_THEME;
+      })();
+    </script>
+  </head>
+  <body>
+    <EmDashBodyStart page={pageCtx} />
+    <div class="site-shell">
+      <header>
+        <nav class="site-nav" aria-label={publicText.navLabel}>
+          <a class="site-title" href={homeUrl}>{siteTitle}</a>
+          <div class="nav-actions">
+            <ul class="language-switcher" aria-label={publicText.languageLabel}>
+              {
+                languageLinks.map((link) => (
+                  <li>
+                    <a href={link.href} aria-current={link.locale === currentLocale ? "page" : undefined}>
+                      {link.label}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+            <ThemeToggle client:load />
+          </div>
+        </nav>
+      </header>
+      <hr class="site-rule" />
+      <slot />
+    </div>
+    <EmDashBodyEnd page={pageCtx} />
+  </body>
+</html>

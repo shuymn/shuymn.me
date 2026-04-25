@@ -1,7 +1,7 @@
 import cloudflare from "@astrojs/cloudflare";
 import node from "@astrojs/node";
 import react from "@astrojs/react";
-import { d1, r2 } from "@emdash-cms/cloudflare";
+import { cloudflareCache, d1, r2 } from "@emdash-cms/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import emdash, { local } from "emdash/astro";
@@ -27,6 +27,15 @@ export default defineConfig({
     : node({
         mode: "standalone",
       }),
+  experimental: isCloudflare
+    ? {
+        cache: {
+          // Deploy setup must provide nodejs_compat plus CF_ZONE_ID and
+          // CF_CACHE_PURGE_TOKEN so EmDash tag invalidation can purge edge cache.
+          provider: cloudflareCache(),
+        },
+      }
+    : {},
   integrations: [
     react(),
     emdash(

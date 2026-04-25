@@ -2,12 +2,17 @@
 import { decodeSlug, getEmDashEntry } from "emdash";
 import { PortableText } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText } from "../lib/i18n";
+import { DEFAULT_LOCALE, formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText } from "../lib/i18n";
 
 const slug = decodeSlug(Astro.params.slug);
 const locale = getCurrentLocale(Astro.currentLocale);
 
-const postResult = slug ? await getEmDashEntry("posts", slug, { locale }) : null;
+const localizedPostResult = slug ? await getEmDashEntry("posts", slug, { locale }) : null;
+const shouldFallbackToDefaultLocale = slug && locale !== DEFAULT_LOCALE && !localizedPostResult?.entry;
+const defaultLocalePostResult = shouldFallbackToDefaultLocale
+    ? await getEmDashEntry("posts", slug, { locale: DEFAULT_LOCALE })
+    : null;
+const postResult = defaultLocalePostResult?.entry ? defaultLocalePostResult : localizedPostResult;
 const post = postResult?.entry ?? null;
 if (postResult?.cacheHint) {
     Astro.cache.set(postResult.cacheHint);

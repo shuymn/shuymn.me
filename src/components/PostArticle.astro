@@ -9,6 +9,9 @@ const locale = getCurrentLocale(Astro.currentLocale);
 
 const postResult = slug ? await getEmDashEntry("posts", slug, { locale }) : null;
 const post = postResult?.entry ?? null;
+if (postResult?.cacheHint) {
+    Astro.cache.set(postResult.cacheHint);
+}
 const publicText = getPublicText(locale);
 const homePath = getHomePath(locale);
 const isNotFound = !slug || !post;

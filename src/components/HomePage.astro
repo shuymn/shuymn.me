@@ -10,10 +10,18 @@ type ProfileLink = {
 };
 
 const locale = getCurrentLocale(Astro.currentLocale);
-const [{ entry: about }, { entries: posts }] = await Promise.all([
+const [aboutResult, postsResult] = await Promise.all([
     getEmDashEntry("site_sections", HOME_ABOUT_SLUG, { locale }),
     getEmDashCollection("posts", { locale, status: "published" }),
 ]);
+const { entry: about } = aboutResult;
+const { entries: posts } = postsResult;
+
+for (const cacheHint of [aboutResult.cacheHint, postsResult.cacheHint]) {
+    if (cacheHint) {
+        Astro.cache.set(cacheHint);
+    }
+}
 
 const sortedPosts = posts.toSorted((a, b) => {
     const dateA = a.data.publishedAt?.getTime() ?? 0;

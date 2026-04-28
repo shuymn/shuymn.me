@@ -1,7 +1,7 @@
 import cloudflare from "@astrojs/cloudflare";
 import node from "@astrojs/node";
 import react from "@astrojs/react";
-import { cloudflareCache, d1, r2 } from "@emdash-cms/cloudflare";
+import { access, cloudflareCache, d1, r2 } from "@emdash-cms/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import emdash, { local } from "emdash/astro";
@@ -10,6 +10,17 @@ import { DEFAULT_LOCALE, LOCALE_FALLBACK, SUPPORTED_LOCALES } from "./src/lib/i1
 
 const runtime = process.env.EMDASH_RUNTIME ?? "local";
 const isCloudflare = runtime === "cloudflare";
+const accessTeamDomain = process.env.CF_ACCESS_TEAM_DOMAIN;
+const defaultAccessRole = 50;
+const accessDefaultRole = Number(process.env.EMDASH_ACCESS_DEFAULT_ROLE ?? defaultAccessRole);
+
+if (isCloudflare && !accessTeamDomain) {
+  throw new Error("CF_ACCESS_TEAM_DOMAIN is required when EMDASH_RUNTIME=cloudflare.");
+}
+
+if (!Number.isInteger(accessDefaultRole)) {
+  throw new Error("EMDASH_ACCESS_DEFAULT_ROLE must be an integer role level.");
+}
 
 export default defineConfig({
   output: "server",
@@ -43,6 +54,12 @@ export default defineConfig({
         ? {
             database: d1({ binding: "DB", session: "auto" }),
             storage: r2({ binding: "MEDIA" }),
+            auth: access({
+              teamDomain: accessTeamDomain,
+              audienceEnvVar: "CF_ACCESS_AUDIENCE",
+              // Access policy owns the outer allowlist; matching users become EmDash admins by default.
+              defaultRole: accessDefaultRole,
+            }),
           }
         : {
             database: sqlite({ url: "file:./data.db" }),

@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shuymn-me",
+  "compatibility_date": "2026-04-28",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    // Public-safe runtime vars live here. Keep API tokens and
+    // CF_CACHE_PURGE_TOKEN in GitHub/Worker secrets, not in this file.
+    "EMDASH_RUNTIME": "cloudflare"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "shuymn-me",
+      "database_id": "73c1da6e-ee28-4550-bbed-875b976c5d0f"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "shuymn-me-media"
+    }
+  ],
+  // @astrojs/cloudflare defaults Astro sessions to KV with this binding
+  // when no explicit session.driver is configured in astro.config.mjs.
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "id": "867af78d2c7a47378e5862a5cc7c709f"
+    }
+  ],
+  // @astrojs/cloudflare uses this binding for runtime image transforms.
+  "images": {
+    "binding": "IMAGES"
+  }
+}

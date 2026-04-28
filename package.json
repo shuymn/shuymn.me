@@ -36,7 +36,7 @@
   "devDependencies": {
     "@astrojs/check": "0.9.8",
     "@biomejs/biome": "2.4.13",
-    "@cloudflare/workers-types": "4.20260424.1",
+    "@cloudflare/workers-types": "4.20260425.1",
     "@commitlint/cli": "20.5.2",
     "@commitlint/config-conventional": "20.5.0",
     "@tailwindcss/typography": "0.5.19",

@@ -60,8 +60,8 @@ importers:
         specifier: 4.20260424.1
         version: 4.20260424.1
       '@commitlint/cli':
-        specifier: 20.5.0
-        version: 20.5.0(@types/node@25.6.0)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
+        specifier: 20.5.2
+        version: 20.5.2(@types/node@25.6.0)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
       '@commitlint/config-conventional':
         specifier: 20.5.0
         version: 20.5.0
@@ -420,8 +420,8 @@ packages:
   '@cloudflare/workers-types@4.20260424.1':
     resolution: {integrity: sha512-0DLJ9yEk1KKzPbqop80Gw/P1wkKKzawmipULiJWdBXIBCoMvE0OVWms3IrL/Q/G7tfmPop9yF4XlZ69k9JLYng==, tarball: https://registry.npmjs.org/@cloudflare/workers-types/-/workers-types-4.20260424.1.tgz}
 
-  '@commitlint/cli@20.5.0':
-    resolution: {integrity: sha512-yNkyN/tuKTJS3wdVfsZ2tXDM4G4Gi7z+jW54Cki8N8tZqwKBltbIvUUrSbT4hz1bhW/h0CdR+5sCSpXD+wMKaQ==, tarball: https://registry.npmjs.org/@commitlint/cli/-/cli-20.5.0.tgz}
+  '@commitlint/cli@20.5.2':
+    resolution: {integrity: sha512-IXr5xd3IX8SEG936P8gcpozRplkDeDSwJlt8UvoY1winwIy2udTbQ/cOCgbaaxcjdDqVoS29VUcz/wkwnSozbA==, tarball: https://registry.npmjs.org/@commitlint/cli/-/cli-20.5.2.tgz}
     engines: {node: '>=v18'}
     hasBin: true
 
@@ -5766,7 +5766,7 @@ snapshots:
 
   '@cloudflare/workers-types@4.20260424.1': {}
 
-  '@commitlint/cli@20.5.0(@types/node@25.6.0)(conventional-commits-parser@6.4.0)(typescript@6.0.3)':
+  '@commitlint/cli@20.5.2(@types/node@25.6.0)(conventional-commits-parser@6.4.0)(typescript@6.0.3)':
     dependencies:
       '@commitlint/format': 20.5.0
       '@commitlint/lint': 20.5.0

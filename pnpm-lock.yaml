@@ -51,8 +51,8 @@ importers:
         version: 1.6.0(react@19.2.5)
     devDependencies:
       '@astrojs/check':
-        specifier: 0.9.8
-        version: 0.9.8(prettier@3.8.3)(typescript@6.0.3)
+        specifier: 0.9.9
+        version: 0.9.9(prettier@3.8.3)(typescript@6.0.3)
       '@biomejs/biome':
         specifier: 2.4.14
         version: 2.4.14
@@ -98,11 +98,11 @@ importers:
 
 packages:
 
-  '@astrojs/check@0.9.8':
-    resolution: {integrity: sha512-LDng8446QLS5ToKjRHd3bgUdirvemVVExV7nRyJfW2wV36xuv7vDxwy5NWN9zqeSEDgg0Tv84sP+T3yEq+Zlkw==, tarball: https://registry.npmjs.org/@astrojs/check/-/check-0.9.8.tgz}
+  '@astrojs/check@0.9.9':
+    resolution: {integrity: sha512-A5UW8uIuErLWEoRQvzgXpO1gTjUFtK8r7nU2Z7GewAMxUb7bPvpk11qaKKgxqXlHJWlAvaaxy+Xg28A6bmQ1Tg==, tarball: https://registry.npmjs.org/@astrojs/check/-/check-0.9.9.tgz}
     hasBin: true
     peerDependencies:
-      typescript: ^5.0.0
+      typescript: ^5.0.0 || ^6.0.0
 
   '@astrojs/cloudflare@13.3.1':
     resolution: {integrity: sha512-I2HcdP1KVppLMd0lXARI+/MKXbvrZdTvkLLKSBNtj5zhRhnDhugnyewjGKN0Ap5+khktD+rime7BgjfUlJ9iZw==, tarball: https://registry.npmjs.org/@astrojs/cloudflare/-/cloudflare-13.3.1.tgz}
@@ -5330,7 +5330,7 @@ packages:
 
 snapshots:
 
-  '@astrojs/check@0.9.8(prettier@3.8.3)(typescript@6.0.3)':
+  '@astrojs/check@0.9.9(prettier@3.8.3)(typescript@6.0.3)':
     dependencies:
       '@astrojs/language-server': 2.16.7(prettier@3.8.3)(typescript@6.0.3)
       chokidar: 4.0.3

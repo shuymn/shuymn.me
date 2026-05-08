@@ -216,6 +216,24 @@ body {
   font-size: 0.95rem;
 }
 
+.translation-note {
+  margin: 1.5rem 0 2rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-bg-subtle);
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}
+
+.translation-note p {
+  margin: 0 0 0.5rem;
+}
+
+.translation-note a {
+  font-weight: 700;
+}
+
 .empty-posts {
   color: var(--color-muted);
 }

@@ -109,13 +109,55 @@ required fields, or known-private material.
 
 English generation is a two-stage workflow: first create a source-versioned
 candidate with automated review results, then auto-publish it through a write path
-that can set `slug`, `locale`, and `translationOf` and verify the result. A human
-review gate should be added only if measured translation quality or pipeline
-reliability is not good enough for automatic publication, such as repeated
-semantic mistranslations, frequent check false positives or false negatives,
-regeneration churn, or reader/editor reports. Regeneration must not silently
-overwrite an edited English version, and failed generations must not block the
-Japanese publication flow.
+that can set `slug`, `locale`, `translationOf`, and the Japanese source
+`publishedAt`, then verify the result. A human review gate should be added only
+if measured translation quality or pipeline reliability is not good enough for
+automatic publication, such as repeated semantic mistranslations, frequent check
+false positives or false negatives, regeneration churn, or reader/editor
+reports. Regeneration must not silently overwrite an edited English version, and
+failed generations must not block the Japanese publication flow.
+
+The initial implementation uses `pnpm run generate:english` as the host-side
+automation path. It is designed for local runs, cron, or a future Worker trigger:
+the command reads eligible published Japanese posts through EmDash, uses separate
+translation and review prompts, calls OpenRouter through Cloudflare AI Gateway,
+writes English candidates through the EmDash REST client with `locale`,
+`translationOf`, and the exact same `slug` as the Japanese source, auto-publishes
+passing candidates with the Japanese source `publishedAt`, and stores gate
+results plus failure reasons on the English record. The English title never
+drives the localized slug; URLs remain stable across locales. Metadata is
+translated field-to-field rather than synthesized: source `title` becomes English
+`title`, source `description` becomes English `description` only when set, and
+source SEO meta description becomes English SEO meta description only when set.
+English SEO title is derived from the English post title only when the Japanese
+source has SEO title set. If an already linked English record has slug, optional
+metadata, or published date drift, the command repairs that drift without calling
+the LLM. Translator and reviewer outputs are schema-backed structured outputs
+rather than prompt-only JSON responses. The review contract is blocker-only: it
+is not a proofreading pass and does not surface nitpicks. If the English article
+must not be published, the reviewer sets `passed` to false and returns
+publication blockers in `failures`; otherwise it returns `passed: true` with an
+empty `failures` list. This keeps the durable localized write outside the
+standard plugin boundary while leaving plugin hooks or infrastructure schedules
+free to trigger the command later.
+
+Review feedback is applied through a bounded diff-edit loop instead of a full
+article regeneration loop. If the automated review rejects a candidate, the
+command calls an `editTranslation` tool that can return only exact
+`field`/`oldText`/`newText` edits. The caller applies an edit only when `oldText`
+appears exactly once in the current field, then re-runs review on the edited
+candidate. This lets review failures feed back into the prose while reducing
+token cost and avoiding unrelated rewrites.
+
+The English body contract uses Markdown as the LLM boundary and Portable Text as
+the storage boundary. The command reads source content from EmDash, derives
+`contentMarkdown`, asks the translator for `contentMarkdown`, normalizes that
+Markdown through EmDash's Markdown-to-Portable-Text converter, and stores the
+resulting Portable Text. This deliberately avoids asking structured output to
+recreate large Portable Text JSON while preserving a Markdown representation for
+translation, review, deterministic checks, and generated-content hashes.
+Unexpected post-level errors stop the run before processing later posts so a
+broken write path does not repeatedly spend LLM calls.
 
 Locale-aware OGP generation is also in scope. Because OGP image paths can be
 separate per locale and slug, generated OGP routes are a lower-risk first slice

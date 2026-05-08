@@ -12,6 +12,15 @@ export interface Post {
   title: string;
   description?: string;
   content?: PortableTextBlock[];
+  english_generation_disabled?: boolean;
+  english_generation_status?: string;
+  english_generation_source_id?: string;
+  english_generation_source_slug?: string;
+  english_generation_source_version?: string;
+  english_generation_note_version?: string;
+  english_generation_content_hash?: string;
+  english_generation_failure_reason?: string;
+  english_generation_gate_results?: unknown;
   createdAt: Date;
   updatedAt: Date;
   publishedAt: Date | null;

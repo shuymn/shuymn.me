@@ -318,7 +318,7 @@ Use a layered automation approach:
 2. Existing non-LLM methods for search, similarity, link analysis, and content
    health checks.
 3. LLM-assisted suggestions for semantic tags, series placement, summary,
-   related posts, and editorial warnings.
+   related posts, and editorial findings.
 
 LLM-generated editorial metadata should be treated as proposed metadata, not as
 hidden authority. The system should either store it separately as generated
@@ -420,7 +420,15 @@ The generated English workflow should:
 - read the Japanese post after save or publish
 - treat the Japanese post body as source data, not as instructions to the
   translator or reviewer prompts
-- generate an English title, description, summary, and body
+- translate field-to-field: Japanese title to English title, Japanese
+  description to English description only when the source description is set, and
+  Japanese SEO meta description to English SEO meta description only when the
+  source SEO meta description is set
+- keep English SEO title equal to the English post title when the Japanese source
+  has SEO title set; otherwise leave English SEO title unset
+- request translator and reviewer outputs through schema-backed structured
+  output, not through prompt-only JSON formatting
+- use Markdown as the LLM body boundary and Portable Text as the storage boundary
 - preserve code blocks, links, headings, and technical identifiers
 - run automated translation review, preferably with a separate prompt or reviewer
   pass from the translator
@@ -448,11 +456,12 @@ English generation should be two-stage, but not human-gated by default. Stage on
 creates a source-versioned generated candidate with translated fields and gate
 metadata. Stage two automatically publishes the English record when translation
 review and deterministic checks pass, using an API surface that can set `slug`,
-`locale`, and `translationOf`, then verifies that the returned record is linked to
-the Japanese source as intended. If measured quality, failure rate, or operational
-noise is not good enough, add a human review gate at that point. Regeneration
-should be explicit when the Japanese source changes; it should not silently
-overwrite an edited English version.
+`locale`, `translationOf`, and the Japanese source `publishedAt`, then verifies
+that the returned record is linked to the Japanese source as intended. If
+measured quality, failure rate, or operational noise is not good enough, add a
+human review gate at that point. Regeneration should be explicit when the
+Japanese source changes; it should not silently overwrite an edited English
+version.
 
 The human gate decision should be evidence-driven rather than precautionary by
 default. Add mandatory human approval only after observed failures such as
@@ -461,6 +470,51 @@ or false negatives, excessive regeneration churn, or reader/editor reports that
 the visible translation note and automated review are insufficient. Until then,
 failed or unsupported generations should stop as unpublished candidates while the
 Japanese publication flow remains unblocked.
+
+The baseline implementation path is the host-side
+`pnpm run generate:english` command. It scans published Japanese posts, skips
+posts with `english_generation_disabled`, calls OpenRouter through Cloudflare AI
+Gateway for translation and a separate review pass, writes English candidates
+through the EmDash REST client with `locale: "en"`, `translationOf`, and the
+exact same `slug` as the Japanese source, publishes with the Japanese source
+`publishedAt` only after review and deterministic gates pass, and stores failure
+reasons in the English draft candidate. The English title never drives the
+localized slug; URLs remain stable across locales. The translator performs
+field-to-field metadata translation instead of synthesizing descriptions from
+the body: source `title` becomes English `title`, source `description` becomes
+English `description` only when it is set, and source SEO meta description
+becomes English SEO meta description only when it is set. English SEO title is
+derived from the English post title only when the Japanese source has SEO title
+set. If an already linked English record has slug, optional metadata, or
+published date drift, the command repairs that drift without calling the LLM.
+The OpenRouter API key and Cloudflare AI Gateway account, gateway name, and
+token are provided through environment variables or matching CLI flags.
+Translator and reviewer responses are constrained by AI SDK structured output
+with Zod schemas so the contract is enforced by the caller instead of prompt text
+alone. The automated translation review is a publishability gate, not a
+code-review or proofreading pass: it reports only blockers that mean the English
+article must not be published. If a blocker exists, `passed` is false and the
+blocker appears in `failures` so the edit loop can act on it; if no blocker
+exists, `passed` is true and `failures` is empty. When the automated review
+fails, the command makes a bounded review-fix pass through an `editTranslation`
+tool rather than asking the translator to regenerate the whole article. The edit
+tool returns exact `field` + `oldText` + `newText` diffs only; the caller applies
+them only when `oldText` appears exactly once in the target field, then re-runs
+review on the edited candidate. Existing English records are protected by
+source-version and generated-content hashes: source changes require explicit
+`--regenerate`, and apparent manual edits require `--force`. The command is
+cron/Worker-callable automation, not a pure standard plugin, because the durable
+write needs locale, slug, publish state, and translation linkage.
+
+The command uses Markdown as the LLM boundary and Portable Text as the storage
+boundary. It reads source posts from EmDash, derives `contentMarkdown`, asks the
+translator to return `contentMarkdown`, converts that Markdown back to Portable
+Text before writing, and stores the converted Portable Text in EmDash. This
+accepts the known limits of Markdown-to-Portable-Text conversion in exchange for
+a much smaller structured output schema and a body format that the translation
+and review prompts can handle reliably. If an unexpected per-post error occurs
+after generation starts, the command stops the run instead of continuing to
+spend provider calls on later posts.
 
 OpenRouter-style HTTP providers fit the standard plugin model better than direct
 Cloudflare Workers AI bindings because plugin network access can be expressed as
@@ -702,7 +756,8 @@ For each implementation slice:
   idempotent suggestion per source version rather than duplicate or stale
   generated state.
 - For English generation, test the full auto-publish path against local EmDash data
-  and verify the resulting English record has the expected note section, `slug`,
+  and verify the resulting English record has the expected note section, the same
+  `slug` as its Japanese source, the same published date as its Japanese source,
   `locale`, source linkage, preserved code blocks, preserved links, and recorded
   gate results before considering the workflow valid.
 - For generated OGP images, verify the selected renderer locally and in the

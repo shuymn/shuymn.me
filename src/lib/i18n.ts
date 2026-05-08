@@ -19,6 +19,9 @@ export const PUBLIC_TEXT_BY_LOCALE = {
     notFoundTitle: "404",
     notFoundMessage: "ページが見つかりませんでした。",
     notFoundHomeLink: "トップページへ戻る",
+    translationNoteLabel: "翻訳注釈",
+    translationNoteText: "この英語版は日本語の原文から自動翻訳されています。正本は日本語の記事です。",
+    translationNoteSourceLink: "日本語の原文を読む",
   },
   en: {
     aboutLabel: "Profile and site information",
@@ -29,6 +32,10 @@ export const PUBLIC_TEXT_BY_LOCALE = {
     notFoundTitle: "404",
     notFoundMessage: "Page not found.",
     notFoundHomeLink: "Back to home",
+    translationNoteLabel: "Translation note",
+    translationNoteText:
+      "This English version was generated automatically from the Japanese original. The Japanese post is the canonical source.",
+    translationNoteSourceLink: "Read the Japanese original",
   },
 } as const;
 

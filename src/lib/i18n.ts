@@ -63,8 +63,13 @@ export function getHomePath(locale?: string): string {
   return localizePath("/", locale);
 }
 
+export function getContentSlug(entry: { id?: unknown; slug?: unknown; data?: { slug?: unknown } }): string {
+  const rawSlug = [entry.slug, entry.data?.slug, entry.id].find((value) => typeof value === "string");
+  return normalizeContentSlug(typeof rawSlug === "string" ? rawSlug : "");
+}
+
 export function getPostPath(slug: string, locale?: string): string {
-  const normalizedSlug = slug.replace(/^\/+|\/+$/g, "");
+  const normalizedSlug = normalizeContentSlug(slug);
   return localizePath(`/posts/${normalizedSlug}`, locale);
 }
 
@@ -87,4 +92,14 @@ function stripLocalePrefix(path: string): string {
     if (path.startsWith(`${prefix}/`)) return path.slice(prefix.length);
   }
   return path;
+}
+
+function normalizeContentSlug(slug: string): string {
+  const normalizedSlug = slug.replace(/^\/+|\/+$/g, "");
+  for (const locale of SUPPORTED_LOCALES) {
+    if (locale === DEFAULT_LOCALE) continue;
+    if (normalizedSlug === locale) return "";
+    if (normalizedSlug.startsWith(`${locale}/`)) return normalizedSlug.slice(locale.length + 1);
+  }
+  return normalizedSlug;
 }

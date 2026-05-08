@@ -3,7 +3,15 @@ import { decodeSlug, getEmDashEntry } from "emdash";
 import { PortableText } from "emdash/ui";
 import Base from "../layouts/Base.astro";
 import { getEnglishTranslationSourceSlug, shouldRenderEnglishTranslationNote } from "../lib/englishGeneration";
-import { DEFAULT_LOCALE, formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText } from "../lib/i18n";
+import {
+    DEFAULT_LOCALE,
+    formatDate,
+    getContentSlug,
+    getCurrentLocale,
+    getHomePath,
+    getPostPath,
+    getPublicText,
+} from "../lib/i18n";
 
 const slug = decodeSlug(Astro.params.slug);
 const locale = getCurrentLocale(Astro.currentLocale);
@@ -22,7 +30,7 @@ for (const cacheHint of [localizedPostResult?.cacheHint, defaultLocalePostResult
 }
 const publicText = getPublicText(locale);
 const homePath = getHomePath(locale);
-const postSlug = typeof post?.id === "string" && post.id.length > 0 ? post.id : null;
+const postSlug = post ? getContentSlug(post) : null;
 const isNotFound = !slug || !post || !postSlug;
 
 const publishedIso = post?.data.publishedAt?.toISOString() ?? null;
@@ -53,7 +61,7 @@ if (isNotFound) {
       type="article"
       publishedTime={publishedIso}
       modifiedTime={modifiedIso}
-      content={{ collection: "posts", id: post.data.id, slug: post.id }}
+      content={{ collection: "posts", id: post.data.id, slug: postSlug }}
       path={getPostPath(postSlug, locale)}
     >
       <main>

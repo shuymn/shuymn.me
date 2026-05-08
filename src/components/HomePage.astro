@@ -2,7 +2,15 @@
 import { getEmDashCollection, getEmDashEntry } from "emdash";
 import { PortableText } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText, HOME_ABOUT_SLUG } from "../lib/i18n";
+import {
+    formatDate,
+    getContentSlug,
+    getCurrentLocale,
+    getHomePath,
+    getPostPath,
+    getPublicText,
+    HOME_ABOUT_SLUG,
+} from "../lib/i18n";
 
 type ProfileLink = {
     label: string;
@@ -24,7 +32,7 @@ for (const cacheHint of [aboutResult.cacheHint, postsResult.cacheHint]) {
 }
 
 const sortedPosts = posts
-    .filter((post): post is typeof post & { id: string } => typeof post.id === "string" && post.id.length > 0)
+    .filter((post) => getContentSlug(post).length > 0)
     .toSorted((a, b) => {
         const dateA = a.data.publishedAt?.getTime() ?? 0;
         const dateB = b.data.publishedAt?.getTime() ?? 0;
@@ -74,7 +82,7 @@ const publicText = getPublicText(locale);
           sortedPosts.map((post) => (
             <article class="post-link">
               <p class="post-date">{formatDate(post.data.publishedAt)}</p>
-              <a href={getPostPath(post.id, locale)}>{post.data.title}</a>
+              <a href={getPostPath(getContentSlug(post), locale)}>{post.data.title}</a>
               {post.data.description && <p class="post-description">{post.data.description}</p>}
             </article>
           ))

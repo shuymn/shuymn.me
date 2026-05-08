@@ -37,7 +37,7 @@
 - Local EmDash uses SQLite at `data.db` and local media under `uploads/`; Cloudflare mode is selected with `EMDASH_RUNTIME=cloudflare`.
 - Treat `seed/seed.json` as the local schema/content seed source. After changing schema or seed content, run the seed/bootstrap flow needed to verify it.
 - For EmDash pages, pass returned `cacheHint` values to `Astro.cache.set(cacheHint)` when using APIs that provide cache hints.
-- Use `entry.id` for slugs and `entry.data.id` for database IDs used by EmDash APIs.
+- Use unprefixed content slugs (`entry.slug` at runtime or `entry.data.slug` in generated types) for public URLs; `entry.id` may include the locale prefix such as `en/<slug>`. Use `entry.data.id` for database IDs used by EmDash APIs.
 - For EmDash image fields, render with the `Image` component from `emdash/ui` instead of treating image values as strings.
 
 ## Project Commands

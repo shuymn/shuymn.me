@@ -21,6 +21,7 @@ import {
   translationEditPayloadSchema,
   translationPayloadSchema,
 } from "../src/lib/englishGeneration.ts";
+import { getContentSlug, getPostPath } from "../src/lib/i18n.ts";
 import { testInternals } from "./generate-english-posts.ts";
 
 test("precheck rejects unsupported and private source content before generation", () => {
@@ -36,6 +37,20 @@ test("precheck rejects unsupported and private source content before generation"
   assert.equal(result.passed, false);
   assert.match(result.failures.join("\n"), /private-content marker/);
   assert.match(result.failures.join("\n"), /unsupported opaque Portable Text blocks/);
+});
+
+test("localized post paths use unprefixed content slugs", () => {
+  assert.equal(
+    getContentSlug({
+      id: "en/2026-04-23-why-interested-in-aituber",
+      data: { slug: "2026-04-23-why-interested-in-aituber" },
+    }),
+    "2026-04-23-why-interested-in-aituber",
+  );
+  assert.equal(
+    getPostPath("en/2026-04-23-why-interested-in-aituber", "en"),
+    "/en/posts/2026-04-23-why-interested-in-aituber",
+  );
 });
 
 test("precheck accepts converted Markdown content for the Markdown bridge", () => {

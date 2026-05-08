@@ -113,6 +113,11 @@ export type DeterministicGateResult = {
       missing: string[];
       extra: string[];
     };
+    tables: {
+      source: MarkdownTableSignature[];
+      translated: MarkdownTableSignature[];
+      mismatches: MarkdownTableMismatch[];
+    };
     review: {
       passed: boolean;
       score: number;
@@ -120,11 +125,32 @@ export type DeterministicGateResult = {
   };
 };
 
+export type MarkdownTableSignature = {
+  hasHeaderRow: boolean;
+  rowCount: number;
+  columnCounts: number[];
+};
+
+export type MarkdownTableMismatch = {
+  index: number;
+  source?: MarkdownTableSignature;
+  translated?: MarkdownTableSignature;
+};
+
 export type TranslationReviewFixLoopResult = {
   translation: TranslationPayload;
   review: ReviewPayload;
   editAttempts: TranslationEditAttempt[];
 };
+
+export type ExistingEnglishCandidateReasonCode =
+  | "unmanaged_existing"
+  | "manual_edit"
+  | "source_changed"
+  | "already_published"
+  | "create_missing"
+  | "explicit_regeneration"
+  | "refresh_managed_candidate";
 
 const OPAQUE_BLOCK_PATTERN = /<!--ec:block\s+.+?-->/s;
 const DEFAULT_PRIVATE_PATTERNS = [/(?:^|\s)#private(?:\s|$)/i, /<!--\s*private\s*-->/i, /\bprivate:\s*true\b/i];
@@ -519,8 +545,9 @@ export function runDeterministicChecks({
   const translatedCodeBlocks = extractMarkdownCodeBlocks(translation.contentMarkdown);
   const sourceLinks = extractMarkdownLinks(source.contentMarkdown);
   const translatedLinks = extractMarkdownLinks(translation.contentMarkdown);
-  const sourceTableCount = countMarkdownTables(source.contentMarkdown);
-  const translatedTableCount = countMarkdownTables(translation.contentMarkdown);
+  const sourceTables = extractMarkdownTableSignatures(source.contentMarkdown);
+  const translatedTables = extractMarkdownTableSignatures(translation.contentMarkdown);
+  const tableMismatches = findMarkdownTableMismatches(sourceTables, translatedTables);
 
   if (noteVersion !== TRANSLATION_NOTE_VERSION) {
     failures.push("translation note version does not match the fixed site template");
@@ -566,8 +593,13 @@ export function runDeterministicChecks({
   if (extraLinks.length > 0) {
     failures.push(`unexpected translated links: ${extraLinks.join(", ")}`);
   }
-  if (sourceTableCount !== translatedTableCount) {
-    failures.push(`Markdown table count changed from ${sourceTableCount} to ${translatedTableCount}`);
+  if (sourceTables.length !== translatedTables.length) {
+    failures.push(`Markdown table count changed from ${sourceTables.length} to ${translatedTables.length}`);
+  }
+  for (const mismatch of tableMismatches) {
+    if (mismatch.source && mismatch.translated) {
+      failures.push(`Markdown table ${mismatch.index + 1} structure changed`);
+    }
   }
 
   if (!review.passed) {
@@ -591,6 +623,11 @@ export function runDeterministicChecks({
         missing: missingLinks,
         extra: extraLinks,
       },
+      tables: {
+        source: sourceTables,
+        translated: translatedTables,
+        mismatches: tableMismatches,
+      },
       review: {
         passed: review.passed,
         score: review.score,
@@ -611,9 +648,9 @@ export function classifyExistingEnglishCandidate({
   currentContentHash: string;
   regenerate?: boolean;
   force?: boolean;
-}): { action: "create" | "update" | "skip"; reason: string } {
+}): { action: "create" | "update" | "skip"; reason: string; reasonCode: ExistingEnglishCandidateReasonCode } {
   if (!existing) {
-    return { action: "create", reason: "no English translation exists" };
+    return { action: "create", reason: "no English translation exists", reasonCode: "create_missing" };
   }
 
   const data = existing.data ?? {};
@@ -621,19 +658,39 @@ export function classifyExistingEnglishCandidate({
   const storedContentHash = getStringField(data, "english_generation_content_hash");
 
   if (!storedSourceVersion) {
-    return { action: force ? "update" : "skip", reason: "existing English version is not managed by automation" };
+    return {
+      action: "skip",
+      reason: "existing English version is not managed by automation",
+      reasonCode: "unmanaged_existing",
+    };
   }
   if (storedContentHash && currentContentHash && storedContentHash !== currentContentHash && !force) {
-    return { action: "skip", reason: "existing English version appears to have been edited manually" };
+    return {
+      action: "skip",
+      reason: "existing English version appears to have been edited manually",
+      reasonCode: "manual_edit",
+    };
   }
   if (storedSourceVersion !== sourceVersion && !regenerate) {
-    return { action: "skip", reason: "source changed; explicit regeneration is required" };
+    return {
+      action: "skip",
+      reason: "source changed; explicit regeneration is required",
+      reasonCode: "source_changed",
+    };
   }
   if (storedSourceVersion === sourceVersion && existing.status === "published" && !regenerate) {
-    return { action: "skip", reason: "English version is already published for this source version" };
+    return {
+      action: "skip",
+      reason: "English version is already published for this source version",
+      reasonCode: "already_published",
+    };
   }
 
-  return { action: "update", reason: regenerate ? "explicit regeneration requested" : "refreshing managed candidate" };
+  return {
+    action: "update",
+    reason: regenerate ? "explicit regeneration requested" : "refreshing managed candidate",
+    reasonCode: regenerate ? "explicit_regeneration" : "refresh_managed_candidate",
+  };
 }
 
 export function buildEnglishGenerationData({
@@ -921,9 +978,9 @@ function parseMarkdownTable(
   };
 }
 
-function countMarkdownTables(markdown: string): number {
+function extractMarkdownTableSignatures(markdown: string): MarkdownTableSignature[] {
   const lines = markdown.split("\n");
-  let count = 0;
+  const signatures: MarkdownTableSignature[] = [];
   let index = 0;
   let isInsideCodeFence = false;
 
@@ -938,25 +995,68 @@ function countMarkdownTables(markdown: string): number {
       continue;
     }
     if (isMarkdownTableSeparator(lines[index])) {
-      count++;
+      const rowLines: string[] = [];
       index++;
       while (index < lines.length && isMarkdownTableRow(lines[index]) && !isMarkdownTableSeparator(lines[index])) {
+        rowLines.push(lines[index]);
         index++;
       }
+      signatures.push(buildTableSignature(rowLines, false));
       continue;
     }
     if (isMarkdownTableRow(lines[index]) && isMarkdownTableSeparator(lines[index + 1])) {
-      count++;
+      const rowLines = [lines[index]];
       index += 2;
       while (index < lines.length && isMarkdownTableRow(lines[index]) && !isMarkdownTableSeparator(lines[index])) {
+        rowLines.push(lines[index]);
         index++;
       }
+      signatures.push(buildTableSignature(rowLines, true));
       continue;
     }
     index++;
   }
 
-  return count;
+  return signatures;
+}
+
+function buildTableSignature(rowLines: string[], hasHeaderRow: boolean): MarkdownTableSignature {
+  return {
+    hasHeaderRow,
+    rowCount: rowLines.length,
+    columnCounts: rowLines.map((line) => splitMarkdownTableRow(line).length),
+  };
+}
+
+function findMarkdownTableMismatches(
+  sourceTables: MarkdownTableSignature[],
+  translatedTables: MarkdownTableSignature[],
+): MarkdownTableMismatch[] {
+  const mismatches: MarkdownTableMismatch[] = [];
+  const tableCount = Math.max(sourceTables.length, translatedTables.length);
+
+  for (let index = 0; index < tableCount; index++) {
+    const source = sourceTables[index];
+    const translated = translatedTables[index];
+    if (!source || !translated) {
+      mismatches.push({ index, source, translated });
+      continue;
+    }
+    if (!areMarkdownTableSignaturesEqual(source, translated)) {
+      mismatches.push({ index, source, translated });
+    }
+  }
+
+  return mismatches;
+}
+
+function areMarkdownTableSignaturesEqual(source: MarkdownTableSignature, translated: MarkdownTableSignature): boolean {
+  return (
+    source.hasHeaderRow === translated.hasHeaderRow &&
+    source.rowCount === translated.rowCount &&
+    source.columnCounts.length === translated.columnCounts.length &&
+    source.columnCounts.every((columnCount, index) => columnCount === translated.columnCounts[index])
+  );
 }
 
 function buildTableBlock(rowLines: string[], hasHeaderRow: boolean): PortableTextBlock {

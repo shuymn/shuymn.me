@@ -521,7 +521,7 @@ test("deterministic checks require Markdown table preservation", () => {
   assert.match(result.failures.join("\n"), /Markdown table count changed from 1 to 0/);
 });
 
-test("deterministic checks reject Markdown table row and column drift", () => {
+test("deterministic checks reject Markdown table row drift", () => {
   const source = precheckSourcePost(
     makeSource({ content: [textBlock("このサイトの構成を変えた。"), tableBlock()] }),
   ).source;
@@ -549,8 +549,63 @@ test("deterministic checks reject Markdown table row and column drift", () => {
   });
 
   assert.equal(result.passed, false);
-  assert.match(result.failures.join("\n"), /Markdown table 1 structure changed/);
+  assert.match(result.failures.join("\n"), /Markdown table 1 row count changed from 3 to 2/);
   assert.equal(result.checks.tables.mismatches.length, 1);
+});
+
+test("deterministic checks reject Markdown table column drift", () => {
+  const source = precheckSourcePost(
+    makeSource({ content: [textBlock("このサイトの構成を変えた。"), tableBlock()] }),
+  ).source;
+  const translation = {
+    ...makePassingTranslation(),
+    contentMarkdown: [
+      "I changed the structure of this site.",
+      "",
+      "|  | Framework | Hosting |",
+      "| --- | --- | --- |",
+      "| Old | [Gatsby.js](https://www.gatsbyjs.com/) |",
+      "| New | Next.js | Vercel |",
+    ].join("\n"),
+  };
+  const review = { passed: true, score: 0.91, failures: [] };
+
+  const result = runDeterministicChecks({
+    source,
+    translation,
+    review,
+    noteVersion: TRANSLATION_NOTE_VERSION,
+  });
+
+  assert.equal(result.passed, false);
+  assert.match(result.failures.join("\n"), /Markdown table 1 row 2 column count changed from 3 to 2/);
+});
+
+test("deterministic checks reject Markdown table header drift", () => {
+  const source = precheckSourcePost(
+    makeSource({ content: [textBlock("ヘッダーなしテーブルです。"), headerlessTableBlock()] }),
+  ).source;
+  const translation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Headerless Table",
+      description: "A translated description.",
+      seoDescription: "",
+      contentMarkdown: ["This is a headerless table.", "", "| Left | Right |", "| --- | --- |", "| Up | Down |"].join(
+        "\n",
+      ),
+    }),
+  );
+  const review = { passed: true, score: 0.91, failures: [] };
+
+  const result = runDeterministicChecks({
+    source,
+    translation,
+    review,
+    noteVersion: TRANSLATION_NOTE_VERSION,
+  });
+
+  assert.equal(result.passed, false);
+  assert.match(result.failures.join("\n"), /Markdown table 1 header presence changed/);
 });
 
 test("deterministic checks treat review failures as publication blockers", () => {

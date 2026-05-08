@@ -597,9 +597,7 @@ export function runDeterministicChecks({
     failures.push(`Markdown table count changed from ${sourceTables.length} to ${translatedTables.length}`);
   }
   for (const mismatch of tableMismatches) {
-    if (mismatch.source && mismatch.translated) {
-      failures.push(`Markdown table ${mismatch.index + 1} structure changed`);
-    }
+    failures.push(...describeMarkdownTableMismatch(mismatch));
   }
 
   if (!review.passed) {
@@ -1048,6 +1046,33 @@ function findMarkdownTableMismatches(
   }
 
   return mismatches;
+}
+
+function describeMarkdownTableMismatch(mismatch: MarkdownTableMismatch): string[] {
+  const { source, translated } = mismatch;
+  if (!source || !translated) return [];
+
+  const tableNumber = mismatch.index + 1;
+  const failures: string[] = [];
+  if (source.hasHeaderRow !== translated.hasHeaderRow) {
+    failures.push(`Markdown table ${tableNumber} header presence changed`);
+  }
+  if (source.rowCount !== translated.rowCount) {
+    failures.push(`Markdown table ${tableNumber} row count changed from ${source.rowCount} to ${translated.rowCount}`);
+  }
+
+  const rowCount = Math.min(source.columnCounts.length, translated.columnCounts.length);
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const sourceColumnCount = source.columnCounts[rowIndex];
+    const translatedColumnCount = translated.columnCounts[rowIndex];
+    if (sourceColumnCount !== translatedColumnCount) {
+      failures.push(
+        `Markdown table ${tableNumber} row ${rowIndex + 1} column count changed from ${sourceColumnCount} to ${translatedColumnCount}`,
+      );
+    }
+  }
+
+  return failures;
 }
 
 function areMarkdownTableSignaturesEqual(source: MarkdownTableSignature, translated: MarkdownTableSignature): boolean {

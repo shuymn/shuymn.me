@@ -61,6 +61,19 @@ test("precheck accepts Portable Text content from raw EmDash API responses", () 
   assert.match(result.source.contentMarkdown, /Portable Text の本文です。/);
 });
 
+test("precheck converts EmDash table blocks to translatable Markdown tables", () => {
+  const source = makeSource({
+    content: [textBlock("このサイトの構成を変えた。"), tableBlock()],
+  });
+
+  const result = precheckSourcePost(source);
+
+  assert.equal(result.passed, true);
+  assert.doesNotMatch(result.source.contentMarkdown, /ec:block/);
+  assert.match(result.source.contentMarkdown, /\| {2}\| フレームワーク \| ホスティング \|/);
+  assert.match(result.source.contentMarkdown, /\| 古 \| \[Gatsby\.js]\(https:\/\/www\.gatsbyjs\.com\/\) \| Netlify \|/);
+});
+
 test("precheck requires a published source timestamp for English backdating", () => {
   const result = precheckSourcePost({ ...makeSource(), publishedAt: null });
 
@@ -82,6 +95,7 @@ test("translation prompt treats the source post as data instead of instructions"
   assert.match(prompt, /field-to-field/i);
   assert.match(prompt, /Do not synthesize a description or SEO description/i);
   assert.match(prompt, /structured output fields/);
+  assert.match(prompt, /Preserve Markdown table structure/i);
   assert.doesNotMatch(prompt, /Return only valid JSON/);
   assert.match(prompt, /"seoDescription"/);
   assert.match(prompt, /"contentMarkdown"/);
@@ -145,6 +159,30 @@ test("translation normalization converts Markdown to Portable Text before storag
   assert.match(translation.contentMarkdown, /# Runtime Notes/);
 });
 
+test("translation normalization converts Markdown tables back to EmDash table blocks", () => {
+  const translation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Renewal",
+      description: "",
+      seoDescription: "",
+      contentMarkdown: [
+        "I changed the structure of this site.",
+        "",
+        "|  | Framework | Hosting |",
+        "| --- | --- | --- |",
+        "| Old | [Gatsby.js](https://www.gatsbyjs.com/) | Netlify |",
+        "| New | Next.js | Vercel |",
+      ].join("\n"),
+    }),
+  );
+
+  const table = translation.contentPortableText.find((block) => block._type === "table");
+
+  assert.ok(table);
+  assert.equal((table.rows as Array<unknown>).length, 3);
+  assert.match(translation.contentMarkdown, /\| Old \| \[Gatsby\.js]\(https:\/\/www\.gatsbyjs\.com\/\) \| Netlify \|/);
+});
+
 test("review prompt uses a publishability rubric instead of requiring perfect translation", () => {
   const source = precheckSourcePost(makeSource()).source;
   const translation = makePassingTranslation();
@@ -155,6 +193,7 @@ test("review prompt uses a publishability rubric instead of requiring perfect tr
   assert.match(prompt, /not whether it is a perfect human translation/i);
   assert.match(prompt, /Blocking failures/i);
   assert.match(prompt, /field-to-field translations/i);
+  assert.match(prompt, /broken Markdown table structure/i);
   assert.match(prompt, /Do not look for nitpicks/i);
   assert.match(prompt, /set passed=false and put it in failures/i);
   assert.doesNotMatch(prompt, /warnings/i);
@@ -176,6 +215,7 @@ test("edit prompt feeds review failures into a diff-only edit tool", () => {
   assert.match(prompt, /oldText/);
   assert.match(prompt, /newText/);
   assert.match(prompt, /missing preserved links/);
+  assert.match(prompt, /Markdown table structure/);
   assert.match(prompt, /https:\/\/example\.com\/runtime/);
   assert.doesNotMatch(prompt, /"contentPortableText"/);
 });
@@ -302,6 +342,31 @@ test("deterministic checks require exact code block and URL preservation", () =>
   });
   assert.equal(failing.passed, false);
   assert.match(failing.failures.join("\n"), /code block 1 was not preserved exactly/);
+});
+
+test("deterministic checks require Markdown table preservation", () => {
+  const source = precheckSourcePost(
+    makeSource({ content: [textBlock("このサイトの構成を変えた。"), tableBlock()] }),
+  ).source;
+  const translation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Renewal",
+      description: "A translated description.",
+      seoDescription: "",
+      contentMarkdown: "I changed the structure of this site.",
+    }),
+  );
+  const review = { passed: true, score: 0.91, failures: [] };
+
+  const result = runDeterministicChecks({
+    source,
+    translation,
+    review,
+    noteVersion: TRANSLATION_NOTE_VERSION,
+  });
+
+  assert.equal(result.passed, false);
+  assert.match(result.failures.join("\n"), /Markdown table count changed from 1 to 0/);
 });
 
 test("deterministic checks treat review failures as publication blockers", () => {
@@ -697,6 +762,41 @@ function linkBlock(text: string, href: string, suffix: string): PortableTextBloc
       { _type: "span", _key: "link-span", text, marks: ["link-a"] },
       { _type: "span", _key: "link-suffix", text: suffix, marks: [] },
     ],
+  };
+}
+
+function tableBlock(): PortableTextBlock {
+  return {
+    _type: "table",
+    _key: "table-a",
+    hasHeaderRow: true,
+    rows: [
+      {
+        _type: "tableRow",
+        _key: "row-a",
+        cells: [tableCell(""), tableCell("フレームワーク"), tableCell("ホスティング")],
+      },
+      {
+        _type: "tableRow",
+        _key: "row-b",
+        cells: [tableCell("古"), tableCell("Gatsby.js", "https://www.gatsbyjs.com/"), tableCell("Netlify")],
+      },
+      {
+        _type: "tableRow",
+        _key: "row-c",
+        cells: [tableCell("新"), tableCell("Next.js"), tableCell("Vercel")],
+      },
+    ],
+  };
+}
+
+function tableCell(text: string, href?: string) {
+  const markDefs = href ? [{ _key: `${text}-link`, _type: "link", href }] : [];
+  return {
+    _type: "tableCell",
+    _key: `cell-${text}`,
+    content: [{ _type: "span", _key: `span-${text}`, text, marks: href ? [`${text}-link`] : [] }],
+    markDefs,
   };
 }
 

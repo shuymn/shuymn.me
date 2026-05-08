@@ -429,11 +429,13 @@ The generated English workflow should:
 - request translator and reviewer outputs through schema-backed structured
   output, not through prompt-only JSON formatting
 - use Markdown as the LLM body boundary and Portable Text as the storage boundary
-- preserve code blocks, links, headings, and technical identifiers
+- preserve code blocks, links, headings, Markdown tables, and technical
+  identifiers
 - run automated translation review, preferably with a separate prompt or reviewer
   pass from the translator
 - run deterministic checks for required note section, source linkage, preserved
-  code blocks, preserved links, and unsupported content patterns
+  code blocks, preserved links, Markdown table count, and unsupported content
+  patterns
 - record the source post, source revision or `updatedAt`, generation timestamp,
   provider, prompt version, reviewer version, and gate results
 - publish automatically when gates pass
@@ -512,9 +514,12 @@ translator to return `contentMarkdown`, converts that Markdown back to Portable
 Text before writing, and stores the converted Portable Text in EmDash. This
 accepts the known limits of Markdown-to-Portable-Text conversion in exchange for
 a much smaller structured output schema and a body format that the translation
-and review prompts can handle reliably. If an unexpected per-post error occurs
-after generation starts, the command stops the run instead of continuing to
-spend provider calls on later posts.
+and review prompts can handle reliably. EmDash table blocks are a supported
+bridge case: source tables are rendered as Markdown tables for translation,
+translated Markdown tables are converted back to EmDash table blocks, and the
+deterministic gate rejects table count drift. If an unexpected per-post error
+occurs after generation starts, the command stops the run instead of continuing
+to spend provider calls on later posts.
 
 OpenRouter-style HTTP providers fit the standard plugin model better than direct
 Cloudflare Workers AI bindings because plugin network access can be expressed as
@@ -758,8 +763,9 @@ For each implementation slice:
 - For English generation, test the full auto-publish path against local EmDash data
   and verify the resulting English record has the expected note section, the same
   `slug` as its Japanese source, the same published date as its Japanese source,
-  `locale`, source linkage, preserved code blocks, preserved links, and recorded
-  gate results before considering the workflow valid.
+  `locale`, source linkage, preserved code blocks, preserved links, preserved
+  Markdown tables, and recorded gate results before considering the workflow
+  valid.
 - For generated OGP images, verify the selected renderer locally and in the
   Cloudflare runtime, including long Japanese and English titles, before making it
   the primary `og:image` path.

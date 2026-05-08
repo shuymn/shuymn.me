@@ -155,9 +155,11 @@ the storage boundary. The command reads source content from EmDash, derives
 Markdown through EmDash's Markdown-to-Portable-Text converter, and stores the
 resulting Portable Text. This deliberately avoids asking structured output to
 recreate large Portable Text JSON while preserving a Markdown representation for
-translation, review, deterministic checks, and generated-content hashes.
-Unexpected post-level errors stop the run before processing later posts so a
-broken write path does not repeatedly spend LLM calls.
+translation, review, deterministic checks, and generated-content hashes. EmDash
+table blocks are bridged as Markdown tables for translation and converted back to
+EmDash table blocks before storage; the deterministic gate rejects table count
+drift. Unexpected post-level errors stop the run before processing later posts so
+a broken write path does not repeatedly spend LLM calls.
 
 Locale-aware OGP generation is also in scope. Because OGP image paths can be
 separate per locale and slug, generated OGP routes are a lower-risk first slice

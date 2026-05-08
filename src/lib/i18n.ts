@@ -95,11 +95,6 @@ function stripLocalePrefix(path: string): string {
 }
 
 function normalizeContentSlug(slug: string): string {
-  const normalizedSlug = slug.replace(/^\/+|\/+$/g, "");
-  for (const locale of SUPPORTED_LOCALES) {
-    if (locale === DEFAULT_LOCALE) continue;
-    if (normalizedSlug === locale) return "";
-    if (normalizedSlug.startsWith(`${locale}/`)) return normalizedSlug.slice(locale.length + 1);
-  }
-  return normalizedSlug;
+  const trimmed = slug.replace(/^\/+|\/+$/g, "");
+  return stripLocalePrefix(`/${trimmed}`).replace(/^\/+/, "");
 }

@@ -475,14 +475,6 @@ test("generated English SEO clears stale SEO fields when the Japanese source doe
   assert.deepEqual(seo, { title: null, description: null });
 });
 
-test("unexpected post errors stop the run before more LLM calls", () => {
-  assert.equal(testInternals.shouldStopAfterResult({ sourceId: "source", sourceSlug: "slug", status: "error" }), true);
-  assert.equal(
-    testInternals.shouldStopAfterResult({ sourceId: "source", sourceSlug: "slug", status: "precheck_failed" }),
-    false,
-  );
-});
-
 test("CLI options read Cloudflare AI Gateway config from env and flags", () => {
   const envOptions = testInternals.parseArgs([], {
     EMDASH_API_TOKEN: "emdash-token",

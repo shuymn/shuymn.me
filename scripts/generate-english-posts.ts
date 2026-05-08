@@ -115,7 +115,7 @@ async function main(): Promise<void> {
     if (options.source && ![listedSource.id, listedSource.slug].includes(options.source)) continue;
 
     processed++;
-    const source = await client.get(POSTS_COLLECTION, listedSource.id, { raw: true });
+    const source = listedSource as ContentItemWithSeo;
     try {
       results.push(await processSourcePost({ client, provider, source, options }));
     } catch (error) {
@@ -128,7 +128,7 @@ async function main(): Promise<void> {
         ...(serializedError.details ? { errorDetails: serializedError.details } : {}),
       };
       results.push(result);
-      if (shouldStopAfterResult(result)) break;
+      if (result.status === "error") break;
     }
   }
 
@@ -496,7 +496,7 @@ async function translatePost(
       name: "englishTranslation",
       description: "English translation of a Japanese personal blog post.",
     }),
-    ...getProviderSamplingSettings(provider),
+    temperature: provider.temperature,
   });
   return normalizeTranslationPayload(output);
 }
@@ -522,7 +522,7 @@ async function editTranslation(
       }),
     },
     toolChoice: { type: "tool", toolName: "editTranslation" },
-    ...getProviderSamplingSettings(provider),
+    temperature: provider.temperature,
   });
   const editOutput = result.toolResults.find((toolResult) => toolResult.toolName === "editTranslation")?.output;
   if (!editOutput) {
@@ -546,13 +546,9 @@ async function reviewTranslation(
       name: "englishTranslationReview",
       description: "Automated publication review for an English translation of a Japanese blog post.",
     }),
-    ...getProviderSamplingSettings(provider),
+    temperature: provider.temperature,
   });
   return output;
-}
-
-function getProviderSamplingSettings(provider: EnglishGenerationProvider): { temperature?: number } {
-  return provider.temperature === undefined ? {} : { temperature: provider.temperature };
 }
 
 async function getExistingEnglishTranslation(client: Client, sourceId: string): Promise<ContentItemWithSeo | null> {
@@ -652,11 +648,13 @@ function buildLinkedEnglishRepair({
   const dataPatch: JsonRecord = {};
   const seoPatch: ContentSeoInput = {};
   const reasons: string[] = [];
+  const slugMismatch = shouldRepairEnglishSlug({ existing, source });
+  const publishedAtMismatch = existing.publishedAt !== source.publishedAt;
 
-  if (shouldRepairEnglishSlug({ existing, source })) {
+  if (slugMismatch) {
     reasons.push("slug");
   }
-  if (existing.publishedAt !== source.publishedAt) {
+  if (publishedAtMismatch) {
     reasons.push("publishedAt");
   }
   if (!source.description && getStringField(data, "description")) {
@@ -681,8 +679,8 @@ function buildLinkedEnglishRepair({
   }
 
   const update = removeUndefinedFields({
-    ...(shouldRepairEnglishSlug({ existing, source }) ? { slug: resolveEnglishSlug(source) } : {}),
-    ...(existing.publishedAt !== source.publishedAt ? { publishedAt: source.publishedAt } : {}),
+    ...(slugMismatch ? { slug: resolveEnglishSlug(source) } : {}),
+    ...(publishedAtMismatch ? { publishedAt: source.publishedAt } : {}),
     ...(Object.keys(dataPatch).length > 0 ? { data: dataPatch } : {}),
     ...(Object.keys(seoPatch).length > 0 ? { seo: seoPatch } : {}),
   }) as { data?: JsonRecord; publishedAt?: string; seo?: ContentSeoInput; slug?: string };
@@ -700,7 +698,10 @@ async function verifyPublishedEnglishTranslation(
   englishId: string,
   options: { expectedPublishedAt: string },
 ): Promise<{ item: ContentItem; translations: Awaited<ReturnType<Client["translations"]>> }> {
-  const item = await client.get(POSTS_COLLECTION, englishId, { raw: true });
+  const [item, translations] = await Promise.all([
+    client.get(POSTS_COLLECTION, englishId, { raw: true }),
+    client.translations(POSTS_COLLECTION, sourceId),
+  ]);
   if (item.status !== "published") {
     throw new Error(`English translation ${englishId} was not published`);
   }
@@ -713,7 +714,6 @@ async function verifyPublishedEnglishTranslation(
     );
   }
 
-  const translations = await client.translations(POSTS_COLLECTION, sourceId);
   const hasLinkedEnglish = translations.translations.some(
     (translation) => translation.id === englishId && translation.locale === ENGLISH_LOCALE,
   );
@@ -753,10 +753,6 @@ function buildContentHash(data: unknown): string {
     seoDescription: getStringField(contentData, "seoDescription") || getStringField(seo, "description"),
     contentMarkdown: getContentMarkdown(contentData),
   });
-}
-
-function shouldStopAfterResult(result: ProcessResult): boolean {
-  return result.status === "error";
 }
 
 function serializeError(error: unknown): { message: string; details?: JsonRecord } {
@@ -828,11 +824,8 @@ export const testInternals = {
   buildContentHash,
   buildLinkedEnglishRepair,
   buildSourceVersion: (item: ContentItemLike) => buildSourceVersion(normalizeSourcePost(item)),
-  getProviderSamplingSettings,
   parseArgs,
   resolveEnglishSlug,
   serializeError,
   shouldRepairEnglishSlug,
-  shouldStopAfterResult,
-  stableStringify,
 };

@@ -1000,11 +1000,5 @@ function getPortableTextField(data: unknown, key: string): PortableTextBlock[] {
 
 function countOccurrences(value: string, search: string): number {
   if (!search) return 0;
-  let count = 0;
-  let index = value.indexOf(search);
-  while (index !== -1) {
-    count++;
-    index = value.indexOf(search, index + search.length);
-  }
-  return count;
+  return value.split(search).length - 1;
 }

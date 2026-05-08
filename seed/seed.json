@@ -34,6 +34,52 @@
           "label": "Content",
           "type": "portableText",
           "searchable": true
+        },
+        {
+          "slug": "english_generation_disabled",
+          "label": "Disable English Generation",
+          "type": "boolean",
+          "defaultValue": false
+        },
+        {
+          "slug": "english_generation_status",
+          "label": "English Generation Status",
+          "type": "string"
+        },
+        {
+          "slug": "english_generation_source_id",
+          "label": "English Generation Source ID",
+          "type": "string"
+        },
+        {
+          "slug": "english_generation_source_slug",
+          "label": "English Generation Source Slug",
+          "type": "string"
+        },
+        {
+          "slug": "english_generation_source_version",
+          "label": "English Generation Source Version",
+          "type": "string"
+        },
+        {
+          "slug": "english_generation_note_version",
+          "label": "English Generation Note Version",
+          "type": "string"
+        },
+        {
+          "slug": "english_generation_content_hash",
+          "label": "English Generation Content Hash",
+          "type": "string"
+        },
+        {
+          "slug": "english_generation_failure_reason",
+          "label": "English Generation Failure Reason",
+          "type": "text"
+        },
+        {
+          "slug": "english_generation_gate_results",
+          "label": "English Generation Gate Results",
+          "type": "json"
         }
       ]
     },

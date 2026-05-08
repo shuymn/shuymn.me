@@ -37,7 +37,7 @@
 - Local EmDash uses SQLite at `data.db` and local media under `uploads/`; Cloudflare mode is selected with `EMDASH_RUNTIME=cloudflare`.
 - Treat `seed/seed.json` as the local schema/content seed source. After changing schema or seed content, run the seed/bootstrap flow needed to verify it.
 - For EmDash pages, pass returned `cacheHint` values to `Astro.cache.set(cacheHint)` when using APIs that provide cache hints.
-- Use `entry.id` for slugs and `entry.data.id` for database IDs used by EmDash APIs.
+- Use unprefixed content slugs (`entry.slug` at runtime or `entry.data.slug` in generated types) for public URLs; `entry.id` may include the locale prefix such as `en/<slug>`. Use `entry.data.id` for database IDs used by EmDash APIs.
 - For EmDash image fields, render with the `Image` component from `emdash/ui` instead of treating image values as strings.
 
 ## Project Commands
@@ -55,6 +55,14 @@ pnpm run typecheck
 pnpm run bootstrap
 pnpm run seed
 ```
+
+## Environment Variables
+
+- `.envrc` uses direnv `dotenv`; create `.env` from `.env.example`, fill local values, and run `direnv allow`.
+- EmDash connection: `EMDASH_BASE_URL`, `EMDASH_API_TOKEN`, `EMDASH_DEV_BYPASS`.
+- EmDash runtime/access: `EMDASH_RUNTIME`, `EMDASH_ACCESS_DEFAULT_ROLE`, `CF_ACCESS_TEAM_DOMAIN`.
+- English generation: `ENGLISH_GENERATION_API_KEY`, `ENGLISH_GENERATION_MODEL`, `ENGLISH_EDIT_MODEL`, `ENGLISH_REVIEW_MODEL`, `ENGLISH_GENERATION_LIMIT`, `ENGLISH_GENERATION_MAX_FIX_ATTEMPTS`, `ENGLISH_GENERATION_TEMPERATURE`.
+- Cloudflare AI Gateway: `CF_AIG_ACCOUNT_ID`, `CF_AIG_GATEWAY`, `CF_AIG_TOKEN`.
 
 ## Skills
 

@@ -2,7 +2,16 @@
 import { decodeSlug, getEmDashEntry } from "emdash";
 import { PortableText } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import { DEFAULT_LOCALE, formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText } from "../lib/i18n";
+import { getEnglishTranslationSourceSlug, shouldRenderEnglishTranslationNote } from "../lib/englishGeneration";
+import {
+    DEFAULT_LOCALE,
+    formatDate,
+    getContentSlug,
+    getCurrentLocale,
+    getHomePath,
+    getPostPath,
+    getPublicText,
+} from "../lib/i18n";
 
 const slug = decodeSlug(Astro.params.slug);
 const locale = getCurrentLocale(Astro.currentLocale);
@@ -14,15 +23,20 @@ const defaultLocalePostResult = shouldFallbackToDefaultLocale
     : null;
 const postResult = defaultLocalePostResult?.entry ? defaultLocalePostResult : localizedPostResult;
 const post = postResult?.entry ?? null;
-if (postResult?.cacheHint) {
-    Astro.cache.set(postResult.cacheHint);
+for (const cacheHint of [localizedPostResult?.cacheHint, defaultLocalePostResult?.cacheHint]) {
+    if (cacheHint) {
+        Astro.cache.set(cacheHint);
+    }
 }
 const publicText = getPublicText(locale);
 const homePath = getHomePath(locale);
-const isNotFound = !slug || !post;
+const postSlug = post ? getContentSlug(post) : null;
+const isNotFound = !slug || !post || !postSlug;
 
 const publishedIso = post?.data.publishedAt?.toISOString() ?? null;
 const modifiedIso = post?.data.updatedAt?.toISOString() ?? null;
+const showTranslationNote = post ? shouldRenderEnglishTranslationNote(post.data, locale) : false;
+const translationSourceSlug = post ? getEnglishTranslationSourceSlug(post.data) : "";
 
 if (isNotFound) {
     Astro.response.status = 404;
@@ -47,8 +61,8 @@ if (isNotFound) {
       type="article"
       publishedTime={publishedIso}
       modifiedTime={modifiedIso}
-      content={{ collection: "posts", id: post.data.id, slug: post.id }}
-      path={getPostPath(post.id, locale)}
+      content={{ collection: "posts", id: post.data.id, slug: postSlug }}
+      path={getPostPath(postSlug, locale)}
     >
       <main>
         <article class="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32 dark:prose-invert prose-pre:bg-surface">
@@ -57,6 +71,14 @@ if (isNotFound) {
             <h1>{post.data.title}</h1>
             {post.data.description && <p>{post.data.description}</p>}
           </header>
+          {
+            showTranslationNote && (
+              <aside class="translation-note" aria-label={publicText.translationNoteLabel}>
+                <p>{publicText.translationNoteText}</p>
+                <a href={getPostPath(translationSourceSlug, DEFAULT_LOCALE)}>{publicText.translationNoteSourceLink}</a>
+              </aside>
+            )
+          }
           <div>
             {post.data.content ? <PortableText value={post.data.content} /> : null}
           </div>

@@ -19,6 +19,9 @@ export const PUBLIC_TEXT_BY_LOCALE = {
     notFoundTitle: "404",
     notFoundMessage: "ページが見つかりませんでした。",
     notFoundHomeLink: "トップページへ戻る",
+    translationNoteLabel: "翻訳注釈",
+    translationNoteText: "この英語版は日本語の原文から自動翻訳されています。正本は日本語の記事です。",
+    translationNoteSourceLink: "日本語の原文を読む",
   },
   en: {
     aboutLabel: "Profile and site information",
@@ -29,6 +32,10 @@ export const PUBLIC_TEXT_BY_LOCALE = {
     notFoundTitle: "404",
     notFoundMessage: "Page not found.",
     notFoundHomeLink: "Back to home",
+    translationNoteLabel: "Translation note",
+    translationNoteText:
+      "This English version was generated automatically from the Japanese original. The Japanese post is the canonical source.",
+    translationNoteSourceLink: "Read the Japanese original",
   },
 } as const;
 
@@ -56,8 +63,13 @@ export function getHomePath(locale?: string): string {
   return localizePath("/", locale);
 }
 
+export function getContentSlug(entry: { id?: unknown; slug?: unknown; data?: { slug?: unknown } }): string {
+  const rawSlug = [entry.slug, entry.data?.slug, entry.id].find((value) => typeof value === "string");
+  return normalizeContentSlug(typeof rawSlug === "string" ? rawSlug : "");
+}
+
 export function getPostPath(slug: string, locale?: string): string {
-  const normalizedSlug = slug.replace(/^\/+|\/+$/g, "");
+  const normalizedSlug = normalizeContentSlug(slug);
   return localizePath(`/posts/${normalizedSlug}`, locale);
 }
 
@@ -80,4 +92,9 @@ function stripLocalePrefix(path: string): string {
     if (path.startsWith(`${prefix}/`)) return path.slice(prefix.length);
   }
   return path;
+}
+
+function normalizeContentSlug(slug: string): string {
+  const trimmed = slug.replace(/^\/+|\/+$/g, "");
+  return stripLocalePrefix(`/${trimmed}`).replace(/^\/+/, "");
 }

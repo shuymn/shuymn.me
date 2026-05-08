@@ -1,7 +1,6 @@
-diff --git a/dist/index.js b/dist/index.js
 --- a/dist/index.js
 +++ b/dist/index.js
-@@ -6002,8 +6002,8 @@
+@@ -6226,8 +6226,8 @@
  				markDefs: markDefs.length > 0 ? markDefs : void 0
  			};
  		}
@@ -12,7 +11,7 @@ diff --git a/dist/index.js b/dist/index.js
  		case "blockquote": {
  			const blocks = [];
  			const blockquoteContent = node.content || [];
-@@ -6066,7 +6066,7 @@
+@@ -6290,7 +6290,7 @@
  		default: return null;
  	}
  }
@@ -21,7 +20,7 @@ diff --git a/dist/index.js b/dist/index.js
  	const blocks = [];
  	const typedItems = items;
  	for (const item of typedItems) if (item.type === "listItem") {
-@@ -6078,11 +6078,15 @@
+@@ -6302,11 +6302,15 @@
  				_key: generateKey(),
  				style: "normal",
  				listItem,
@@ -38,7 +37,7 @@ diff --git a/dist/index.js b/dist/index.js
  	}
  	return blocks;
  }
-@@ -6168,15 +6172,14 @@
+@@ -6392,15 +6396,14 @@
  		const block = blocks[i];
  		if (isTextBlock(block) && block.listItem) {
  			const listBlocks = [];
@@ -56,7 +55,7 @@ diff --git a/dist/index.js b/dist/index.js
  		} else {
  			const converted = convertPTBlock(block);
  			if (converted) content.push(converted);
-@@ -6272,21 +6275,64 @@
+@@ -6496,22 +6499,65 @@
  		}
  	}
  }
@@ -127,10 +126,11 @@ diff --git a/dist/index.js b/dist/index.js
 +		}
 +	}
 +	return [lists, index];
-+}
+ }
 +function getListLevel(item) {
 +	const level = item?.level;
 +	return typeof level === "number" && Number.isFinite(level) && level > 0 ? Math.floor(level) : 1;
- }
++}
  function convertPTSpans(spans, markDefs) {
  	const nodes = [];
+ 	const markDefsMap = new Map(markDefs.map((md) => [md._key, md]));

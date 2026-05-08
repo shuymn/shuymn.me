@@ -154,14 +154,19 @@ export type ExistingEnglishCandidateReasonCode =
 
 const OPAQUE_BLOCK_PATTERN = /<!--ec:block\s+.+?-->/s;
 const DEFAULT_PRIVATE_PATTERNS = [/(?:^|\s)#private(?:\s|$)/i, /<!--\s*private\s*-->/i, /\bprivate:\s*true\b/i];
-const CODE_FENCE_LINE_PATTERN = /^ {0,3}```/;
-const CODE_FENCE_START_PATTERN = /^ {0,3}```/gm;
-const CODE_BLOCK_PATTERN = /^ {0,3}```[^\n]*\n([\s\S]*?)\n {0,3}```[ \t]*(?=\n|$)/gm;
+const CODE_FENCE_OPEN_PATTERN = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+const CODE_FENCE_CLOSE_PATTERN = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
 const MARKDOWN_LINK_PATTERN = /!?\[[^\]]*]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
 const RAW_URL_PATTERN = /\bhttps?:\/\/[^\s<>)]+/g;
 const DUPLICATE_NOTE_PATTERN = /automatically translated|Japanese original|canonical source/i;
 const TABLE_SEPARATOR_CELL_PATTERN = /^:?-{3,}:?$/;
 let generatedTableKeyCounter = 0;
+
+type MarkdownCodeFence = {
+  marker: "`" | "~";
+  length: number;
+  info: string;
+};
 
 export function shouldRenderEnglishTranslationNote(data: unknown, locale: string | null | undefined): boolean {
   return (
@@ -415,13 +420,14 @@ export function buildTranslationEditPrompt({
 }
 
 export function normalizeTranslationPayload(output: TranslationModelOutput): TranslationPayload {
-  const contentPortableText = markdownToPortableTextWithTables(output.contentMarkdown.trim());
+  const contentMarkdown = output.contentMarkdown.trim();
+  const contentPortableText = markdownToPortableTextWithTables(contentMarkdown);
   return {
     ...output,
     title: output.title.trim(),
     description: output.description.trim(),
     seoDescription: output.seoDescription.trim(),
-    contentMarkdown: portableTextToTranslatableMarkdown(contentPortableText).trim(),
+    contentMarkdown,
     contentPortableText,
   };
 }
@@ -768,14 +774,38 @@ export function buildEnglishGenerationSeo({
 }
 
 export function hasBalancedCodeFences(markdown: unknown): boolean {
-  const matches = String(markdown ?? "").match(CODE_FENCE_START_PATTERN);
-  return (matches?.length ?? 0) % 2 === 0;
+  let activeFence: MarkdownCodeFence | null = null;
+  for (const line of String(markdown ?? "").split("\n")) {
+    if (activeFence) {
+      if (isClosingCodeFence(line, activeFence)) activeFence = null;
+      continue;
+    }
+    activeFence = parseCodeFenceOpening(line);
+  }
+  return activeFence === null;
 }
 
 export function extractMarkdownCodeBlocks(markdown: unknown): string[] {
   const blocks: string[] = [];
-  for (const match of String(markdown ?? "").matchAll(CODE_BLOCK_PATTERN)) {
-    blocks.push(match[0]);
+  let activeFence: MarkdownCodeFence | null = null;
+  let blockLines: string[] = [];
+
+  for (const line of String(markdown ?? "").split("\n")) {
+    if (activeFence) {
+      blockLines.push(line);
+      if (isClosingCodeFence(line, activeFence)) {
+        blocks.push(blockLines.join("\n"));
+        activeFence = null;
+        blockLines = [];
+      }
+      continue;
+    }
+
+    const openingFence = parseCodeFenceOpening(line);
+    if (openingFence) {
+      activeFence = openingFence;
+      blockLines = [line];
+    }
   }
   return blocks;
 }
@@ -872,7 +902,8 @@ function markdownToPortableTextWithTables(markdown: string): PortableTextBlock[]
   const lines = markdown.split("\n");
   const pendingLines: string[] = [];
   let index = 0;
-  let isInsideCodeFence = false;
+  let activeFence: MarkdownCodeFence | null = null;
+  let activeFenceLines: string[] = [];
 
   const flushPendingLines = () => {
     const pendingMarkdown = pendingLines.join("\n").trim();
@@ -884,14 +915,28 @@ function markdownToPortableTextWithTables(markdown: string): PortableTextBlock[]
 
   while (index < lines.length) {
     const line = lines[index] ?? "";
-    if (isCodeFenceLine(line)) {
-      pendingLines.push(normalizeCodeFenceLine(line));
-      isInsideCodeFence = !isInsideCodeFence;
+    if (activeFence) {
+      if (isClosingCodeFence(line, activeFence)) {
+        blocks.push(buildCodeBlock(activeFence, activeFenceLines.join("\n")));
+        activeFence = null;
+        activeFenceLines = [];
+      } else {
+        activeFenceLines.push(line);
+      }
       index++;
       continue;
     }
 
-    const table = isInsideCodeFence ? null : parseMarkdownTable(lines, index);
+    const openingFence = parseCodeFenceOpening(line);
+    if (openingFence) {
+      flushPendingLines();
+      activeFence = openingFence;
+      activeFenceLines = [];
+      index++;
+      continue;
+    }
+
+    const table = parseMarkdownTable(lines, index);
     if (table) {
       flushPendingLines();
       blocks.push(table.block);
@@ -905,6 +950,19 @@ function markdownToPortableTextWithTables(markdown: string): PortableTextBlock[]
 
   flushPendingLines();
   return blocks;
+}
+
+function buildCodeBlock(fence: MarkdownCodeFence, code: string): PortableTextBlock {
+  const [language = ""] = fence.info.trim().split(/\s+/, 1);
+  const block = {
+    _type: "code",
+    _key: generateTableKey("code"),
+    code,
+  } as PortableTextBlock;
+  if (language) {
+    (block as JsonRecord).language = language;
+  }
+  return block;
 }
 
 function isTableBlock(block: PortableTextBlock): boolean {
@@ -1009,15 +1067,19 @@ function extractMarkdownTableSignatures(markdown: string): MarkdownTableSignatur
   const lines = markdown.split("\n");
   const signatures: MarkdownTableSignature[] = [];
   let index = 0;
-  let isInsideCodeFence = false;
+  let activeFence: MarkdownCodeFence | null = null;
 
   while (index < lines.length) {
-    if (isCodeFenceLine(lines[index] ?? "")) {
-      isInsideCodeFence = !isInsideCodeFence;
+    const line = lines[index] ?? "";
+    if (activeFence) {
+      if (isClosingCodeFence(line, activeFence)) activeFence = null;
       index++;
       continue;
     }
-    if (isInsideCodeFence) {
+
+    const openingFence = parseCodeFenceOpening(line);
+    if (openingFence) {
+      activeFence = openingFence;
       index++;
       continue;
     }
@@ -1128,12 +1190,21 @@ function buildTableBlock(rowLines: string[], hasHeaderRow: boolean): PortableTex
   };
 }
 
-function isCodeFenceLine(line: string): boolean {
-  return CODE_FENCE_LINE_PATTERN.test(line);
+function parseCodeFenceOpening(line: string): MarkdownCodeFence | null {
+  const match = line.match(CODE_FENCE_OPEN_PATTERN);
+  const delimiter = match?.[1];
+  if (!delimiter) return null;
+  return {
+    marker: delimiter[0] as "`" | "~",
+    length: delimiter.length,
+    info: match[2] ?? "",
+  };
 }
 
-function normalizeCodeFenceLine(line: string): string {
-  return line.replace(/^ {1,3}(```)/, "$1");
+function isClosingCodeFence(line: string, fence: MarkdownCodeFence): boolean {
+  const match = line.match(CODE_FENCE_CLOSE_PATTERN);
+  const delimiter = match?.[1];
+  return Boolean(delimiter && delimiter[0] === fence.marker && delimiter.length >= fence.length);
 }
 
 function isMarkdownTableRow(line: string | undefined): line is string {

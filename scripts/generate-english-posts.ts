@@ -676,6 +676,7 @@ function buildLinkedEnglishRepair({
   const publishedAtMismatch = existing.publishedAt !== source.publishedAt;
 
   if (slugMismatch) {
+    dataPatch.english_generation_source_slug = resolveEnglishSlug(source);
     reasons.push("slug");
   }
   if (publishedAtMismatch) {

@@ -12,6 +12,7 @@ import {
   type ContentItemLike,
   classifyExistingEnglishCandidate,
   ENGLISH_GENERATION_MANAGED_PUBLISHED,
+  extractMarkdownCodeBlocks,
   normalizeTranslationPayload,
   precheckSourcePost,
   reviewPayloadSchema,
@@ -253,7 +254,76 @@ test("translation normalization preserves table-like Markdown inside indented co
     translation.contentPortableText.some((block) => block._type === "code"),
     true,
   );
-  assert.match(translation.contentMarkdown, /```md\n\| Name \| Value \|\n\| --- \| --- \|\n\| foo \| bar \|\n```/);
+  assert.equal(
+    translation.contentMarkdown.includes(
+      ["   ```md", "| Name | Value |", "| --- | --- |", "| foo | bar |", "   ```"].join("\n"),
+    ),
+    true,
+  );
+});
+
+test("translation normalization preserves table-like Markdown inside longer and tilde code fences", () => {
+  const quadrupleFenceMarkdown = [
+    "A nested Markdown fence example:",
+    "",
+    "````md",
+    "```ts",
+    "| Name | Value |",
+    "| --- | --- |",
+    "| foo | bar |",
+    "```",
+    "````",
+  ].join("\n");
+  const quadrupleFenceTranslation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Nested Markdown Example",
+      description: "",
+      seoDescription: "",
+      contentMarkdown: quadrupleFenceMarkdown,
+    }),
+  );
+
+  assert.equal(
+    quadrupleFenceTranslation.contentPortableText.some((block) => block._type === "table"),
+    false,
+  );
+  assert.equal(
+    quadrupleFenceTranslation.contentPortableText.some((block) => block._type === "code"),
+    true,
+  );
+  assert.deepEqual(extractMarkdownCodeBlocks(quadrupleFenceMarkdown), [
+    ["````md", "```ts", "| Name | Value |", "| --- | --- |", "| foo | bar |", "```", "````"].join("\n"),
+  ]);
+
+  const tildeFenceMarkdown = [
+    "A tilde Markdown fence example:",
+    "",
+    "~~~md",
+    "| Name | Value |",
+    "| --- | --- |",
+    "| foo | bar |",
+    "~~~",
+  ].join("\n");
+  const tildeFenceTranslation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Tilde Markdown Example",
+      description: "",
+      seoDescription: "",
+      contentMarkdown: tildeFenceMarkdown,
+    }),
+  );
+
+  assert.equal(
+    tildeFenceTranslation.contentPortableText.some((block) => block._type === "table"),
+    false,
+  );
+  assert.equal(
+    tildeFenceTranslation.contentPortableText.some((block) => block._type === "code"),
+    true,
+  );
+  assert.deepEqual(extractMarkdownCodeBlocks(tildeFenceMarkdown), [
+    ["~~~md", "| Name | Value |", "| --- | --- |", "| foo | bar |", "~~~"].join("\n"),
+  ]);
 });
 
 test("headerless EmDash tables round-trip without gaining a header row", () => {
@@ -923,6 +993,22 @@ test("existing English translations with different slugs are repaired without re
     }),
     false,
   );
+
+  const repair = testInternals.buildLinkedEnglishRepair({
+    existing: {
+      slug: "runtime-notes-in-english",
+      publishedAt: "2026-05-09T00:00:00.000Z",
+      data: {
+        english_generation_source_slug: "runtime-notes-in-english",
+      },
+      seo: {},
+    },
+    source,
+  });
+  assert.deepEqual(repair.update, {
+    slug: "runtime-notes",
+    data: { english_generation_source_slug: "runtime-notes" },
+  });
 });
 
 test("existing linked English metadata is repaired without regeneration when source optional fields are unset", () => {

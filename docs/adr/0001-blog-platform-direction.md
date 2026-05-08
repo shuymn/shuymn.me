@@ -53,6 +53,14 @@ standard plugin surface cannot express the whole contract, use site-native Astro
 routes, host-side APIs, CLI automation, trusted first-party extensions, or
 standalone Cloudflare Workers instead.
 
+For the currently installed EmDash 0.9.0 API, the standard plugin
+`content:write` surface writes collection field data and optional SEO metadata,
+but not `slug`, `status`, `locale`, `translationOf`, author/byline,
+`publishedAt`, publish state, or taxonomy relationships. English
+auto-publication, accepted taxonomy assignments, and public OGP image delivery
+therefore need a verified host-side/API/CLI/trusted-extension path rather than a
+pure standard plugin implementation.
+
 Plugin hooks are triggers, not the sole source of durable publishing changes.
 `content:beforeSave` must stay deterministic and must not call LLM providers.
 `content:afterSave` and `content:afterPublish` may mark generated suggestions

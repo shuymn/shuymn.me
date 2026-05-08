@@ -1,4 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>shuymn/github-actions#main"]
+  "extends": ["github>shuymn/github-actions#main"],
+  "packageRules": [
+    {
+      "description": "Group EmDash packages so related releases are upgraded together.",
+      "matchPackageNames": ["emdash", "/^@emdash-cms\\//"],
+      "groupName": "EmDash packages",
+      "groupSlug": "emdash"
+    }
+  ]
 }

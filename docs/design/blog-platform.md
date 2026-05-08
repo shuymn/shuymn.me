@@ -196,6 +196,42 @@ standalone Cloudflare Worker that does. A plugin may still own suggestion
 generation and review state, but durable publishing actions should live where the
 relevant EmDash or infrastructure API is available.
 
+Verified boundary for the currently installed EmDash 0.9.0 API:
+
+- Standard plugins can declare `content:read`, `content:write`, `media:read`,
+  `media:write`, `network:request`, scoped storage, KV, hooks, and plugin routes.
+- Standard plugin `content:write` exposes `ctx.content.create`, `update`, and
+  `delete`, but its write input is collection field data plus optional `seo`.
+  It does not expose the full content envelope needed for `slug`, `status`,
+  `locale`, `translationOf`, author/byline, `publishedAt`, or publishing state.
+- EmDash's REST/API handler and CLI content command can create localized
+  translation siblings with `slug`, `locale`, and `translationOf`, then publish
+  the result. Use that host-side/API/CLI path for English auto-publication unless
+  the standard plugin API grows an equivalent verified contract.
+- Taxonomy relationship writes are available through EmDash's content-term API
+  and database repository, not through the current plugin context. A plugin may
+  propose accepted terms, but the actual relationship write should use a private
+  host-side/API path or trusted first-party extension.
+- Plugin routes return JSON-shaped API responses through
+  `/_emdash/api/plugins/...`; they are not the right primary surface for public,
+  cacheable binary OGP images. OGP rendering should live in an Astro route,
+  pre-generation CLI, host-side service, or standalone Worker depending on
+  Cloudflare runtime proof.
+- Sandboxed plugins run in isolated workers with capability-gated access,
+  restricted HTTP through `allowedHosts`, no Node built-ins, resource limits, and
+  no direct Cloudflare bindings. Cloudflare Analytics, R2/D1 binding work,
+  scheduled durable jobs, and raw infrastructure telemetry should stay outside
+  the standard plugin.
+
+Verification evidence: `package.json` uses `emdash` 0.9.0; inspected
+`node_modules/emdash/src/plugins/types.ts`, `plugins/context.ts`,
+`plugins/hooks.ts`, `api/schemas/content.ts`, `api/handlers/content.ts`,
+`astro/routes/api/content/[collection]/index.ts`,
+`astro/routes/api/content/[collection]/[id]/publish.ts`,
+`astro/routes/api/content/[collection]/[id]/terms/[taxonomy].ts`,
+`plugins/routes.ts`, `astro/routes/api/plugins/[pluginId]/[...path].ts`, and
+`cli/commands/content.ts`.
+
 Use a standalone Cloudflare Worker when the work is primarily infrastructure-side:
 
 - reading Cloudflare Analytics, logs, queues, schedules, R2, D1, Workers AI, or

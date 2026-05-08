@@ -295,6 +295,7 @@ export async function processSourcePost({
   await publishEnglishCandidate(client, written.id, normalizedSource.publishedAt);
   const verified = await verifyPublishedEnglishTranslation(client, normalizedSource.id, written.id, {
     expectedPublishedAt: normalizedSource.publishedAt,
+    expectedSlug: resolveEnglishSlug(normalizedSource),
   });
 
   return {
@@ -318,8 +319,8 @@ function parseArgs(args: string[], env: NodeJS.ProcessEnv): CliOptions {
     cfAiGatewayGateway: env.CF_AIG_GATEWAY,
     cfAiGatewayToken: env.CF_AIG_TOKEN,
     model: env.ENGLISH_GENERATION_MODEL,
-    editModel: env.ENGLISH_EDIT_MODEL ?? env.ENGLISH_GENERATION_MODEL,
-    reviewModel: env.ENGLISH_REVIEW_MODEL ?? env.ENGLISH_GENERATION_MODEL,
+    editModel: env.ENGLISH_EDIT_MODEL,
+    reviewModel: env.ENGLISH_REVIEW_MODEL,
     source: undefined,
     limit: Number(env.ENGLISH_GENERATION_LIMIT ?? DEFAULT_LIMIT),
     maxFixAttempts: Number(env.ENGLISH_GENERATION_MAX_FIX_ATTEMPTS ?? DEFAULT_MAX_FIX_ATTEMPTS),
@@ -394,6 +395,9 @@ function parseArgs(args: string[], env: NodeJS.ProcessEnv): CliOptions {
         throw new Error(`Unknown option: ${arg}`);
     }
   }
+
+  options.editModel ??= options.model;
+  options.reviewModel ??= options.model;
 
   if (!Number.isInteger(options.limit) || options.limit < 1) {
     throw new Error("--limit must be a positive integer");
@@ -696,7 +700,7 @@ async function verifyPublishedEnglishTranslation(
   client: Client,
   sourceId: string,
   englishId: string,
-  options: { expectedPublishedAt: string },
+  options: { expectedPublishedAt: string; expectedSlug: string },
 ): Promise<{ item: ContentItem; translations: Awaited<ReturnType<Client["translations"]>> }> {
   const [item, translations] = await Promise.all([
     client.get(POSTS_COLLECTION, englishId, { raw: true }),
@@ -711,6 +715,11 @@ async function verifyPublishedEnglishTranslation(
   if (item.publishedAt !== options.expectedPublishedAt) {
     throw new Error(
       `English translation ${englishId} publishedAt is ${item.publishedAt ?? "null"}, expected ${options.expectedPublishedAt}`,
+    );
+  }
+  if (item.slug !== options.expectedSlug) {
+    throw new Error(
+      `English translation ${englishId} slug is ${item.slug ?? "null"}, expected ${options.expectedSlug}`,
     );
   }
 
@@ -828,4 +837,5 @@ export const testInternals = {
   resolveEnglishSlug,
   serializeError,
   shouldRepairEnglishSlug,
+  verifyPublishedEnglishTranslation,
 };

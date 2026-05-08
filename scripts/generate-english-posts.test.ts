@@ -183,6 +183,58 @@ test("translation normalization converts Markdown tables back to EmDash table bl
   assert.match(translation.contentMarkdown, /\| Old \| \[Gatsby\.js]\(https:\/\/www\.gatsbyjs\.com\/\) \| Netlify \|/);
 });
 
+test("translation normalization preserves table-like Markdown inside code fences", () => {
+  const translation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Markdown Example",
+      description: "",
+      seoDescription: "",
+      contentMarkdown: [
+        "A Markdown table example:",
+        "",
+        "```md",
+        "| Name | Value |",
+        "| --- | --- |",
+        "| foo | bar |",
+        "```",
+      ].join("\n"),
+    }),
+  );
+
+  assert.equal(
+    translation.contentPortableText.some((block) => block._type === "table"),
+    false,
+  );
+  assert.equal(
+    translation.contentPortableText.some((block) => block._type === "code"),
+    true,
+  );
+  assert.match(translation.contentMarkdown, /```md\n\| Name \| Value \|\n\| --- \| --- \|\n\| foo \| bar \|\n```/);
+});
+
+test("headerless EmDash tables round-trip without gaining a header row", () => {
+  const source = makeSource({
+    content: [textBlock("ヘッダーなしテーブルです。"), headerlessTableBlock()],
+  });
+
+  const precheck = precheckSourcePost(source);
+  const translation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Headerless Table",
+      description: "A translated description.",
+      seoDescription: "",
+      contentMarkdown: precheck.source.contentMarkdown,
+    }),
+  );
+  const table = translation.contentPortableText.find((block) => block._type === "table");
+
+  assert.equal(precheck.passed, true);
+  assert.match(precheck.source.contentMarkdown, /^\| --- \| --- \|\n\| 左 \| 右 \|/m);
+  assert.ok(table);
+  assert.equal((table as { hasHeaderRow?: unknown }).hasHeaderRow, false);
+  assert.equal(((table as { rows?: unknown[] }).rows ?? []).length, 2);
+});
+
 test("review prompt uses a publishability rubric instead of requiring perfect translation", () => {
   const source = precheckSourcePost(makeSource()).source;
   const translation = makePassingTranslation();
@@ -342,6 +394,18 @@ test("deterministic checks require exact code block and URL preservation", () =>
   });
   assert.equal(failing.passed, false);
   assert.match(failing.failures.join("\n"), /code block 1 was not preserved exactly/);
+
+  const addedLink = runDeterministicChecks({
+    source,
+    translation: {
+      ...translation,
+      contentMarkdown: `${translation.contentMarkdown}\n\nSee also https://example.com/unrelated.`,
+    },
+    review,
+    noteVersion: TRANSLATION_NOTE_VERSION,
+  });
+  assert.equal(addedLink.passed, false);
+  assert.match(addedLink.failures.join("\n"), /unexpected translated links: https:\/\/example\.com\/unrelated/);
 });
 
 test("deterministic checks require Markdown table preservation", () => {
@@ -535,6 +599,20 @@ test("CLI options read Cloudflare AI Gateway config from env and flags", () => {
   assert.equal(flagOptions.cfAiGatewayToken, "cf-token-flag");
 });
 
+test("CLI --model becomes the default edit and review model when dedicated models are unset", () => {
+  const options = testInternals.parseArgs(["--model", "translation-flag"], {
+    EMDASH_API_TOKEN: "emdash-token",
+    ENGLISH_GENERATION_API_KEY: "openrouter-token",
+    CF_AIG_ACCOUNT_ID: "account-id",
+    CF_AIG_GATEWAY: "gateway-name",
+    CF_AIG_TOKEN: "cf-token",
+  });
+
+  assert.equal(options.model, "translation-flag");
+  assert.equal(options.editModel, "translation-flag");
+  assert.equal(options.reviewModel, "translation-flag");
+});
+
 test("OpenRouter fixed config does not require a provider base URL", () => {
   assert.doesNotThrow(() =>
     testInternals.parseArgs([], {
@@ -580,6 +658,30 @@ test("provider errors include safe HTTP diagnostics without request prompts", ()
     url: "https://example.test/v1/chat/completions",
     responseBody: { error: { message: "response_format is not supported" } },
   });
+});
+
+test("published English verification rejects slug drift", async () => {
+  const client = {
+    get: async () => ({
+      id: "01ENGLISH",
+      slug: "translated-title",
+      status: "published",
+      locale: "en",
+      publishedAt: "2026-05-09T00:00:00.000Z",
+    }),
+    translations: async () => ({
+      translations: [{ id: "01ENGLISH", locale: "en" }],
+    }),
+  };
+
+  await assert.rejects(
+    () =>
+      testInternals.verifyPublishedEnglishTranslation(client as never, "01SOURCE", "01ENGLISH", {
+        expectedPublishedAt: "2026-05-09T00:00:00.000Z",
+        expectedSlug: "runtime-notes",
+      }),
+    /slug is translated-title, expected runtime-notes/,
+  );
 });
 
 test("English translation slug stays identical to the Japanese source slug", () => {
@@ -777,6 +879,26 @@ function tableBlock(): PortableTextBlock {
         _type: "tableRow",
         _key: "row-c",
         cells: [tableCell("新"), tableCell("Next.js"), tableCell("Vercel")],
+      },
+    ],
+  };
+}
+
+function headerlessTableBlock(): PortableTextBlock {
+  return {
+    _type: "table",
+    _key: "table-headerless",
+    hasHeaderRow: false,
+    rows: [
+      {
+        _type: "tableRow",
+        _key: "row-left-right",
+        cells: [tableCell("左"), tableCell("右")],
+      },
+      {
+        _type: "tableRow",
+        _key: "row-up-down",
+        cells: [tableCell("上"), tableCell("下")],
       },
     ],
   };

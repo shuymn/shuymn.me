@@ -111,6 +111,7 @@ export type DeterministicGateResult = {
       source: string[];
       translated: string[];
       missing: string[];
+      extra: string[];
     };
     review: {
       passed: boolean;
@@ -557,8 +558,12 @@ export function runDeterministicChecks({
   }
 
   const missingLinks = sourceLinks.filter((link) => !translatedLinks.includes(link));
+  const extraLinks = translatedLinks.filter((link) => !sourceLinks.includes(link));
   if (missingLinks.length > 0) {
     failures.push(`missing preserved links: ${missingLinks.join(", ")}`);
+  }
+  if (extraLinks.length > 0) {
+    failures.push(`unexpected translated links: ${extraLinks.join(", ")}`);
   }
   if (sourceTableCount !== translatedTableCount) {
     failures.push(`Markdown table count changed from ${sourceTableCount} to ${translatedTableCount}`);
@@ -583,6 +588,7 @@ export function runDeterministicChecks({
         source: sourceLinks,
         translated: translatedLinks,
         missing: missingLinks,
+        extra: extraLinks,
       },
       review: {
         passed: review.passed,
@@ -781,6 +787,7 @@ function markdownToPortableTextWithTables(markdown: string): PortableTextBlock[]
   const lines = markdown.split("\n");
   const pendingLines: string[] = [];
   let index = 0;
+  let isInsideCodeFence = false;
 
   const flushPendingLines = () => {
     const pendingMarkdown = pendingLines.join("\n").trim();
@@ -791,7 +798,15 @@ function markdownToPortableTextWithTables(markdown: string): PortableTextBlock[]
   };
 
   while (index < lines.length) {
-    const table = parseMarkdownTable(lines, index);
+    const line = lines[index] ?? "";
+    if (isCodeFenceLine(line)) {
+      pendingLines.push(line);
+      isInsideCodeFence = !isInsideCodeFence;
+      index++;
+      continue;
+    }
+
+    const table = isInsideCodeFence ? null : parseMarkdownTable(lines, index);
     if (table) {
       flushPendingLines();
       blocks.push(table.block);
@@ -819,8 +834,12 @@ function renderTableBlock(block: PortableTextBlock): string {
 
   const columnCount = Math.max(...rows.map((row) => row.length));
   const paddedRows = rows.map((row) => padTableRow(row, columnCount));
-  const [headerRow = [], ...bodyRows] = paddedRows;
   const separatorRow = Array.from({ length: columnCount }, () => "---");
+  if (asRecord(block).hasHeaderRow === false) {
+    return [renderMarkdownTableRow(separatorRow), ...paddedRows.map(renderMarkdownTableRow)].join("\n").trim();
+  }
+
+  const [headerRow = [], ...bodyRows] = paddedRows;
 
   return [
     renderMarkdownTableRow(headerRow),
@@ -869,7 +888,23 @@ function parseMarkdownTable(
 ): { block: PortableTextBlock; nextIndex: number } | null {
   const headerLine = lines[startIndex];
   const separatorLine = lines[startIndex + 1];
-  if (headerLine === undefined || separatorLine === undefined) return null;
+  if (headerLine === undefined) return null;
+  if (isMarkdownTableSeparator(headerLine)) {
+    const rowLines: string[] = [];
+    let index = startIndex + 1;
+    while (index < lines.length && isMarkdownTableRow(lines[index]) && !isMarkdownTableSeparator(lines[index])) {
+      rowLines.push(lines[index]);
+      index++;
+    }
+    if (rowLines.length === 0) return null;
+
+    return {
+      block: buildTableBlock(rowLines, false),
+      nextIndex: index,
+    };
+  }
+
+  if (separatorLine === undefined) return null;
   if (!isMarkdownTableRow(headerLine) || !isMarkdownTableSeparator(separatorLine)) return null;
 
   const rowLines = [headerLine];
@@ -879,21 +914,8 @@ function parseMarkdownTable(
     index++;
   }
 
-  const rows = rowLines.map((line, rowIndex) => ({
-    _type: "tableRow",
-    _key: generateTableKey("row"),
-    cells: splitMarkdownTableRow(line).map((cell, cellIndex) =>
-      markdownTableCellToPortableTextCell(cell, rowIndex, cellIndex),
-    ),
-  }));
-
   return {
-    block: {
-      _type: "table",
-      _key: generateTableKey("table"),
-      hasHeaderRow: true,
-      rows,
-    },
+    block: buildTableBlock(rowLines, true),
     nextIndex: index,
   };
 }
@@ -902,8 +924,26 @@ function countMarkdownTables(markdown: string): number {
   const lines = markdown.split("\n");
   let count = 0;
   let index = 0;
+  let isInsideCodeFence = false;
 
   while (index < lines.length) {
+    if (isCodeFenceLine(lines[index] ?? "")) {
+      isInsideCodeFence = !isInsideCodeFence;
+      index++;
+      continue;
+    }
+    if (isInsideCodeFence) {
+      index++;
+      continue;
+    }
+    if (isMarkdownTableSeparator(lines[index])) {
+      count++;
+      index++;
+      while (index < lines.length && isMarkdownTableRow(lines[index]) && !isMarkdownTableSeparator(lines[index])) {
+        index++;
+      }
+      continue;
+    }
     if (isMarkdownTableRow(lines[index]) && isMarkdownTableSeparator(lines[index + 1])) {
       count++;
       index += 2;
@@ -916,6 +956,25 @@ function countMarkdownTables(markdown: string): number {
   }
 
   return count;
+}
+
+function buildTableBlock(rowLines: string[], hasHeaderRow: boolean): PortableTextBlock {
+  return {
+    _type: "table",
+    _key: generateTableKey("table"),
+    hasHeaderRow,
+    rows: rowLines.map((line, rowIndex) => ({
+      _type: "tableRow",
+      _key: generateTableKey("row"),
+      cells: splitMarkdownTableRow(line).map((cell, cellIndex) =>
+        markdownTableCellToPortableTextCell(cell, rowIndex, cellIndex),
+      ),
+    })),
+  };
+}
+
+function isCodeFenceLine(line: string): boolean {
+  return line.startsWith("```");
 }
 
 function isMarkdownTableRow(line: string | undefined): line is string {

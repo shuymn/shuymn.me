@@ -56,6 +56,14 @@ pnpm run bootstrap
 pnpm run seed
 ```
 
+## Environment Variables
+
+- `.envrc` uses direnv `dotenv`; create `.env` from `.env.example`, fill local values, and run `direnv allow`.
+- EmDash connection: `EMDASH_BASE_URL`, `EMDASH_API_TOKEN`, `EMDASH_DEV_BYPASS`.
+- EmDash runtime/access: `EMDASH_RUNTIME`, `EMDASH_ACCESS_DEFAULT_ROLE`, `CF_ACCESS_TEAM_DOMAIN`.
+- English generation: `ENGLISH_GENERATION_API_KEY`, `ENGLISH_GENERATION_MODEL`, `ENGLISH_EDIT_MODEL`, `ENGLISH_REVIEW_MODEL`, `ENGLISH_GENERATION_LIMIT`, `ENGLISH_GENERATION_MAX_FIX_ATTEMPTS`, `ENGLISH_GENERATION_TEMPERATURE`.
+- Cloudflare AI Gateway: `CF_AIG_ACCOUNT_ID`, `CF_AIG_GATEWAY`, `CF_AIG_TOKEN`.
+
 ## Skills
 
 - Use `building-emdash-site` for Astro + EmDash site work.

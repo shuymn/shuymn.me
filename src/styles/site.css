@@ -231,7 +231,10 @@ body {
 }
 
 .translation-note a {
+  color: var(--color-primary);
   font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .empty-posts {

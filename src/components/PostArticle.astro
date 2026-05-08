@@ -20,7 +20,8 @@ if (postResult?.cacheHint) {
 }
 const publicText = getPublicText(locale);
 const homePath = getHomePath(locale);
-const isNotFound = !slug || !post;
+const postSlug = typeof post?.data.slug === "string" && post.data.slug.length > 0 ? post.data.slug : null;
+const isNotFound = !slug || !post || !postSlug;
 
 const publishedIso = post?.data.publishedAt?.toISOString() ?? null;
 const modifiedIso = post?.data.updatedAt?.toISOString() ?? null;
@@ -51,7 +52,7 @@ if (isNotFound) {
       publishedTime={publishedIso}
       modifiedTime={modifiedIso}
       content={{ collection: "posts", id: post.data.id, slug: post.id }}
-      path={getPostPath(post.id, locale)}
+      path={getPostPath(postSlug, locale)}
     >
       <main>
         <article class="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32 dark:prose-invert prose-pre:bg-surface">

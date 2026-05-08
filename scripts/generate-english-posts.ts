@@ -45,7 +45,7 @@ const DEFAULT_MAX_FIX_ATTEMPTS = 1;
 const POSTS_COLLECTION = "posts";
 
 type Client = InstanceType<typeof EmDashClient>;
-type ContentItemWithSeo = ContentItem & { seo?: unknown };
+type ContentItemWithSeo = ContentItem & { seo?: unknown; _rev?: string };
 
 type CliOptions = {
   baseUrl: string;
@@ -178,7 +178,7 @@ export async function processSourcePost({
   });
 
   const linkedEnglishRepair =
-    existing && classification.action === "skip"
+    existing && shouldRepairLinkedEnglish(classification)
       ? buildLinkedEnglishRepair({ existing, source: normalizedSource })
       : null;
   if (existing && linkedEnglishRepair?.needsRepair) {
@@ -193,7 +193,10 @@ export async function processSourcePost({
       };
     }
 
-    const updated = await updateContent(client, existing.id, linkedEnglishRepair.update);
+    const updated = await updateContent(client, existing.id, {
+      ...linkedEnglishRepair.update,
+      _rev: requireExistingRevision(existing),
+    });
     return {
       sourceId: normalizedSource.id,
       sourceSlug: normalizedSource.slug,
@@ -577,7 +580,7 @@ async function writeEnglishCandidate({
   slug: string;
 }): Promise<ContentItem> {
   if (existing) {
-    return updateContent(client, existing.id, { data, seo, slug });
+    return updateContent(client, existing.id, { data, seo, slug, _rev: requireExistingRevision(existing) });
   }
   const input: Parameters<Client["create"]>[1] & { seo?: ContentSeoInput } = {
     data,
@@ -592,7 +595,7 @@ async function writeEnglishCandidate({
 async function updateContent(
   client: Client,
   id: string,
-  input: { data?: JsonRecord; publishedAt?: string; seo?: ContentSeoInput; slug?: string },
+  input: { data?: JsonRecord; publishedAt?: string; seo?: ContentSeoInput; slug?: string; _rev?: string },
 ): Promise<ContentItem> {
   const result = await emdashRequest<{ item: ContentItem; _rev?: string }>(
     client,
@@ -604,6 +607,23 @@ async function updateContent(
     result.item._rev = result._rev;
   }
   return result.item;
+}
+
+function requireExistingRevision(existing: ContentItemWithSeo): string {
+  if (!existing._rev) {
+    throw new Error(`Existing English translation ${existing.id} is missing _rev; refusing blind write`);
+  }
+  return existing._rev;
+}
+
+function shouldRepairLinkedEnglish(classification: {
+  action: "create" | "update" | "skip";
+  reasonCode: string;
+}): boolean {
+  return (
+    classification.action === "skip" &&
+    (classification.reasonCode === "already_published" || classification.reasonCode === "source_changed")
+  );
 }
 
 async function publishEnglishCandidate(client: Client, id: string, publishedAt: string): Promise<void> {

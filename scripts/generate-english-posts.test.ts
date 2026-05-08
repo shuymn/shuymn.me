@@ -22,7 +22,7 @@ import {
   translationPayloadSchema,
 } from "../src/lib/englishGeneration.ts";
 import { getContentSlug, getPostPath } from "../src/lib/i18n.ts";
-import { testInternals } from "./generate-english-posts.ts";
+import { processSourcePost, testInternals } from "./generate-english-posts.ts";
 
 test("precheck rejects unsupported and private source content before generation", () => {
   const source = makeSource({
@@ -521,6 +521,38 @@ test("deterministic checks require Markdown table preservation", () => {
   assert.match(result.failures.join("\n"), /Markdown table count changed from 1 to 0/);
 });
 
+test("deterministic checks reject Markdown table row and column drift", () => {
+  const source = precheckSourcePost(
+    makeSource({ content: [textBlock("このサイトの構成を変えた。"), tableBlock()] }),
+  ).source;
+  const translation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Renewal",
+      description: "A translated description.",
+      seoDescription: "",
+      contentMarkdown: [
+        "I changed the structure of this site.",
+        "",
+        "|  | Framework | Hosting |",
+        "| --- | --- | --- |",
+        "| Old | [Gatsby.js](https://www.gatsbyjs.com/) |",
+      ].join("\n"),
+    }),
+  );
+  const review = { passed: true, score: 0.91, failures: [] };
+
+  const result = runDeterministicChecks({
+    source,
+    translation,
+    review,
+    noteVersion: TRANSLATION_NOTE_VERSION,
+  });
+
+  assert.equal(result.passed, false);
+  assert.match(result.failures.join("\n"), /Markdown table 1 structure changed/);
+  assert.equal(result.checks.tables.mismatches.length, 1);
+});
+
 test("deterministic checks treat review failures as publication blockers", () => {
   const source = precheckSourcePost(makeSource()).source;
   const translation = makePassingTranslation();
@@ -847,7 +879,134 @@ test("existing generated English content is not overwritten after manual edits",
   });
 
   assert.equal(result.action, "skip");
+  assert.equal(result.reasonCode, "manual_edit");
   assert.match(result.reason, /edited manually/);
+});
+
+test("unmanaged existing English content is skipped even with force", () => {
+  const result = classifyExistingEnglishCandidate({
+    existing: {
+      status: "published",
+      data: {
+        title: "Manually managed English post",
+      },
+    },
+    sourceVersion: "source-a",
+    currentContentHash: "current-hash",
+    regenerate: true,
+    force: true,
+  });
+
+  assert.equal(result.action, "skip");
+  assert.equal(result.reasonCode, "unmanaged_existing");
+});
+
+test("manual edited English translations are not repaired on dry run", async () => {
+  const source = makeSource({ description: "" });
+  const sourceVersion = testInternals.buildSourceVersion(source);
+  const requests: unknown[] = [];
+  const client = {
+    translations: async () => ({
+      translations: [{ id: "01ENGLISH", locale: "en" }],
+    }),
+    get: async () => ({
+      id: "01ENGLISH",
+      slug: "runtime-notes-in-english",
+      status: "published",
+      locale: "en",
+      publishedAt: "2026-05-08T00:00:00.000Z",
+      _rev: "rev-current",
+      data: {
+        title: "Notes on the Runtime",
+        description: "Manual English description.",
+        content: makePassingTranslation().contentPortableText,
+        english_generation_source_version: sourceVersion,
+        english_generation_content_hash: "pre-edit-content-hash",
+      },
+      seo: {
+        title: "Manual SEO title",
+        description: "Manual SEO description.",
+      },
+    }),
+    request: async (...args: unknown[]) => {
+      requests.push(args);
+      throw new Error("request should not be called");
+    },
+  };
+
+  const result = await processSourcePost({
+    client: client as never,
+    provider: null,
+    source: source as never,
+    options: makeOptions({ dryRun: true, regenerate: true }),
+  });
+
+  assert.equal(result.status, "skipped");
+  assert.match(String(result.reason), /edited manually/);
+  assert.equal(requests.length, 0);
+});
+
+test("linked English repair sends the existing _rev", async () => {
+  const source = makeSource();
+  const sourceVersion = testInternals.buildSourceVersion(source);
+  const existing = makeExistingEnglish({
+    sourceVersion,
+    slug: "runtime-notes-in-english",
+    rev: "rev-current",
+  });
+  const requests: Array<{ method: string; path: string; body: Record<string, unknown> }> = [];
+  const client = makeRepairClient({
+    existing,
+    request: async (method, path, body) => {
+      requests.push({ method, path, body });
+      return {
+        item: { ...existing, slug: "runtime-notes" },
+        _rev: "rev-next",
+      };
+    },
+  });
+
+  const result = await processSourcePost({
+    client: client as never,
+    provider: null,
+    source: source as never,
+    options: makeOptions({ dryRun: false }),
+  });
+
+  assert.equal(result.status, "linked_english_repaired");
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.method, "PUT");
+  assert.equal(requests[0]?.body._rev, "rev-current");
+});
+
+test("existing English updates fail before request when _rev is missing", async () => {
+  const source = makeSource();
+  const sourceVersion = testInternals.buildSourceVersion(source);
+  const existing = makeExistingEnglish({
+    sourceVersion,
+    slug: "runtime-notes-in-english",
+    rev: undefined,
+  });
+  const requests: unknown[] = [];
+  const client = makeRepairClient({
+    existing,
+    request: async (...args) => {
+      requests.push(args);
+      throw new Error("request should not be called");
+    },
+  });
+
+  await assert.rejects(
+    () =>
+      processSourcePost({
+        client: client as never,
+        provider: null,
+        source: source as never,
+        options: makeOptions({ dryRun: false }),
+      }),
+    /missing _rev/,
+  );
+  assert.equal(requests.length, 0);
 });
 
 test("existing linked English publishedAt is repaired to the source publishedAt without regeneration", () => {
@@ -1008,5 +1167,55 @@ function codeBlock(code: string): PortableTextBlock {
     _key: "code-a",
     language: "ts",
     code,
+  };
+}
+
+function makeOptions(overrides: Record<string, unknown> = {}) {
+  return {
+    baseUrl: "http://localhost:4321",
+    devBypass: true,
+    limit: 25,
+    maxFixAttempts: 1,
+    regenerate: false,
+    force: false,
+    dryRun: false,
+    ...overrides,
+  } as never;
+}
+
+function makeExistingEnglish({ sourceVersion, slug, rev }: { sourceVersion: string; slug: string; rev?: string }) {
+  const existing = {
+    id: "01ENGLISH",
+    slug,
+    status: "published",
+    locale: "en",
+    publishedAt: "2026-05-09T00:00:00.000Z",
+    ...(rev ? { _rev: rev } : {}),
+    data: {
+      title: "Notes on the Runtime",
+      description: "A translated description.",
+      content: makePassingTranslation().contentPortableText,
+      english_generation_source_version: sourceVersion,
+      english_generation_content_hash: "",
+    },
+    seo: {},
+  };
+  existing.data.english_generation_content_hash = testInternals.buildContentHash(existing);
+  return existing;
+}
+
+function makeRepairClient({
+  existing,
+  request,
+}: {
+  existing: unknown;
+  request: (method: string, path: string, body: Record<string, unknown>) => Promise<unknown>;
+}) {
+  return {
+    translations: async () => ({
+      translations: [{ id: "01ENGLISH", locale: "en" }],
+    }),
+    get: async () => existing,
+    request,
   };
 }

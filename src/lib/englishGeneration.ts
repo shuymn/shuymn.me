@@ -128,8 +128,9 @@ export type TranslationReviewFixLoopResult = {
 
 const OPAQUE_BLOCK_PATTERN = /<!--ec:block\s+.+?-->/s;
 const DEFAULT_PRIVATE_PATTERNS = [/(?:^|\s)#private(?:\s|$)/i, /<!--\s*private\s*-->/i, /\bprivate:\s*true\b/i];
-const CODE_FENCE_START_PATTERN = /^```/gm;
-const CODE_BLOCK_PATTERN = /^```[^\n]*\n([\s\S]*?)\n```/gm;
+const CODE_FENCE_LINE_PATTERN = /^ {0,3}```/;
+const CODE_FENCE_START_PATTERN = /^ {0,3}```/gm;
+const CODE_BLOCK_PATTERN = /^ {0,3}```[^\n]*\n([\s\S]*?)\n {0,3}```[ \t]*(?=\n|$)/gm;
 const MARKDOWN_LINK_PATTERN = /!?\[[^\]]*]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
 const RAW_URL_PATTERN = /\bhttps?:\/\/[^\s<>)]+/g;
 const DUPLICATE_NOTE_PATTERN = /automatically translated|Japanese original|canonical source/i;
@@ -800,7 +801,7 @@ function markdownToPortableTextWithTables(markdown: string): PortableTextBlock[]
   while (index < lines.length) {
     const line = lines[index] ?? "";
     if (isCodeFenceLine(line)) {
-      pendingLines.push(line);
+      pendingLines.push(normalizeCodeFenceLine(line));
       isInsideCodeFence = !isInsideCodeFence;
       index++;
       continue;
@@ -974,7 +975,11 @@ function buildTableBlock(rowLines: string[], hasHeaderRow: boolean): PortableTex
 }
 
 function isCodeFenceLine(line: string): boolean {
-  return line.startsWith("```");
+  return CODE_FENCE_LINE_PATTERN.test(line);
+}
+
+function normalizeCodeFenceLine(line: string): string {
+  return line.replace(/^ {1,3}(```)/, "$1");
 }
 
 function isMarkdownTableRow(line: string | undefined): line is string {

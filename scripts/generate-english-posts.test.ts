@@ -227,6 +227,35 @@ test("translation normalization preserves table-like Markdown inside code fences
   assert.match(translation.contentMarkdown, /```md\n\| Name \| Value \|\n\| --- \| --- \|\n\| foo \| bar \|\n```/);
 });
 
+test("translation normalization preserves table-like Markdown inside indented code fences", () => {
+  const translation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Indented Markdown Example",
+      description: "",
+      seoDescription: "",
+      contentMarkdown: [
+        "A Markdown table example:",
+        "",
+        "   ```md",
+        "| Name | Value |",
+        "| --- | --- |",
+        "| foo | bar |",
+        "   ```",
+      ].join("\n"),
+    }),
+  );
+
+  assert.equal(
+    translation.contentPortableText.some((block) => block._type === "table"),
+    false,
+  );
+  assert.equal(
+    translation.contentPortableText.some((block) => block._type === "code"),
+    true,
+  );
+  assert.match(translation.contentMarkdown, /```md\n\| Name \| Value \|\n\| --- \| --- \|\n\| foo \| bar \|\n```/);
+});
+
 test("headerless EmDash tables round-trip without gaining a header row", () => {
   const source = makeSource({
     content: [textBlock("ヘッダーなしテーブルです。"), headerlessTableBlock()],
@@ -409,6 +438,33 @@ test("deterministic checks require exact code block and URL preservation", () =>
   });
   assert.equal(failing.passed, false);
   assert.match(failing.failures.join("\n"), /code block 1 was not preserved exactly/);
+
+  const indentedCodeBlock = [
+    "# Runtime Notes",
+    "",
+    "See [the source](https://example.com/runtime).",
+    "",
+    "   ```ts",
+    'console.log("keep me");',
+    "   ```",
+  ].join("\n");
+  const indentedSource = precheckSourcePost(makeSource({ content: indentedCodeBlock })).source;
+  const indentedTranslation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Notes on the Runtime",
+      description: "A translated description.",
+      seoDescription: "",
+      contentMarkdown: indentedCodeBlock.replace("keep me", "changed"),
+    }),
+  );
+  const indentedFailing = runDeterministicChecks({
+    source: indentedSource,
+    translation: indentedTranslation,
+    review,
+    noteVersion: TRANSLATION_NOTE_VERSION,
+  });
+  assert.equal(indentedFailing.passed, false);
+  assert.match(indentedFailing.failures.join("\n"), /code block 1 was not preserved exactly/);
 
   const addedLink = runDeterministicChecks({
     source,

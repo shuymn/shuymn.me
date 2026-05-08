@@ -456,6 +456,15 @@ test("deterministic checks require exact code block and URL preservation", () =>
   assert.equal(failing.passed, false);
   assert.match(failing.failures.join("\n"), /code block 1 was not preserved exactly/);
 
+  const changedFenceHeader = runDeterministicChecks({
+    source,
+    translation: { ...translation, contentMarkdown: translation.contentMarkdown.replace("```ts", "```js") },
+    review,
+    noteVersion: TRANSLATION_NOTE_VERSION,
+  });
+  assert.equal(changedFenceHeader.passed, false);
+  assert.match(changedFenceHeader.failures.join("\n"), /code block 1 was not preserved exactly/);
+
   const indentedCodeBlock = [
     "# Runtime Notes",
     "",

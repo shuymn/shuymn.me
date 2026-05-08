@@ -775,7 +775,7 @@ export function hasBalancedCodeFences(markdown: unknown): boolean {
 export function extractMarkdownCodeBlocks(markdown: unknown): string[] {
   const blocks: string[] = [];
   for (const match of String(markdown ?? "").matchAll(CODE_BLOCK_PATTERN)) {
-    blocks.push(match[1]);
+    blocks.push(match[0]);
   }
   return blocks;
 }

@@ -368,6 +368,23 @@ test("translation edit schema and applier perform exact diff edits only", () => 
   );
   assert.equal(ambiguous.changed, false);
   assert.match(ambiguous.failures.join("\n"), /oldText matched 2 times/);
+
+  const overlappingAmbiguous = applyTranslationEdits(
+    normalizeTranslationPayload(
+      translationPayloadSchema.parse({
+        title: "Runtime Notes",
+        description: "A translated description.",
+        seoDescription: "",
+        contentMarkdown: "banana",
+      }),
+    ),
+    {
+      changeSummary: "Invalid overlapping edit.",
+      edits: [{ field: "contentMarkdown", oldText: "ana", newText: "changed", rationale: "test" }],
+    },
+  );
+  assert.equal(overlappingAmbiguous.changed, false);
+  assert.match(overlappingAmbiguous.failures.join("\n"), /oldText matched 2 times/);
 });
 
 test("review fix loop applies edit tool diffs and re-reviews the edited translation", async () => {

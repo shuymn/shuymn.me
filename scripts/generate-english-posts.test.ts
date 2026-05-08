@@ -494,6 +494,34 @@ test("deterministic checks require exact code block and URL preservation", () =>
   });
   assert.equal(addedLink.passed, false);
   assert.match(addedLink.failures.join("\n"), /unexpected translated links: https:\/\/example\.com\/unrelated/);
+
+  const duplicateLinkSource = precheckSourcePost(
+    makeSource({
+      content: [
+        "# Runtime Notes",
+        "",
+        "See [the source](https://example.com/runtime).",
+        "",
+        "Also keep https://example.com/runtime here.",
+      ].join("\n"),
+    }),
+  ).source;
+  const duplicateLinkTranslation = normalizeTranslationPayload(
+    translationPayloadSchema.parse({
+      title: "Notes on the Runtime",
+      description: "A translated description.",
+      seoDescription: "",
+      contentMarkdown: "# Runtime Notes\n\nSee [the source](https://example.com/runtime).",
+    }),
+  );
+  const duplicateLinkFailing = runDeterministicChecks({
+    source: duplicateLinkSource,
+    translation: duplicateLinkTranslation,
+    review,
+    noteVersion: TRANSLATION_NOTE_VERSION,
+  });
+  assert.equal(duplicateLinkFailing.passed, false);
+  assert.match(duplicateLinkFailing.failures.join("\n"), /missing preserved links: https:\/\/example\.com\/runtime/);
 });
 
 test("deterministic checks require Markdown table preservation", () => {

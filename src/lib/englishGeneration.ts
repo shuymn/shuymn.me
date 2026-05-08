@@ -585,8 +585,8 @@ export function runDeterministicChecks({
     });
   }
 
-  const missingLinks = sourceLinks.filter((link) => !translatedLinks.includes(link));
-  const extraLinks = translatedLinks.filter((link) => !sourceLinks.includes(link));
+  const missingLinks = diffLinkOccurrences(sourceLinks, translatedLinks);
+  const extraLinks = diffLinkOccurrences(translatedLinks, sourceLinks);
   if (missingLinks.length > 0) {
     failures.push(`missing preserved links: ${missingLinks.join(", ")}`);
   }
@@ -782,16 +782,45 @@ export function extractMarkdownCodeBlocks(markdown: unknown): string[] {
 
 export function extractMarkdownLinks(markdown: unknown): string[] {
   const text = String(markdown ?? "");
-  const links = new Set<string>();
+  const links: string[] = [];
+  const markdownLinkUrlRanges: Array<{ start: number; end: number }> = [];
 
   for (const match of text.matchAll(MARKDOWN_LINK_PATTERN)) {
-    links.add(match[1]);
+    const url = match[1];
+    links.push(url);
+    const matchStart = match.index ?? 0;
+    const urlOffset = match[0].indexOf(url);
+    if (urlOffset >= 0) {
+      markdownLinkUrlRanges.push({ start: matchStart + urlOffset, end: matchStart + urlOffset + url.length });
+    }
   }
   for (const match of text.matchAll(RAW_URL_PATTERN)) {
-    links.add(match[0].replace(/[.,;:!?]+$/g, ""));
+    const start = match.index ?? 0;
+    const end = start + match[0].length;
+    if (markdownLinkUrlRanges.some((range) => start >= range.start && end <= range.end)) continue;
+    links.push(match[0].replace(/[.,;:!?]+$/g, ""));
   }
 
-  return [...links];
+  return links;
+}
+
+function diffLinkOccurrences(expected: string[], actual: string[]): string[] {
+  const remaining = new Map<string, number>();
+  for (const link of actual) {
+    remaining.set(link, (remaining.get(link) ?? 0) + 1);
+  }
+
+  const missing: string[] = [];
+  for (const link of expected) {
+    const count = remaining.get(link) ?? 0;
+    if (count > 0) {
+      remaining.set(link, count - 1);
+      continue;
+    }
+    missing.push(link);
+  }
+
+  return missing;
 }
 
 export function asRecord(value: unknown): JsonRecord {

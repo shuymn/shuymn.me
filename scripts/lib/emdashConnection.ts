@@ -1,4 +1,12 @@
-import { EmDashClient } from "emdash/client";
+import {
+  createTransport,
+  csrfInterceptor,
+  devBypassInterceptor,
+  EmDashApiError,
+  EmDashClient,
+  type Interceptor,
+  tokenInterceptor,
+} from "emdash/client";
 import { customHeadersInterceptor } from "emdash/client/cf-access";
 import type { Args } from "gunshi";
 
@@ -80,6 +88,50 @@ export function createEmDashClient(options: EmDashConnectionOptions): EmDashClie
   });
 }
 
+export class EmDashApiClient {
+  private readonly baseUrl: string;
+  private readonly transport: { fetch: (request: Request) => Promise<Response> };
+
+  constructor(options: EmDashConnectionOptions) {
+    this.baseUrl = stripTrailingSlash(options.baseUrl);
+    this.transport = createTransport({
+      interceptors: createConnectionInterceptors(options),
+    });
+  }
+
+  async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+    const response = await this.requestRaw(method, path, body);
+    await assertOk(response);
+    const json = (await response.json()) as { data: T };
+    return json.data;
+  }
+
+  private async requestRaw(method: string, path: string, body?: unknown): Promise<Response> {
+    if (!path.startsWith("/")) {
+      throw new Error(`EmDash API path must start with "/": ${path}`);
+    }
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+    };
+    let requestBody: string | undefined;
+    if (body !== undefined) {
+      headers["Content-Type"] = "application/json";
+      requestBody = JSON.stringify(body);
+    }
+    return this.transport.fetch(
+      new Request(`${this.baseUrl}/_emdash/api${path}`, {
+        method,
+        headers,
+        body: requestBody,
+      }),
+    );
+  }
+}
+
+export function createEmDashApiClient(options: EmDashConnectionOptions): EmDashApiClient {
+  return new EmDashApiClient(options);
+}
+
 export function readOptionalString(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
@@ -124,6 +176,42 @@ function validateHeader(name: string, value: string, source: string): void {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`${source} header is invalid: ${name}: ${message}`);
   }
+}
+
+function createConnectionInterceptors(options: EmDashConnectionOptions): Interceptor[] {
+  const interceptors: Interceptor[] = [csrfInterceptor()];
+  if (options.token) {
+    interceptors.push(tokenInterceptor(options.token));
+  } else if (options.devBypass) {
+    interceptors.push(devBypassInterceptor(options.baseUrl));
+  }
+  if (Object.keys(options.headers).length > 0) {
+    interceptors.push(customHeadersInterceptor(options.headers));
+  }
+  return interceptors;
+}
+
+async function assertOk(response: Response): Promise<void> {
+  if (response.ok) return;
+
+  let code = "UNKNOWN_ERROR";
+  let message = `HTTP ${response.status}`;
+  let details: Record<string, unknown> | undefined;
+
+  try {
+    const json = (await response.json()) as {
+      error?: { code?: string; message?: string; details?: Record<string, unknown> };
+    };
+    if (json.error) {
+      code = json.error.code ?? code;
+      message = json.error.message ?? message;
+      details = json.error.details;
+    }
+  } catch {
+    message = response.statusText || message;
+  }
+
+  throw new EmDashApiError(response.status, code, message, details);
 }
 
 function splitEnvHeaderLines(value: string | undefined): string[] {

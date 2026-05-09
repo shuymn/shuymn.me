@@ -84,6 +84,11 @@ building CD automation. `seed/seed.json` remains the local bootstrap and
 reproducibility source, but an already deployed site needs an explicit
 migration/deploy path that compares desired state with the selected EmDash
 instance and applies missing or changed pieces through authenticated APIs.
+The initial command is `pnpm run deploy:emdash -- --dry-run ...` for planning
+and `pnpm run deploy:emdash -- --apply ...` for explicit writes. Its first
+supported surface is `settings` plus `collections` / `fields` from
+`seed/seed.json`; seed content, destructive deletions, and immutable field type
+changes are unsupported results rather than direct database workarounds.
 Cloudflare Workers preview builds can produce non-production Worker versions, but
 D1, R2, KV, and secrets still depend on configured bindings and are not
 automatically cloned per pull request. EmDash `previewDatabase()` is a read-only

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  createEmDashApiClient,
   createEmDashClient,
   type EmDashConnectionCliValues,
   resolveEmDashConnectionOptions,
@@ -123,4 +124,40 @@ test("EmDash connection helper attaches custom headers to API requests", async (
   assert.equal(requests[0]?.headers.get("authorization"), "Bearer emdash-token");
   assert.equal(requests[0]?.headers.get("CF-Access-Client-Id"), "access-id");
   assert.equal(requests[0]?.headers.get("CF-Access-Client-Secret"), "access-secret");
+});
+
+test("EmDash API client shares auth headers and unwraps JSON API responses", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests: Request[] = [];
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = input instanceof Request ? input : new Request(input, init);
+    requests.push(request);
+    return new Response(JSON.stringify({ success: true, data: { title: "shuymn.me" } }), {
+      headers: { "content-type": "application/json" },
+    });
+  }) as typeof fetch;
+
+  try {
+    const client = createEmDashApiClient({
+      baseUrl: "https://cms.example.test",
+      token: "emdash-token",
+      devBypass: false,
+      headers: {
+        "CF-Access-Client-Id": "access-id",
+      },
+    });
+
+    const result = await client.request<{ title: string }>("POST", "/settings", { title: "shuymn.me" });
+
+    assert.deepEqual(result, { title: "shuymn.me" });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.url, "https://cms.example.test/_emdash/api/settings");
+  assert.equal(requests[0]?.headers.get("authorization"), "Bearer emdash-token");
+  assert.equal(requests[0]?.headers.get("CF-Access-Client-Id"), "access-id");
+  assert.equal(requests[0]?.headers.get("X-EmDash-Request"), "1");
+  assert.equal(requests[0]?.headers.get("Origin"), "https://cms.example.test");
 });

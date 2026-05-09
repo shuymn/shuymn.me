@@ -231,10 +231,12 @@ Findings:
   route. Locale-aware local content routes will need an explicit route strategy
   instead of relying on the global route duplication behavior.
 - The current EmDash integration emits prerender warnings for `Astro.request`
-  headers and session access during the static spike route. A successful
-  local-source migration likely needs to remove, isolate, or conditionally
-  disable EmDash runtime integrations before SSG routes become warning-free.
+  headers and session access during the static spike route. If local Markdown
+  becomes the canonical source, EmDash should be removed from the public content
+  path rather than treated as a long-term runtime integration to preserve.
+  The remaining platform choice should be Astro alone or Astro plus a supporting
+  CMS/editor layer that does not own the canonical post body.
 
 These findings support continuing the local Markdown spike, but they also show
-that keeping EmDash installed while introducing SSG routes is not a clean final
-state.
+that keeping EmDash installed while introducing local-source SSG routes is only
+a transitional state, not the target architecture.

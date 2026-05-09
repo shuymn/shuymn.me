@@ -22,9 +22,7 @@ const translationSourceSlug = post.data.translation.sourceSlug ?? "";
 
 <Base title={post.data.title} description={seoDescription} type="article" publishedTime={publishedIso} path={postPath}>
     <main>
-        <article
-            class="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32 dark:prose-invert prose-pre:bg-surface"
-        >
+        <article class="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32">
             <header>
                 <small>{formatDate(post.data.publishedAt)}</small>
                 <h1>{post.data.title}</h1>

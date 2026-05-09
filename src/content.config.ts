@@ -12,6 +12,7 @@ export const postSchema = z
     locale: postLocaleSchema,
     title: z.string().min(1),
     publishedAt: z.coerce.date(),
+    updatedAt: z.coerce.date().optional(),
     tags: z.array(z.string().min(1)).default([]),
     series: z
       .object({
@@ -37,6 +38,12 @@ export const postSchema = z
       .strict()
       .default({ disabled: false }),
     statusNote: optionalTextSchema,
+    relatedPostSlugs: z
+      .array(z.string().min(1))
+      .refine((slugs) => new Set(slugs).size === slugs.length, {
+        message: "relatedPostSlugs must not contain duplicate values",
+      })
+      .default([]),
   })
   .strict();
 

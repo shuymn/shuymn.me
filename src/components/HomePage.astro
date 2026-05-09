@@ -1,7 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
-import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText, type Locale } from "../lib/i18n";
+import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText } from "../lib/i18n";
 import { SITE_TITLE } from "../lib/seo";
 
 type ProfileLink = {
@@ -15,25 +15,8 @@ const PROFILE_LINKS: readonly ProfileLink[] = [
     { label: "mail", url: "mailto:mail@shuymn.me" },
 ];
 
-const ABOUT_PARAGRAPHS_BY_LOCALE: Record<Locale, readonly string[]> = {
-    ja: [
-        "ソフトウェアエンジニア。主にバックエンド領域を主戦場としています。SNSキュレーション事業会社、VTuber運営会社を経て現在はBtoBのSaaS企業に在籍。",
-        "このサイトは自分のための備忘録であり、内容の正確性は保証しません。",
-        "投稿は全て個人の意見であり、所属する組織の意見ではありません。",
-        "お問い合わせの際は、下記のリンク先からご連絡ください。",
-    ],
-    en: [
-        "Software engineer primarily focused on backend systems.",
-        "Previously worked at a social media curation company and a VTuber management company, and currently work at a B2B SaaS company.",
-        "This site is a personal knowledge base, and I do not guarantee the accuracy of its content.",
-        "All posts are personal opinions and do not represent the views of any organization I belong to.",
-        "For inquiries, please contact me through the links below.",
-    ],
-};
-
 const locale = getCurrentLocale(Astro.currentLocale);
 const posts = await getCollection("posts", ({ data }) => data.locale === locale);
-const aboutParagraphs = ABOUT_PARAGRAPHS_BY_LOCALE[locale];
 
 const sortedPosts = posts
     .filter((post) => post.data.slug.length > 0)
@@ -49,7 +32,31 @@ const publicText = getPublicText(locale);
 <Base title={SITE_TITLE} path={getHomePath(locale)}>
   <main>
     <section class="about" aria-label={publicText.aboutLabel}>
-      {aboutParagraphs.map((paragraph) => <p>{paragraph}</p>)}
+      {
+        locale === "ja" ? (
+          <>
+            <p>
+              ソフトウェアエンジニア。主にバックエンド領域を主戦場としています。SNSキュレーション事業会社、VTuber運営会社を経て現在はBtoBのSaaS企業に在籍。
+            </p>
+
+            <p>このサイトは自分のための備忘録であり、内容の正確性は保証しません。</p>
+            <p>投稿は全て個人の意見であり、所属する組織の意見ではありません。</p>
+            <p>お問い合わせの際は、下記のリンク先からご連絡ください。</p>
+          </>
+        ) : (
+          <>
+            <p>Software engineer primarily focused on backend systems.</p>
+            <p>
+              Previously worked at a social media curation company and a VTuber management company, and currently work at a B2B
+              SaaS company.
+            </p>
+
+            <p>This site is a personal knowledge base, and I do not guarantee the accuracy of its content.</p>
+            <p>All posts are personal opinions and do not represent the views of any organization I belong to.</p>
+            <p>For inquiries, please contact me through the links below.</p>
+          </>
+        )
+      }
       <ul class="profile-links">
         {PROFILE_LINKS.map((link) => (
           <li>

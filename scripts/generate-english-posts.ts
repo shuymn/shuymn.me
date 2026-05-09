@@ -4,7 +4,8 @@ import { createHash } from "node:crypto";
 import { APICallError, generateText, type LanguageModel, Output, tool } from "ai";
 import { createAiGateway } from "ai-gateway-provider";
 import { createOpenRouter } from "ai-gateway-provider/providers/openrouter";
-import { type ContentItem, EmDashClient } from "emdash/client";
+import type { ContentItem } from "emdash/client";
+import { type ArgValues, cli, define } from "gunshi";
 import {
   asRecord,
   buildEnglishGenerationData,
@@ -38,19 +39,24 @@ import {
   translationEditPayloadSchema,
   translationPayloadSchema,
 } from "../src/lib/englishGeneration.ts";
+import {
+  createEmDashClient,
+  type EmDashConnectionCliValues,
+  type EmDashConnectionOptions,
+  emdashConnectionArgs,
+  readOptionalString,
+  resolveEmDashConnectionOptions,
+} from "./lib/emdashConnection.ts";
+import { formatCliError, normalizeScriptArgv, resolveHostCliValues } from "./lib/hostCli.ts";
 
-const DEFAULT_BASE_URL = "http://localhost:4321";
 const DEFAULT_LIMIT = 25;
 const DEFAULT_MAX_FIX_ATTEMPTS = 1;
 const POSTS_COLLECTION = "posts";
 
-type Client = InstanceType<typeof EmDashClient>;
+type Client = ReturnType<typeof createEmDashClient>;
 type ContentItemWithSeo = ContentItem & { seo?: unknown; _rev?: string };
 
-type CliOptions = {
-  baseUrl: string;
-  token?: string;
-  devBypass: boolean;
+type CliOptions = EmDashConnectionOptions & {
   providerApiKey?: string;
   cfAiGatewayAccountId?: string;
   cfAiGatewayGateway?: string;
@@ -66,6 +72,24 @@ type CliOptions = {
   dryRun: boolean;
   temperature?: number;
 };
+
+type EnglishGenerationCliValues = EmDashConnectionCliValues &
+  ArgValues<typeof englishGenerationArgs> & {
+    providerApiKey?: string;
+    cfAigAccountId?: string;
+    cfAigGateway?: string;
+    cfAigToken?: string;
+    model?: string;
+    editModel?: string;
+    reviewModel?: string;
+    source?: string;
+    limit?: number;
+    maxFixAttempts?: number;
+    regenerate?: boolean;
+    force?: boolean;
+    dryRun?: boolean;
+    temperature?: number;
+  };
 
 type EnglishGenerationProvider = {
   translationModel: LanguageModel;
@@ -86,20 +110,27 @@ type ProcessResult = {
   [key: string]: unknown;
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
-    console.error(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) }));
-    process.exit(1);
+async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void> {
+  const normalizedArgv = normalizeScriptArgv(argv);
+  const command = define({
+    name: "generate:english",
+    description: "Generate English EmDash posts from published Japanese posts",
+    args: englishGenerationArgs,
+    toKebab: true,
+    rendering: {
+      header: null,
+      validationErrors: null,
+    },
+    run: async (ctx) => {
+      await runGenerateEnglish(parseArgs(ctx._, env));
+    },
   });
+
+  await cli(normalizedArgv, command, { name: "generate:english" });
 }
 
-async function main(): Promise<void> {
-  const options = parseArgs(process.argv.slice(2), process.env);
-  const client = new EmDashClient({
-    baseUrl: options.baseUrl,
-    token: options.token,
-    devBypass: options.devBypass,
-  });
+async function runGenerateEnglish(options: CliOptions): Promise<void> {
+  const client = createEmDashClient(options);
   const provider = options.dryRun ? null : createEnglishGenerationProvider(options);
   const results: ProcessResult[] = [];
 
@@ -143,6 +174,66 @@ async function main(): Promise<void> {
     process.exitCode = 1;
   }
 }
+
+const englishGenerationArgs = {
+  ...emdashConnectionArgs,
+  providerApiKey: {
+    type: "string",
+    description: "OpenRouter API key",
+  },
+  cfAigAccountId: {
+    type: "string",
+    description: "Cloudflare AI Gateway account ID",
+  },
+  cfAigGateway: {
+    type: "string",
+    description: "Cloudflare AI Gateway name",
+  },
+  cfAigToken: {
+    type: "string",
+    description: "Cloudflare AI Gateway token",
+  },
+  model: {
+    type: "string",
+    description: "Translation model",
+  },
+  editModel: {
+    type: "string",
+    description: "Diff edit model (default: translation model)",
+  },
+  reviewModel: {
+    type: "string",
+    description: "Separate review model",
+  },
+  source: {
+    type: "string",
+    description: "Limit to one Japanese source post",
+  },
+  limit: {
+    type: "number",
+    description: "Maximum published Japanese posts to scan",
+  },
+  maxFixAttempts: {
+    type: "number",
+    description: `Review-driven diff edit attempts per post (default: ${DEFAULT_MAX_FIX_ATTEMPTS})`,
+  },
+  regenerate: {
+    type: "boolean",
+    description: "Explicitly regenerate when the source version changed",
+  },
+  force: {
+    type: "boolean",
+    description: "Override manual-edit protection",
+  },
+  dryRun: {
+    type: "boolean",
+    description: "Scan and classify without calling the provider or writing content",
+  },
+  temperature: {
+    type: "number",
+    description: "Optional sampling temperature; omitted by default",
+  },
+} as const;
 
 export async function processSourcePost({
   client,
@@ -313,94 +404,32 @@ export async function processSourcePost({
 }
 
 function parseArgs(args: string[], env: NodeJS.ProcessEnv): CliOptions {
+  return resolveOptions(resolveHostCliValues(englishGenerationArgs, args) as EnglishGenerationCliValues, env);
+}
+
+function resolveOptions(values: EnglishGenerationCliValues, env: NodeJS.ProcessEnv): CliOptions {
+  const connection = resolveEmDashConnectionOptions(values, env);
+  const model = readOptionalString(values.model) ?? readOptionalString(env.ENGLISH_GENERATION_MODEL);
+  const editModel = readOptionalString(values.editModel) ?? readOptionalString(env.ENGLISH_EDIT_MODEL) ?? model;
+  const reviewModel = readOptionalString(values.reviewModel) ?? readOptionalString(env.ENGLISH_REVIEW_MODEL) ?? model;
   const options: CliOptions = {
-    baseUrl: env.EMDASH_BASE_URL ?? DEFAULT_BASE_URL,
-    token: env.EMDASH_API_TOKEN,
-    devBypass: env.EMDASH_DEV_BYPASS === "1" || env.EMDASH_DEV_BYPASS === "true",
-    providerApiKey: env.ENGLISH_GENERATION_API_KEY,
-    cfAiGatewayAccountId: env.CF_AIG_ACCOUNT_ID,
-    cfAiGatewayGateway: env.CF_AIG_GATEWAY,
-    cfAiGatewayToken: env.CF_AIG_TOKEN,
-    model: env.ENGLISH_GENERATION_MODEL,
-    editModel: env.ENGLISH_EDIT_MODEL,
-    reviewModel: env.ENGLISH_REVIEW_MODEL,
-    source: undefined,
-    limit: Number(env.ENGLISH_GENERATION_LIMIT ?? DEFAULT_LIMIT),
-    maxFixAttempts: Number(env.ENGLISH_GENERATION_MAX_FIX_ATTEMPTS ?? DEFAULT_MAX_FIX_ATTEMPTS),
-    regenerate: false,
-    force: false,
-    dryRun: false,
-    temperature:
-      env.ENGLISH_GENERATION_TEMPERATURE === undefined ? undefined : Number(env.ENGLISH_GENERATION_TEMPERATURE),
+    ...connection,
+    providerApiKey: readOptionalString(values.providerApiKey) ?? readOptionalString(env.ENGLISH_GENERATION_API_KEY),
+    cfAiGatewayAccountId: readOptionalString(values.cfAigAccountId) ?? readOptionalString(env.CF_AIG_ACCOUNT_ID),
+    cfAiGatewayGateway: readOptionalString(values.cfAigGateway) ?? readOptionalString(env.CF_AIG_GATEWAY),
+    cfAiGatewayToken: readOptionalString(values.cfAigToken) ?? readOptionalString(env.CF_AIG_TOKEN),
+    model,
+    editModel,
+    reviewModel,
+    source: readOptionalString(values.source),
+    limit: values.limit ?? readNumberEnv(env.ENGLISH_GENERATION_LIMIT) ?? DEFAULT_LIMIT,
+    maxFixAttempts:
+      values.maxFixAttempts ?? readNumberEnv(env.ENGLISH_GENERATION_MAX_FIX_ATTEMPTS) ?? DEFAULT_MAX_FIX_ATTEMPTS,
+    regenerate: values.regenerate ?? false,
+    force: values.force ?? false,
+    dryRun: values.dryRun ?? false,
+    temperature: values.temperature ?? readNumberEnv(env.ENGLISH_GENERATION_TEMPERATURE),
   };
-
-  for (let index = 0; index < args.length; index++) {
-    const arg = args[index];
-    if (!arg) continue;
-    switch (arg) {
-      case "--":
-        break;
-      case "--base-url":
-        options.baseUrl = requireValue(args, ++index, arg);
-        break;
-      case "--token":
-        options.token = requireValue(args, ++index, arg);
-        break;
-      case "--dev-bypass":
-        options.devBypass = true;
-        break;
-      case "--provider-api-key":
-        options.providerApiKey = requireValue(args, ++index, arg);
-        break;
-      case "--cf-aig-account-id":
-        options.cfAiGatewayAccountId = requireValue(args, ++index, arg);
-        break;
-      case "--cf-aig-gateway":
-        options.cfAiGatewayGateway = requireValue(args, ++index, arg);
-        break;
-      case "--cf-aig-token":
-        options.cfAiGatewayToken = requireValue(args, ++index, arg);
-        break;
-      case "--model":
-        options.model = requireValue(args, ++index, arg);
-        break;
-      case "--edit-model":
-        options.editModel = requireValue(args, ++index, arg);
-        break;
-      case "--review-model":
-        options.reviewModel = requireValue(args, ++index, arg);
-        break;
-      case "--source":
-        options.source = requireValue(args, ++index, arg);
-        break;
-      case "--limit":
-        options.limit = Number(requireValue(args, ++index, arg));
-        break;
-      case "--max-fix-attempts":
-        options.maxFixAttempts = Number(requireValue(args, ++index, arg));
-        break;
-      case "--temperature":
-        options.temperature = Number(requireValue(args, ++index, arg));
-        break;
-      case "--regenerate":
-        options.regenerate = true;
-        break;
-      case "--force":
-        options.force = true;
-        break;
-      case "--dry-run":
-        options.dryRun = true;
-        break;
-      case "--help":
-        printHelp();
-        return process.exit(0);
-      default:
-        throw new Error(`Unknown option: ${arg}`);
-    }
-  }
-
-  options.editModel ??= options.model;
-  options.reviewModel ??= options.model;
 
   if (!Number.isInteger(options.limit) || options.limit < 1) {
     throw new Error("--limit must be a positive integer");
@@ -413,9 +442,6 @@ function parseArgs(args: string[], env: NodeJS.ProcessEnv): CliOptions {
     (!Number.isFinite(options.temperature) || options.temperature < 0 || options.temperature > 2)
   ) {
     throw new Error("--temperature must be between 0 and 2");
-  }
-  if (!options.token && !options.devBypass) {
-    throw new Error("Set EMDASH_API_TOKEN or pass --dev-bypass for local trusted execution");
   }
   if (!options.dryRun) {
     if (!options.providerApiKey) throw new Error("Set ENGLISH_GENERATION_API_KEY or pass --provider-api-key");
@@ -430,36 +456,9 @@ function parseArgs(args: string[], env: NodeJS.ProcessEnv): CliOptions {
   return options;
 }
 
-function requireValue(args: string[], index: number, optionName: string): string {
-  const value = args[index];
-  if (!value || value.startsWith("--")) {
-    throw new Error(`${optionName} requires a value`);
-  }
-  return value;
-}
-
-function printHelp(): void {
-  console.log(`Usage: pnpm run generate:english -- [options]
-
-Options:
-  --base-url <url>             EmDash base URL (default: ${DEFAULT_BASE_URL})
-  --token <token>              EmDash API token
-  --dev-bypass                 Use local EmDash dev-bypass auth
-  --provider-api-key <key>     OpenRouter API key
-  --cf-aig-account-id <id>     Cloudflare AI Gateway account ID
-  --cf-aig-gateway <name>      Cloudflare AI Gateway name
-  --cf-aig-token <token>       Cloudflare AI Gateway token
-  --model <model>              Translation model
-  --edit-model <model>         Diff edit model (default: translation model)
-  --review-model <model>       Separate review model
-  --source <id-or-slug>        Limit to one Japanese source post
-  --limit <count>              Maximum published Japanese posts to scan
-  --max-fix-attempts <count>   Review-driven diff edit attempts per post (default: ${DEFAULT_MAX_FIX_ATTEMPTS})
-  --regenerate                 Explicitly regenerate when the source version changed
-  --force                      Override manual-edit protection
-  --dry-run                    Scan and classify without calling the provider or writing content
-  --temperature <value>        Optional sampling temperature; omitted by default
-`);
+function readNumberEnv(value: string | undefined): number | undefined {
+  const normalized = readOptionalString(value);
+  return normalized === undefined ? undefined : Number(normalized);
 }
 
 function createEnglishGenerationProvider(options: CliOptions): EnglishGenerationProvider {
@@ -860,3 +859,10 @@ export const testInternals = {
   shouldRepairEnglishSlug,
   verifyPublishedEnglishTranslation,
 };
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main(process.argv.slice(2), process.env).catch((error) => {
+    console.error(JSON.stringify({ ok: false, error: formatCliError(error) }));
+    process.exit(1);
+  });
+}

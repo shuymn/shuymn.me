@@ -102,6 +102,9 @@ The requirements use EARS notation.
 - When the author reviews readership signals, Cloudflare-provided telemetry
   shall be the primary source of truth and EmDash shall only map those signals to
   content metadata for editorial interpretation.
+- When EmDash schema or deployable content configuration changes, the system
+  shall provide a host-side automation path that can apply the same change to any
+  EmDash instance selected by URL and credentials.
 
 ## WordPress Patterns To Translate
 
@@ -263,6 +266,55 @@ Hard rules for plugin-backed automation:
 - Keep secrets in environment or infrastructure bindings. Plugin storage may hold
   preferences and generated state, not long-lived Cloudflare or LLM secrets unless
   the storage and admin surface have been explicitly reviewed for that purpose.
+
+## Host-Side Automation Boundary
+
+Host-side automation is the preferred baseline for durable operations that need
+more authority than the current standard plugin surface provides but do not yet
+justify a standalone Cloudflare Worker or CD integration. The existing
+`pnpm run generate:english` command is the model: a script connects to an EmDash
+HTTP endpoint, performs deterministic prechecks, makes narrowly scoped writes,
+verifies the returned records, and can later be triggered by cron, GitHub
+Actions, or a Cloudflare-native workflow without changing the core operation.
+
+New host-side scripts should follow the same connection model instead of adding
+their own `local` or `prod` target concept:
+
+- choose the EmDash instance with `EMDASH_BASE_URL` or `--base-url`
+- authenticate with `EMDASH_API_TOKEN` or `--token`
+- allow local trusted execution through `EMDASH_DEV_BYPASS` or `--dev-bypass`
+- support generic request headers through newline-separated `EMDASH_HEADERS`
+  and repeated `--header` / `-H` flags for reverse proxies such as Cloudflare
+  Access rather than hardcoding a production environment name
+- express safety through `--dry-run`, explicit apply flags, diff output,
+  idempotency, fail-fast behavior, and post-write verification rather than
+  environment-specific branches
+
+For local validation, the same script can point at `http://localhost:4321` and use
+dev-bypass against the local SQLite-backed EmDash instance. For production, it
+can point at the deployed Cloudflare Worker URL and use an EmDash API token plus
+Cloudflare Access service-token headers via `EMDASH_HEADERS` or repeated
+`--header` / `-H` flags when `/_emdash/*` is protected. This
+keeps the operational model consistent across English generation, schema/content
+deployment, taxonomy acceptance, and any future host-side maintenance scripts.
+
+`seed/seed.json` remains the bootstrap and local reproducibility source. It
+should not be treated as the only ongoing production deployment mechanism after a
+site has existing remote state. Ongoing schema or configuration changes need a
+separate host-side migration/deploy script that can compare desired state against
+the selected EmDash instance, apply only the missing or changed pieces, and
+verify the result.
+
+Cloudflare preview and EmDash preview are useful but not the first implementation
+boundary for this migration path. Cloudflare Workers Git integration and Preview
+URLs can create non-production Worker versions or branch previews, but stateful
+D1, R2, KV, and secrets are still determined by bindings and are not automatically
+cloned per pull request. EmDash `previewDatabase()` is a read-only Durable Object
+snapshot for content preview, not a writable schema migration target.
+`playgroundDatabase()` is seed-backed and writable but represents a demo/playground
+database, not production state. Therefore, build the host-side script first,
+prove it against local EmDash and an explicitly selected remote EmDash instance,
+then decide whether to wrap it in CD.
 
 ## EmDash Content Model Direction
 
@@ -753,6 +805,9 @@ For each implementation slice:
 - Run the narrowest relevant check first.
 - For schema or seed changes, run the seed/bootstrap flow needed to prove the
   schema loads.
+- For host-side EmDash deployment scripts, run a dry-run against local EmDash via
+  the shared `baseUrl`/credential connection model, then apply only after the
+  diff and idempotency behavior are understood.
 - Before using an EmDash plugin API for a durable write, verify the current
   installed EmDash API can express the required fields or relation. If it cannot,
   move that write to a host-side API, CLI command, or trusted first-party

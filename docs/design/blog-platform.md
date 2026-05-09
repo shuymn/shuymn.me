@@ -38,6 +38,8 @@ Foundation reconsideration:
   source spike is evaluated.
 - ADR 0003 resolves the spike direction: the next public-content target is an
   Astro-only local-source architecture.
+- `docs/design/local-source-contract.md` defines the minimum file layout and
+  projection command for the EmDash-free cutover.
 - The memorandum-first goals in this document remain in force. EmDash-specific
   implementation assumptions below are historical context or unpublished
   migration references, not part of the deployable replacement target.

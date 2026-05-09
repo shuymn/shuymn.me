@@ -1,0 +1,130 @@
+# Local Source Contract
+
+Status: Draft
+Date: 2026-05-10
+Issue: `shuymn_me-1er.16`
+
+## Purpose
+
+Define the minimum local content contract needed to deploy the EmDash-free Astro
+site without making rich post frontmatter the canonical source of generated or
+accepted metadata.
+
+This contract is intentionally narrower than the full blog-platform baseline. It
+exists to unblock the Astro/Cloudflare cutover. Tags, series, English
+generation, OGP automation, editor UI, and image handling remain follow-up work.
+
+## Layout
+
+Author source:
+
+```text
+src/content/source/posts/<locale>/<slug>.md
+```
+
+Accepted metadata:
+
+```text
+src/content/metadata/posts/<locale>/<slug>.json
+```
+
+Generated state:
+
+```text
+src/content/generated/posts/<locale>/<slug>/*.json
+```
+
+Astro build projection:
+
+```text
+src/content/posts/<locale>/<slug>.md
+```
+
+Only the projection is consumed by Astro content collections. Author source and
+accepted metadata are the local source of truth. Generated state is never read by
+public routes unless a value is first accepted into metadata.
+
+## Author Source
+
+The author source file contains the post title and body. The only frontmatter
+field currently allowed is `title`.
+
+Example:
+
+```markdown
+---
+title: "Post Title"
+---
+
+Body text.
+```
+
+The path provides `locale` and `slug`. The source body remains the primary file
+that Coding Agents and local editors should draft, review, and translate.
+
+## Accepted Metadata
+
+The metadata sidecar stores durable publishing inputs. The current cutover
+schema allows:
+
+- `slug`
+- `locale`
+- `description`
+- `publishedAt`
+- `updatedAt`
+- `draft`
+- `tags`
+- `series`
+- `seo`
+- `translation`
+- `visibility`
+- `statusNote`
+- `redirects`
+- `revision`
+
+This sidecar is the place for accepted values. LLM suggestions, failed
+generation attempts, prompt versions, and rejected candidates do not belong here
+until a value is accepted or deterministically promoted.
+
+## Generated State
+
+Generated state is reserved for suggestion and run records such as provider
+output, prompt versions, validation failures, rejected candidates, and retry
+state. The current cutover does not require any generated state files.
+
+When generated state is added later, public rendering shall continue to ignore it
+until a command or editor action writes an accepted value into the metadata
+sidecar.
+
+## Projection
+
+Run:
+
+```bash
+pnpm run project:content -- --apply
+```
+
+to regenerate Astro content projection files from author source plus accepted
+metadata.
+
+Run:
+
+```bash
+pnpm run project:content -- --check
+```
+
+to verify the checked-in projection is current. `pnpm run build` runs this check
+before Astro builds.
+
+The projection may contain frontmatter because Astro's Markdown content
+collection expects it. That frontmatter is implementation output, not the
+authoring contract.
+
+## Cutover Constraints
+
+- Current deployment only needs Japanese source posts.
+- English generated posts are not part of the cutover.
+- `src/content/posts/en/*.md` may be absent.
+- EmDash export files remain migration evidence only.
+- Future editor/CMS work must edit author source and accepted metadata, not own
+  the canonical body.

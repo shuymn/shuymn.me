@@ -1,0 +1,21 @@
+{
+  "slug": "2020-12-30-good-bye-2020",
+  "locale": "ja",
+  "publishedAt": "2020-12-30T00:00:00.000Z",
+  "updatedAt": "2026-04-24T16:49:45.018Z",
+  "draft": false,
+  "tags": [],
+  "seo": {
+    "title": "ふりかえり 2020",
+    "description": "2020年の振り返り"
+  },
+  "translation": {
+    "disabled": false
+  },
+  "visibility": "public",
+  "redirects": [],
+  "revision": {
+    "source": "emdash-export",
+    "reconciled": false
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "slug": "2021-01-10-intake-vent-replace",
+  "locale": "ja",
+  "publishedAt": "2021-01-10T00:00:00.000Z",
+  "updatedAt": "2026-04-24T16:49:45.302Z",
+  "draft": false,
+  "tags": [],
+  "seo": {
+    "title": "給気口を交換した",
+    "description": "24時間換気の給気口を自費で交換した話"
+  },
+  "translation": {
+    "disabled": false
+  },
+  "visibility": "public",
+  "redirects": [],
+  "revision": {
+    "source": "emdash-export",
+    "reconciled": false
+  }
+}

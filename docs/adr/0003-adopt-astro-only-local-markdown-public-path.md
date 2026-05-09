@@ -184,5 +184,6 @@ be considered a deployable cutover:
 ## Related Design
 
 - [Blog Platform Design](../design/blog-platform.md)
+- [Local Source Contract](../design/local-source-contract.md)
 - [ADR 0002: Spike Local Markdown Canonical Source Before Further CMS Commitment](0002-spike-local-markdown-canonical-source.md)
 - [Local Markdown Canonical Source Spike](../design/local-markdown-canonical-source-spike.md)

@@ -45,15 +45,9 @@ export const localPostSchema = z
       })
       .strict()
       .default({ disabled: false }),
-    generation: z
-      .object({
-        promptVersion: optionalTextSchema,
-        reviewerVersion: optionalTextSchema,
-        sourceHash: optionalTextSchema,
-        status: z.enum(["draft", "reviewing", "passed", "failed", "published"]).optional(),
-      })
-      .strict()
-      .default({}),
+    visibility: z.enum(["public", "unlisted"]).default("public"),
+    statusNote: optionalTextSchema,
+    redirects: z.array(z.string().min(1)).default([]),
   })
   .strict();
 

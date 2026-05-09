@@ -52,11 +52,14 @@ pnpm run lint:fix
 pnpm run fmt
 pnpm run fmt:fix
 pnpm run typecheck
+pnpm run project:content -- --check
+pnpm run project:content -- --apply
 pnpm run export:emdash-content -- --dry-run
 pnpm run bootstrap
 pnpm run seed
 pnpm run deploy:emdash -- --dry-run --dev-bypass
 pnpm run test:emdash-export
+pnpm run test:local-content
 pnpm run test:emdash-deploy
 ```
 

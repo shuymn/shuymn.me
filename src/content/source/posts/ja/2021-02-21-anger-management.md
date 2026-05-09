@@ -1,16 +1,5 @@
 ---
-slug: "2021-02-21-anger-management"
-locale: "ja"
 title: "『アンガーマネジメント入門』を読んだ"
-publishedAt: "2021-02-21T00:00:00.000Z"
-updatedAt: "2026-04-24T16:49:45.615Z"
-draft: false
-tags: []
-seo:
-  title: "『アンガーマネジメント入門』を読んだ"
-  description: "『アンガーマネジメント入門』という本を読んだ感想"
-translation:
-  disabled: false
 ---
 
 ただ読むだけだとすぐ頭から抜けるので、読書感想文を書いてみることにした。

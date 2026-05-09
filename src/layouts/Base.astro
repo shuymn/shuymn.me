@@ -1,4 +1,5 @@
 ---
+
 import ThemeToggle from "../components/ThemeToggle";
 import {
     getCurrentLocale,
@@ -47,54 +48,50 @@ const publicText = getPublicText(currentLocale);
 
 <!doctype html>
 <html lang={currentLocale}>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="follow, index" />
-    <title>{fullTitle}</title>
-    {description && <meta name="description" content={description} />}
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <meta property="og:type" content={type} />
-    <meta property="og:site_name" content={siteTitle} />
-    <meta property="og:title" content={fullTitle} />
-    {description && <meta property="og:description" content={description} />}
-    {image && <meta property="og:image" content={image} />}
-    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
-    {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
-    <script is:inline define:vars={{ THEME_STORAGE_KEY, DARK_THEME, LIGHT_THEME }}>
-      (function () {
-        var storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        document.documentElement.dataset.theme =
-          storedTheme === DARK_THEME || (storedTheme !== LIGHT_THEME && prefersDark)
-            ? DARK_THEME
-            : LIGHT_THEME;
-      })();
-    </script>
-  </head>
-  <body>
-    <div class="site-shell">
-      <header>
-        <nav class="site-nav" aria-label={publicText.navLabel}>
-          <a class="site-title" href={homeUrl}>{siteTitle}</a>
-          <div class="nav-actions">
-            <ul class="language-switcher" aria-label={publicText.languageLabel}>
-              {
-                languageLinks.map((link) => (
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="follow, index">
+        <title>{fullTitle}</title>
+        {description && <meta name="description" content={description} />}
+        <link rel="shortcut icon" href="/favicon.ico">
+        <meta property="og:type" content={type}>
+        <meta property="og:site_name" content={siteTitle}>
+        <meta property="og:title" content={fullTitle}>
+        {description && <meta property="og:description" content={description} />}
+        {image && <meta property="og:image" content={image} />}
+        {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+        {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+        <script is:inline define:vars={{ THEME_STORAGE_KEY, DARK_THEME, LIGHT_THEME }}>
+        (() => {
+            var storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+            var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            document.documentElement.dataset.theme =
+                storedTheme === DARK_THEME || (storedTheme !== LIGHT_THEME && prefersDark) ? DARK_THEME : LIGHT_THEME;
+        })();
+        </script>
+    </head>
+    <body>
+        <div class="site-shell">
+            <header>
+                <nav class="site-nav" aria-label={publicText.navLabel}>
+                    <a class="site-title" href={homeUrl}>{siteTitle}</a>
+                    <div class="nav-actions">
+                        <ul class="language-switcher" aria-label={publicText.languageLabel}>
+                            {languageLinks.map((link) => (
                   <li>
                     <a href={link.href} aria-current={link.locale === currentLocale ? "page" : undefined}>
                       {link.label}
                     </a>
                   </li>
-                ))
-              }
-            </ul>
-            <ThemeToggle client:load />
-          </div>
-        </nav>
-      </header>
-      <hr class="site-rule" />
-      <slot />
-    </div>
-  </body>
+                ))}
+                        </ul>
+                        <ThemeToggle client:load />
+                    </div>
+                </nav>
+            </header>
+            <hr class="site-rule">
+            <slot />
+        </div>
+    </body>
 </html>

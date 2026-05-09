@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execFileSync } from "node:child_process";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { z } from "zod";
@@ -71,8 +72,10 @@ export function parseArgs(argv) {
     check: false,
     force: false,
     initFromProjection: false,
+    legacyDir: "_posts",
     metadataDir: DEFAULT_METADATA_DIR,
     projectionDir: DEFAULT_PROJECTION_DIR,
+    recoverFromGit: "",
     sourceDir: DEFAULT_SOURCE_DIR,
   };
 
@@ -92,6 +95,14 @@ export function parseArgs(argv) {
     }
     if (arg === "--init-from-projection") {
       options.initFromProjection = true;
+      continue;
+    }
+    if (arg === "--recover-from-git") {
+      options.recoverFromGit = readValue(args, ++index, "--recover-from-git");
+      continue;
+    }
+    if (arg === "--legacy-dir") {
+      options.legacyDir = readValue(args, ++index, "--legacy-dir");
       continue;
     }
     if (arg === "--source-dir") {
@@ -120,6 +131,17 @@ export async function projectLocalContent(options) {
   const sourceDir = resolve(options.sourceDir);
   const metadataDir = resolve(options.metadataDir);
   const projectionDir = resolve(options.projectionDir);
+
+  if (options.recoverFromGit) {
+    return recoverAuthorSourceFromGit({
+      check: options.check,
+      force: options.force,
+      legacyDir: options.legacyDir,
+      metadataDir,
+      sourceDir,
+      treeish: options.recoverFromGit,
+    });
+  }
 
   if (options.initFromProjection) {
     return initFromProjection({ metadataDir, projectionDir, sourceDir, force: options.force, check: options.check });
@@ -256,6 +278,63 @@ async function initFromProjection({ metadataDir, projectionDir, sourceDir, force
   };
 }
 
+async function recoverAuthorSourceFromGit({ check, force, legacyDir, metadataDir, sourceDir, treeish }) {
+  const legacyPaths = listGitTreeFiles(treeish, legacyDir)
+    .filter((path) => path.endsWith(".md"))
+    .sort();
+  const stale = [];
+  let recovered = 0;
+
+  for (const legacyPath of legacyPaths) {
+    const slug = legacyPath.split("/").pop()?.replace(/\.md$/, "");
+    if (!slug) throw new Error(`could not derive slug from ${legacyPath}`);
+    const sourcePath = join(sourceDir, `ja/${slug}.md`);
+    const metadataPath = join(metadataDir, `ja/${slug}.json`);
+    const legacyContent = readGitFile(treeish, legacyPath);
+    const parsed = splitMarkdownFile(legacyContent, `${treeish}:${legacyPath}`);
+    const legacyFrontmatter = parseYamlObject(parsed.frontmatter);
+    const legacyTitle = assertNonEmptyString(legacyFrontmatter.title, `${legacyPath} title`);
+    const legacyDescription = optionalString(legacyFrontmatter.description);
+    const currentMetadata = parseAcceptedMetadata(await readJsonFile(metadataPath), `ja/${slug}.json`);
+    const nextSource = `${serializeMarkdownFile({ title: legacyTitle }, normalizeMarkdownBody(parsed.body))}\n`;
+    const nextMetadata = {
+      ...currentMetadata,
+      ...(legacyDescription ? { description: legacyDescription } : {}),
+      revision: {
+        source: "git-history",
+        reconciled: true,
+        notes: `Recovered from ${treeish}:${legacyPath}`,
+      },
+    };
+    const metadataContent = `${JSON.stringify(parseAcceptedMetadata(nextMetadata, `ja/${slug}.json`), null, 2)}\n`;
+
+    if (check) {
+      const currentSource = await readOptionalFile(sourcePath);
+      const currentMetadataContent = await readOptionalFile(metadataPath);
+      if (currentSource !== nextSource) stale.push(`source:ja/${slug}.md`);
+      if (currentMetadataContent !== metadataContent) stale.push(`metadata:ja/${slug}.json`);
+    } else {
+      await mkdir(dirname(sourcePath), { recursive: true });
+      await mkdir(dirname(metadataPath), { recursive: true });
+      await writeFile(sourcePath, nextSource, { flag: force ? "w" : "wx" });
+      await writeFile(metadataPath, metadataContent, { flag: force ? "w" : "wx" });
+    }
+    recovered++;
+  }
+
+  if (check && stale.length > 0) {
+    throw new Error(`historical source recovery is stale: ${stale.join(", ")}`);
+  }
+
+  return {
+    ok: true,
+    applied: !check,
+    checked: check,
+    recovered,
+    treeish,
+  };
+}
+
 function buildAcceptedMetadataFromProjection(frontmatter, locale, slug) {
   const metadata = compactObject({
     slug,
@@ -300,6 +379,9 @@ function splitMarkdownFile(content, label) {
 function normalizeMarkdownBody(body) {
   let inFence = false;
   return body
+    .split("")
+    .filter(isSupportedMarkdownCharacter)
+    .join("")
     .replace(/^\n+/, "")
     .trimEnd()
     .split("\n")
@@ -311,6 +393,12 @@ function normalizeMarkdownBody(body) {
       return normalizedLine;
     })
     .join("\n");
+}
+
+function isSupportedMarkdownCharacter(character) {
+  const code = character.charCodeAt(0);
+  if (code === 0x09 || code === 0x0a) return true;
+  return (code >= 0x20 && code !== 0x7f) || code > 0x7f;
 }
 
 function normalizeMarkdownLineEnd(line, inFence) {
@@ -374,7 +462,8 @@ function parseScalar(value) {
   if (value === "false") return false;
   if (value === "null") return null;
   if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
-  if (value.startsWith('"') || value.startsWith("'")) return JSON.parse(value);
+  if (value.startsWith('"')) return JSON.parse(value);
+  if (value.startsWith("'") && value.endsWith("'")) return value.slice(1, -1).replace(/''/gu, "'");
   return value;
 }
 
@@ -440,6 +529,18 @@ async function readJsonFile(path) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`${path} must be valid JSON: ${message}`);
   }
+}
+
+function listGitTreeFiles(treeish, path) {
+  return execFileSync("git", ["ls-tree", "-r", "--name-only", treeish, "--", path], {
+    encoding: "utf8",
+  })
+    .split("\n")
+    .filter(Boolean);
+}
+
+function readGitFile(treeish, path) {
+  return execFileSync("git", ["show", `${treeish}:${path}`], { encoding: "utf8" });
 }
 
 async function readOptionalFile(path) {

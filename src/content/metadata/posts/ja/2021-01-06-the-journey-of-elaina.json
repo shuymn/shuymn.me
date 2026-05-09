@@ -1,6 +1,7 @@
 {
   "slug": "2021-01-06-the-journey-of-elaina",
   "locale": "ja",
+  "description": "アニメ『魔女の旅々』を観た感想など",
   "publishedAt": "2021-01-06T00:00:00.000Z",
   "updatedAt": "2026-04-24T16:49:45.160Z",
   "draft": false,
@@ -15,7 +16,8 @@
   "visibility": "public",
   "redirects": [],
   "revision": {
-    "source": "emdash-export",
-    "reconciled": false
+    "source": "git-history",
+    "reconciled": true,
+    "notes": "Recovered from bbcd28c4ed5148db1422179a082fffc95ef4c29f^:_posts/2021-01-06-the-journey-of-elaina.md"
   }
 }

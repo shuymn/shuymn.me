@@ -1,6 +1,7 @@
 {
   "slug": "2020-12-26-best-buy-this-year",
   "locale": "ja",
+  "description": "2020年に買ってよかったものを紹介します。",
   "publishedAt": "2020-12-26T00:00:00.000Z",
   "updatedAt": "2026-04-24T16:49:44.948Z",
   "draft": false,
@@ -15,7 +16,8 @@
   "visibility": "public",
   "redirects": [],
   "revision": {
-    "source": "emdash-export",
-    "reconciled": false
+    "source": "git-history",
+    "reconciled": true,
+    "notes": "Recovered from bbcd28c4ed5148db1422179a082fffc95ef4c29f^:_posts/2020-12-26-best-buy-this-year.md"
   }
 }

@@ -4,7 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { buildProjectionFromSource, parseAcceptedMetadata, projectLocalContent } from "./project-local-content.mjs";
+import {
+  buildProjectionFromSource,
+  parseAcceptedMetadata,
+  parseAuthorSource,
+  projectLocalContent,
+} from "./project-local-content.mjs";
 
 test("projects author source and accepted metadata into Astro content frontmatter", async () => {
   const root = await mkdtemp(join(tmpdir(), "local-content-"));
@@ -60,6 +65,12 @@ test("rejects generated state in accepted metadata", () => {
       }),
     /Unrecognized key/,
   );
+});
+
+test("normalizes legacy control characters out of author bodies", () => {
+  const source = parseAuthorSource('---\ntitle: "Legacy"\n---\n\nSP皆伝を取った。\n\b高校生のときから遊んだ。\n');
+
+  assert.equal(source.body, "SP皆伝を取った。\n高校生のときから遊んだ。");
 });
 
 test("check mode detects stale projections", async () => {

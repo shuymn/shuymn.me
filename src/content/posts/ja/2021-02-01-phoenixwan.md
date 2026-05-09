@@ -2,6 +2,7 @@
 slug: "2021-02-01-phoenixwan"
 locale: "ja"
 title: "PHOENIXWANを買った"
+description: "beatmania IIDXのコントローラー\"PHOENIXWAN\"を購入した"
 publishedAt: "2021-02-01T00:00:00.000Z"
 updatedAt: "2026-04-24T16:49:45.461Z"
 draft: false
@@ -33,5 +34,6 @@ translation:
     - 三和電子 OBSA-SP-50g(50g)に換装
 - 皿
     - 軽かったので皿の裏側にフェルトを貼って摩擦を増やしたりした
+
 
 具体的にどう静音化したかは試行錯誤もあり書くと長くなりそうな予感があるので、書く気がおきたら別の記事として投稿する予定。

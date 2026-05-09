@@ -120,6 +120,22 @@ The projection may contain frontmatter because Astro's Markdown content
 collection expects it. That frontmatter is implementation output, not the
 authoring contract.
 
+## Historical Recovery
+
+Japanese author source can be recovered from a git tree that still contains the
+legacy `_posts` directory:
+
+```bash
+pnpm run project:content -- --recover-from-git '<tree-ish>' --apply --force
+pnpm run project:content -- --apply
+```
+
+The recovery mode writes author source from historical Markdown and marks the
+metadata sidecar as reconciled from git history. During recovery, Markdown hard
+breaks are normalized and legacy C0 control characters are removed from article
+bodies. See `docs/design/japanese-source-recovery.md` for the current recovery
+evidence.
+
 ## Cutover Constraints
 
 - Current deployment only needs Japanese source posts.

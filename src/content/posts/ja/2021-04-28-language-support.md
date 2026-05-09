@@ -2,6 +2,7 @@
 slug: "2021-04-28-language-support"
 locale: "ja"
 title: "英語の翻訳や文法校正ソフトウェアに課金した"
+description: "DeepLとGrammarlyとLudwigに課金した話とファーストインプレッションについて書きました"
 publishedAt: "2021-04-28T00:00:00.000Z"
 updatedAt: "2026-04-24T16:49:45.769Z"
 draft: false

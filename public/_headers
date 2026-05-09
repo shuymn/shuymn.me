@@ -1,0 +1,5 @@
+/posts/*.md
+  Content-Type: text/markdown; charset=utf-8
+
+/en/posts/*.md
+  Content-Type: text/markdown; charset=utf-8

@@ -176,6 +176,14 @@ body {
   margin: 2rem 0;
 }
 
+.about p {
+  margin: 0;
+}
+
+.about p + p {
+  margin-top: 1rem;
+}
+
 .profile-links {
   display: flex;
   gap: 0.5rem;

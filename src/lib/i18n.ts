@@ -16,6 +16,7 @@ export const PUBLIC_TEXT_BY_LOCALE = {
     emptyPosts: "投稿はまだありません。",
     navLabel: "サイトナビゲーション",
     languageLabel: "言語切替",
+    themeToggleLabel: "ダークモード",
     notFoundTitle: "404",
     notFoundMessage: "ページが見つかりませんでした。",
     notFoundHomeLink: "トップページへ戻る",
@@ -29,6 +30,7 @@ export const PUBLIC_TEXT_BY_LOCALE = {
     emptyPosts: "No posts yet.",
     navLabel: "Site navigation",
     languageLabel: "Language",
+    themeToggleLabel: "Dark mode",
     notFoundTitle: "404",
     notFoundMessage: "Page not found.",
     notFoundHomeLink: "Back to home",
@@ -38,8 +40,6 @@ export const PUBLIC_TEXT_BY_LOCALE = {
     translationNoteSourceLink: "Read the Japanese original",
   },
 } as const;
-
-export const HOME_ABOUT_SLUG = "home-about";
 
 export type PublicText = (typeof PUBLIC_TEXT_BY_LOCALE)[Locale];
 
@@ -51,50 +51,7 @@ export function getPublicText(locale: string | undefined): PublicText {
   return PUBLIC_TEXT_BY_LOCALE[getCurrentLocale(locale)];
 }
 
-export function localizePath(path: string, locale?: string): string {
-  const currentLocale = getCurrentLocale(locale);
-  const normalizedPath = stripLocalePrefix(normalizeAbsolutePath(path));
-  if (currentLocale === DEFAULT_LOCALE) return normalizedPath;
-  if (normalizedPath === "/") return `/${currentLocale}`;
-  return `/${currentLocale}${normalizedPath}`;
-}
-
-export function getHomePath(locale?: string): string {
-  return localizePath("/", locale);
-}
-
-export function getContentSlug(entry: { id?: unknown; slug?: unknown; data?: { slug?: unknown } }): string {
-  const rawSlug = [entry.slug, entry.data?.slug, entry.id].find((value) => typeof value === "string");
-  return normalizeContentSlug(typeof rawSlug === "string" ? rawSlug : "");
-}
-
-export function getPostPath(slug: string, locale?: string): string {
-  const normalizedSlug = normalizeContentSlug(slug);
-  return localizePath(`/posts/${normalizedSlug}`, locale);
-}
-
 export function formatDate(date: Date | null | undefined): string {
   if (!date) return "";
   return date.toISOString().slice(0, 10).replace(/-/g, ".");
-}
-
-function normalizeAbsolutePath(path: string): string {
-  if (!path) return "/";
-  const absolutePath = path.startsWith("/") ? path : `/${path}`;
-  return absolutePath.replace(/\/{2,}/g, "/");
-}
-
-function stripLocalePrefix(path: string): string {
-  for (const locale of SUPPORTED_LOCALES) {
-    if (locale === DEFAULT_LOCALE) continue;
-    const prefix = `/${locale}`;
-    if (path === prefix) return "/";
-    if (path.startsWith(`${prefix}/`)) return path.slice(prefix.length);
-  }
-  return path;
-}
-
-function normalizeContentSlug(slug: string): string {
-  const trimmed = slug.replace(/^\/+|\/+$/g, "");
-  return stripLocalePrefix(`/${trimmed}`).replace(/^\/+/, "");
 }

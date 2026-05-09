@@ -4,37 +4,24 @@
   "private": true,
   "packageManager": "pnpm@10.33.4",
   "type": "module",
-  "emdash": {
-    "seed": "seed/seed.json"
-  },
   "scripts": {
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
-    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "build": "node scripts/project-local-content.mjs --check && ASTRO_TELEMETRY_DISABLED=1 astro build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
-    "start": "node ./dist/server/entry.mjs",
-    "bootstrap": "emdash init && emdash seed --on-conflict update && node scripts/clear-emdash-manifest-cache.mjs",
-    "seed": "emdash seed --on-conflict update && node scripts/clear-emdash-manifest-cache.mjs",
+    "deploy:dry-run": "pnpm run build && wrangler deploy --dry-run --config dist/server/wrangler.json",
     "lint": "biome check --error-on-warnings .",
     "lint:fix": "biome check --write .",
     "fmt": "biome check --linter-enabled=false --error-on-warnings .",
     "fmt:fix": "biome check --linter-enabled=false --write .",
     "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check",
-    "generate:english": "node scripts/generate-english-posts.ts",
-    "deploy:emdash": "node scripts/deploy-emdash-state.ts",
-    "test:english-generation": "node --test scripts/generate-english-posts.test.ts scripts/lib/emdashConnection.test.ts",
-    "test:emdash-deploy": "node --test scripts/deploy-emdash-state.test.ts scripts/lib/emdashDeploy.test.ts scripts/lib/emdashConnection.test.ts"
+    "project:content": "node scripts/project-local-content.mjs",
+    "test:local-content": "node --test scripts/project-local-content.test.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.1.7",
-    "@astrojs/node": "^10.0.0",
     "@astrojs/react": "^5.0.0",
-    "@emdash-cms/cloudflare": "^0.9.0",
-    "ai": "^6.0.176",
-    "ai-gateway-provider": "^3.1.3",
+    "@astrojs/sitemap": "^3.7.2",
     "astro": "^6.0.1",
-    "better-sqlite3": "^12.8.0",
-    "emdash": "^0.9.0",
-    "gunshi": "^0.29.5",
     "lucide-react": "^1.0.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
@@ -61,14 +48,9 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "better-sqlite3",
       "esbuild",
       "workerd"
-    ],
-    "patchedDependencies": {
-      "@emdash-cms/admin@0.9.0": "patches/@emdash-cms__admin@0.9.0.patch",
-      "emdash@0.9.0": "patches/emdash@0.9.0.patch"
-    }
+    ]
   },
   "engines": {
     "node": "24.x"

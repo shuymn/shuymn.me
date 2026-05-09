@@ -6,18 +6,6 @@
   "observability": {
     "enabled": true
   },
-  "vars": {
-    // Public-safe runtime vars live here. Keep API tokens and
-    // CF_CACHE_PURGE_TOKEN in GitHub/Worker secrets, not in this file.
-    "EMDASH_RUNTIME": "cloudflare"
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "shuymn-me",
-      "database_id": "73c1da6e-ee28-4550-bbed-875b976c5d0f"
-    }
-  ],
   "r2_buckets": [
     {
       "binding": "MEDIA",
@@ -35,5 +23,7 @@
   // @astrojs/cloudflare uses this binding for runtime image transforms.
   "images": {
     "binding": "IMAGES"
-  }
+  },
+  "workers_dev": false,
+  "preview_urls": false
 }

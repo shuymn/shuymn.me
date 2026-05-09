@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">shuymn.me</title>
+  <desc id="desc">Default Open Graph image for shuymn.me.</desc>
+  <rect width="1200" height="630" fill="#101214"/>
+  <rect x="64" y="64" width="1072" height="502" fill="#f5f0e8"/>
+  <text x="120" y="300" fill="#101214" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="92" font-weight="700">shuymn.me</text>
+  <text x="124" y="378" fill="#384048" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="34">notes, engineering, and AI systems</text>
+</svg>

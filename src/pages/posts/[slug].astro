@@ -1,5 +1,20 @@
 ---
-import PostArticle from "../../components/PostArticle.astro";
+import type { CollectionEntry } from "astro:content";
+import PostPage from "../../components/PostPage.astro";
+import { DEFAULT_LOCALE } from "../../lib/i18n";
+import { getPostStaticPaths } from "../../lib/posts";
+
+export const prerender = true;
+
+type Props = {
+    post: CollectionEntry<"posts">;
+};
+
+export async function getStaticPaths() {
+    return getPostStaticPaths(DEFAULT_LOCALE);
+}
+
+const { post } = Astro.props as Props;
 ---
 
-<PostArticle />
+<PostPage post={post} />

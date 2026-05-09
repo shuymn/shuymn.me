@@ -1,17 +1,8 @@
 ---
-import { getSiteSettings } from "emdash";
-import { createPublicPageContext } from "emdash/page";
-import { EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
 import ThemeToggle from "../components/ThemeToggle";
-import {
-    getCurrentLocale,
-    getHomePath,
-    getPublicText,
-    LOCALE_LABELS,
-    localizePath,
-    SUPPORTED_LOCALES,
-} from "../lib/i18n";
-import { DEFAULT_OG_IMAGE_URL } from "../lib/seo";
+import { getCurrentLocale, getPublicText, LOCALE_LABELS, SUPPORTED_LOCALES } from "../lib/i18n";
+import { getHomePath, localizePath } from "../lib/i18n-routing";
+import { DEFAULT_OG_IMAGE_URL, SITE_TITLE, SITE_URL } from "../lib/seo";
 import { DARK_THEME, LIGHT_THEME, THEME_STORAGE_KEY } from "../lib/theme";
 import "../styles/site.css";
 
@@ -21,26 +12,25 @@ interface Props {
     type?: "website" | "article";
     publishedTime?: string | null;
     modifiedTime?: string | null;
-    content?: { collection: string; id: string; slug?: string | null };
     image?: string | null;
     path?: string;
 }
 
-const siteSettings = await getSiteSettings();
-const siteTitle = typeof siteSettings.title === "string" ? siteSettings.title : "shuymn.me";
 const {
-    title = siteTitle,
+    title,
     description = null,
     type = "website",
     publishedTime = null,
     modifiedTime = null,
-    content,
     image = DEFAULT_OG_IMAGE_URL,
     path,
 } = Astro.props;
-const fullTitle = title === siteTitle ? siteTitle : `${title} | ${siteTitle}`;
+const siteTitle = SITE_TITLE;
+const pageTitle = title ?? siteTitle;
+const fullTitle = pageTitle === siteTitle ? siteTitle : `${pageTitle} | ${siteTitle}`;
 const currentLocale = getCurrentLocale(Astro.currentLocale);
 const currentPath = path ?? getHomePath(currentLocale);
+const canonicalUrl = new URL(currentPath, SITE_URL).href;
 const homeUrl = getHomePath(currentLocale);
 const languageLinks = SUPPORTED_LOCALES.map((locale) => ({
     locale,
@@ -48,67 +38,62 @@ const languageLinks = SUPPORTED_LOCALES.map((locale) => ({
     href: localizePath(currentPath, locale),
 }));
 const publicText = getPublicText(currentLocale);
-
-const pageCtx = createPublicPageContext({
-    Astro,
-    kind: content ? "content" : "custom",
-    pageType: type,
-    title: fullTitle,
-    pageTitle: title,
-    description,
-    image,
-    articleMeta: { publishedTime, modifiedTime },
-    content,
-    siteName: siteTitle,
-});
 ---
 
 <!doctype html>
 <html lang={currentLocale}>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="follow, index" />
-    <title>{fullTitle}</title>
-    {description && <meta name="description" content={description} />}
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <EmDashHead page={pageCtx} />
-    <script is:inline define:vars={{ THEME_STORAGE_KEY, DARK_THEME, LIGHT_THEME }}>
-      (function () {
-        var storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        document.documentElement.dataset.theme =
-          storedTheme === DARK_THEME || (storedTheme !== LIGHT_THEME && prefersDark)
-            ? DARK_THEME
-            : LIGHT_THEME;
-      })();
-    </script>
-  </head>
-  <body>
-    <EmDashBodyStart page={pageCtx} />
-    <div class="site-shell">
-      <header>
-        <nav class="site-nav" aria-label={publicText.navLabel}>
-          <a class="site-title" href={homeUrl}>{siteTitle}</a>
-          <div class="nav-actions">
-            <ul class="language-switcher" aria-label={publicText.languageLabel}>
-              {
-                languageLinks.map((link) => (
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="follow, index">
+        <title>{fullTitle}</title>
+        <link rel="canonical" href={canonicalUrl}>
+        <link rel="sitemap" href="/sitemap-index.xml">
+        {description && <meta name="description" content={description} />}
+        <link rel="shortcut icon" href="/favicon.ico">
+        <meta property="og:type" content={type}>
+        <meta property="og:url" content={canonicalUrl}>
+        <meta property="og:site_name" content={siteTitle}>
+        <meta property="og:title" content={fullTitle}>
+        {description && <meta property="og:description" content={description} />}
+        {image && <meta property="og:image" content={image} />}
+        {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+        {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+        <script is:inline define:vars={{ THEME_STORAGE_KEY, DARK_THEME, LIGHT_THEME }}>
+        (() => {
+            var storedTheme = null;
+            try {
+                storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+            } catch {
+                storedTheme = null;
+            }
+            var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            document.documentElement.dataset.theme =
+                storedTheme === DARK_THEME || (storedTheme !== LIGHT_THEME && prefersDark) ? DARK_THEME : LIGHT_THEME;
+        })();
+        </script>
+    </head>
+    <body>
+        <div class="site-shell">
+            <header>
+                <nav class="site-nav" aria-label={publicText.navLabel}>
+                    <a class="site-title" href={homeUrl}>{siteTitle}</a>
+                    <div class="nav-actions">
+                        <ul class="language-switcher" aria-label={publicText.languageLabel}>
+                            {languageLinks.map((link) => (
                   <li>
                     <a href={link.href} aria-current={link.locale === currentLocale ? "page" : undefined}>
                       {link.label}
                     </a>
                   </li>
-                ))
-              }
-            </ul>
-            <ThemeToggle client:load />
-          </div>
-        </nav>
-      </header>
-      <hr class="site-rule" />
-      <slot />
-    </div>
-    <EmDashBodyEnd page={pageCtx} />
-  </body>
+                ))}
+                        </ul>
+                        <ThemeToggle client:load label={publicText.themeToggleLabel} />
+                    </div>
+                </nav>
+            </header>
+            <hr class="site-rule">
+            <slot />
+        </div>
+    </body>
 </html>

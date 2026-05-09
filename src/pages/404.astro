@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getCurrentLocale, getHomePath, getPublicText } from "../lib/i18n";
+import { getCurrentLocale, getPublicText } from "../lib/i18n";
+import { getHomePath } from "../lib/i18n-routing";
 
 const locale = getCurrentLocale(Astro.currentLocale);
 const publicText = getPublicText(locale);
@@ -8,11 +9,11 @@ const homeUrl = getHomePath(locale);
 ---
 
 <Base title={publicText.notFoundTitle} path={homeUrl}>
-  <main>
-    <section class="not-found">
-      <h1>{publicText.notFoundTitle}</h1>
-      <p>{publicText.notFoundMessage}</p>
-      <p><a href={homeUrl}>{publicText.notFoundHomeLink}</a></p>
-    </section>
-  </main>
+    <main>
+        <section class="not-found">
+            <h1>{publicText.notFoundTitle}</h1>
+            <p>{publicText.notFoundMessage}</p>
+            <p><a href={homeUrl}>{publicText.notFoundHomeLink}</a></p>
+        </section>
+    </main>
 </Base>

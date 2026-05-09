@@ -1,0 +1,383 @@
+#!/usr/bin/env node
+
+import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { dirname, join, relative, resolve } from "node:path";
+import { z } from "zod";
+
+const DEFAULT_SOURCE_DIR = "posts";
+const DEFAULT_PROJECTION_DIR = "src/content/posts/ja";
+const DEFAULT_LOCALE = "ja";
+
+const sourceFrontmatterSchema = z
+  .object({
+    title: z.string().min(1),
+  })
+  .strict();
+
+export function parseArgs(argv) {
+  const args = argv[0] === "--" ? argv.slice(1) : argv;
+  const options = {
+    apply: false,
+    check: false,
+    projectionDir: DEFAULT_PROJECTION_DIR,
+    sourceDir: DEFAULT_SOURCE_DIR,
+  };
+
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (arg === "--apply") {
+      options.apply = true;
+      continue;
+    }
+    if (arg === "--check") {
+      options.check = true;
+      continue;
+    }
+    if (arg === "--source-dir") {
+      options.sourceDir = readValue(args, ++index, "--source-dir");
+      continue;
+    }
+    if (arg === "--projection-dir") {
+      options.projectionDir = readValue(args, ++index, "--projection-dir");
+      continue;
+    }
+    throw new Error(`Unknown option: ${arg}`);
+  }
+
+  if (options.apply === options.check) {
+    throw new Error("Pass exactly one of --apply or --check");
+  }
+
+  return options;
+}
+
+export async function projectLocalContent(options) {
+  const sourceDir = resolve(options.sourceDir);
+  const projectionDir = resolve(options.projectionDir);
+
+  const sourcePaths = await listFiles(sourceDir, ".md");
+  const projections = await Promise.all(
+    sourcePaths.map((sourcePath) => buildProjectionFromSource({ projectionDir, sourceDir, sourcePath })),
+  );
+  projections.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
+
+  const expectedRelativePaths = new Set(projections.map((projection) => projection.relativePath));
+  const existingProjectionPaths = await listFiles(projectionDir, ".md");
+  const orphanRelativePaths = existingProjectionPaths
+    .map((path) => normalizeRelativePath(relative(projectionDir, path)))
+    .filter((rel) => !expectedRelativePaths.has(rel))
+    .sort();
+
+  if (options.check) {
+    const staleResults = await Promise.all(
+      projections.map(async (projection) => {
+        const current = await readOptionalFile(projection.filePath);
+        return current === projection.content ? null : projection.relativePath;
+      }),
+    );
+    const stale = staleResults.filter((entry) => entry !== null);
+    const issues = [...stale, ...orphanRelativePaths];
+    if (issues.length > 0) {
+      throw new Error(`local content projection is stale: ${issues.join(", ")}`);
+    }
+  } else {
+    await Promise.all([
+      ...projections.map(async (projection) => {
+        await mkdir(dirname(projection.filePath), { recursive: true });
+        await writeFile(projection.filePath, projection.content);
+      }),
+      ...orphanRelativePaths.map((rel) => unlink(join(projectionDir, rel))),
+    ]);
+  }
+
+  return {
+    ok: true,
+    applied: options.apply,
+    checked: options.check,
+    initialized: false,
+    projections: projections.length,
+  };
+}
+
+export async function buildProjectionFromSource({ projectionDir, sourceDir, sourcePath }) {
+  const relativePath = normalizeRelativePath(relative(sourceDir, sourcePath));
+  const { slug } = parsePostMarkdownPath(relativePath);
+  const source = parseAuthorSource(await readFile(sourcePath, "utf8"), relativePath);
+
+  const projectionFrontmatter = compactObject({
+    slug,
+    locale: DEFAULT_LOCALE,
+    title: source.title,
+    publishedAt: publishedAtFromSlug(slug),
+    seo: compactObject({
+      title: source.title,
+      description: generateSeoDescription(source.body),
+    }),
+  });
+
+  return {
+    filePath: join(projectionDir, relativePath),
+    relativePath,
+    content: `${serializeMarkdownFile(projectionFrontmatter, source.body)}\n`,
+  };
+}
+
+export function parseAuthorSource(content, label = "author source") {
+  const file = splitMarkdownFile(content, label);
+  const frontmatter = sourceFrontmatterSchema.parse(parseYamlObject(file.frontmatter));
+  const body = normalizeMarkdownBody(file.body);
+  if (!body.trim()) throw new Error(`${label} body is empty`);
+  return { title: frontmatter.title, body };
+}
+
+export function serializeMarkdownFile(frontmatter, markdown) {
+  return ["---", serializeYaml(frontmatter), "---", "", markdown.trimEnd()].join("\n");
+}
+
+function splitMarkdownFile(content, label) {
+  const normalized = content.replace(/\r\n/g, "\n");
+  if (!normalized.startsWith("---\n")) {
+    throw new Error(`${label} must start with frontmatter`);
+  }
+  const end = normalized.indexOf("\n---\n", 4);
+  if (end === -1) {
+    throw new Error(`${label} frontmatter is not closed`);
+  }
+  return {
+    frontmatter: normalized.slice(4, end),
+    body: normalized.slice(end + "\n---\n".length),
+  };
+}
+
+function normalizeMarkdownBody(body) {
+  let inFence = false;
+  return body
+    .split("")
+    .filter(isSupportedMarkdownCharacter)
+    .join("")
+    .replace(/^\n+/, "")
+    .trimEnd()
+    .split("\n")
+    .map((line) => {
+      const trimmedLine = line.trimStart();
+      const opensOrClosesFence = trimmedLine.startsWith("```") || trimmedLine.startsWith("~~~");
+      const normalizedLine = normalizeMarkdownLineEnd(line, inFence);
+      if (opensOrClosesFence) inFence = !inFence;
+      return normalizedLine;
+    })
+    .join("\n");
+}
+
+function isSupportedMarkdownCharacter(character) {
+  const code = character.charCodeAt(0);
+  if (code === 0x09 || code === 0x0a) return true;
+  return (code >= 0x20 && code !== 0x7f) || code > 0x7f;
+}
+
+function normalizeMarkdownLineEnd(line, inFence) {
+  if (inFence) return line.replace(/[ \t]+$/u, "");
+  if (/[ \t]{2,}$/u.test(line)) return line.replace(/[ \t]+$/u, "\\");
+  return line.replace(/[ \t]+$/u, "");
+}
+
+function parseYamlObject(yaml) {
+  const root = {};
+  const stack = [{ indent: -1, value: root }];
+  const lines = yaml.split("\n");
+
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    if (!line.trim()) continue;
+    const indent = line.match(/^ */)?.[0].length ?? 0;
+    const trimmed = line.trim();
+
+    while (stack.length > 1 && indent <= stack.at(-1).indent) stack.pop();
+    const parent = stack.at(-1).value;
+
+    if (trimmed.startsWith("- ")) {
+      if (!Array.isArray(parent)) throw new Error(`unsupported YAML array item at line ${index + 1}`);
+      parent.push(parseScalar(trimmed.slice(2)));
+      continue;
+    }
+
+    const match = trimmed.match(/^([A-Za-z0-9_]+):(.*)$/);
+    if (!match) throw new Error(`unsupported YAML line ${index + 1}: ${line}`);
+    const [, key, rawValue] = match;
+    const valueText = rawValue.trim();
+
+    if (valueText) {
+      parent[key] = parseScalar(valueText);
+      continue;
+    }
+
+    const nestedValue = nextNonEmptyLineIsArray(lines, index, indent) ? [] : {};
+    parent[key] = nestedValue;
+    stack.push({ indent, value: nestedValue });
+  }
+
+  return root;
+}
+
+function nextNonEmptyLineIsArray(lines, index, indent) {
+  for (let next = index + 1; next < lines.length; next++) {
+    const line = lines[next];
+    if (!line.trim()) continue;
+    const nextIndent = line.match(/^ */)?.[0].length ?? 0;
+    return nextIndent > indent && line.trim().startsWith("- ");
+  }
+  return false;
+}
+
+function parseScalar(value) {
+  if (value === "[]") return [];
+  if (value === "{}") return {};
+  if (value === "true") return true;
+  if (value === "false") return false;
+  if (value === "null") return null;
+  if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
+  if (value.startsWith('"')) return JSON.parse(value);
+  if (value.startsWith("'") && value.endsWith("'")) return value.slice(1, -1).replace(/''/gu, "'");
+  return value;
+}
+
+function serializeYaml(value, indent = 0) {
+  return Object.entries(value)
+    .map(([key, entry]) => serializeYamlEntry(key, entry, indent))
+    .join("\n");
+}
+
+function serializeYamlEntry(key, value, indent) {
+  const prefix = " ".repeat(indent);
+  if (Array.isArray(value)) {
+    if (value.length === 0) return `${prefix}${key}: []`;
+    return [`${prefix}${key}:`, ...value.map((item) => `${prefix}  - ${serializeScalar(item)}`)].join("\n");
+  }
+  if (value && typeof value === "object") {
+    const serialized = serializeYaml(value, indent + 2);
+    return serialized ? `${prefix}${key}:\n${serialized}` : `${prefix}${key}: {}`;
+  }
+  return `${prefix}${key}: ${serializeScalar(value)}`;
+}
+
+function serializeScalar(value) {
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number") return String(value);
+  if (value === null) return "null";
+  return JSON.stringify(String(value));
+}
+
+function compactObject(value) {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => {
+      if (entry === undefined || entry === null) return false;
+      if (typeof entry === "string" && entry.trim() === "") return false;
+      if (entry && typeof entry === "object" && !Array.isArray(entry) && Object.keys(entry).length === 0) {
+        return false;
+      }
+      return true;
+    }),
+  );
+}
+
+async function listFiles(root, extension) {
+  const entries = await readdir(root, { withFileTypes: true }).catch((error) => {
+    if (error && error.code === "ENOENT") return [];
+    throw error;
+  });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const path = join(root, entry.name);
+      if (entry.isDirectory()) return listFiles(path, extension);
+      if (entry.isFile() && entry.name.endsWith(extension)) return [path];
+      return [];
+    }),
+  );
+  return files.flat().sort();
+}
+
+async function readOptionalFile(path) {
+  try {
+    return await readFile(path, "utf8");
+  } catch (error) {
+    if (error && error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function parsePostMarkdownPath(path) {
+  const normalized = normalizeRelativePath(path);
+  const match = normalized.match(/^([^/]+)\.md$/);
+  if (!match) throw new Error(`expected <slug>.md path, got ${path}`);
+  const [, slug] = match;
+  if (slug === "." || slug === "..") throw new Error(`unsupported slug: ${slug}`);
+  return { slug };
+}
+
+function publishedAtFromSlug(slug) {
+  const match = slug.match(/^(\d{4})-(\d{2})-(\d{2})-/);
+  if (!match) throw new Error(`slug must start with YYYY-MM-DD: ${slug}`);
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    throw new Error(`slug has invalid published date: ${slug}`);
+  }
+  return `${yearText}-${monthText}-${dayText}T00:00:00.000Z`;
+}
+
+function generateSeoDescription(markdown) {
+  const paragraph = markdown
+    .split(/\n{2,}/u)
+    .map((entry) => stripMarkdownForDescription(entry))
+    .find((entry) => entry.length > 0);
+  if (!paragraph) return undefined;
+  const characters = Array.from(paragraph);
+  if (characters.length <= 120) return paragraph;
+  return `${characters.slice(0, 117).join("").trimEnd()}...`;
+}
+
+function stripMarkdownForDescription(markdown) {
+  return markdown
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trim();
+      return (
+        trimmed.length > 0 &&
+        !trimmed.startsWith("#") &&
+        !trimmed.startsWith("```") &&
+        !trimmed.startsWith("~~~") &&
+        !trimmed.startsWith("!")
+      );
+    })
+    .join(" ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/gu, "$1")
+    .replace(/[*_`>#~-]+/gu, "")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function normalizeRelativePath(path) {
+  return path.split("\\").join("/");
+}
+
+function readValue(argv, index, name) {
+  const value = argv[index];
+  if (!value || value.startsWith("--")) {
+    throw new Error(`${name} requires a value`);
+  }
+  return value;
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  projectLocalContent(parseArgs(process.argv.slice(2)))
+    .then((summary) => {
+      console.log(JSON.stringify(summary, null, 2));
+    })
+    .catch((error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(JSON.stringify({ ok: false, error: message }));
+      process.exit(1);
+    });
+}

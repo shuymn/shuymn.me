@@ -1,31 +1,51 @@
 # shuymn.me
 
-Personal website and blog built with Astro and EmDash.
+Personal website and blog built with Astro Markdown author source and a generated
+Astro content projection.
 
 ## Setup
 
-Use Node.js 24 and pnpm.
+Use Node.js 24 and pnpm 10.33.3.
 
 ```bash
 pnpm install
-pnpm run bootstrap
 pnpm run dev
+```
+
+## Content
+
+Canonical Japanese post source lives in root `posts/*.md`. Each source file has
+title-only frontmatter; slug and publication date are derived from the filename.
+
+Astro reads generated projection files under `src/content/posts/ja/*.md`.
+Regenerate or verify the projection with:
+
+```bash
+pnpm run project:content -- --apply
+pnpm run project:content -- --check
+```
+
+`pnpm run build` runs the projection check before building.
+
+## Validation
+
+Run the narrowest relevant command first:
+
+```bash
+pnpm run fmt
+pnpm run lint
+pnpm run test:local-content
+pnpm run typecheck
+pnpm run build
+```
+
+Validate the Cloudflare Worker output without deploying with:
+
+```bash
+pnpm run deploy:dry-run
 ```
 
 ## Environment
 
-Local secrets are loaded through direnv and `.envrc`.
-
-```bash
-cp .env.example .env
-eval "$(direnv hook zsh)"
-direnv allow
-```
-
-Install direnv with your package manager first, then add the shell hook command
-to your shell profile. For shells other than zsh, use the hook command shown by
-the direnv documentation.
-
-`.env.example` lists the EmDash, Cloudflare Access, Cloudflare AI Gateway, and
-English-generation variables used by this repository. Keep real values in
-`.env`; it is ignored by git.
+No environment variables are required for the current author source deploy
+target. `.envrc` may still load a local `.env`; keep real values out of git.

@@ -6,12 +6,20 @@ type Theme = typeof DARK_THEME | typeof LIGHT_THEME;
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
+type Props = {
+  label: string;
+};
+
+let inMemoryTheme: Theme | null = null;
+
 function getStoredTheme(): Theme | null {
-  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-  if (storedTheme === DARK_THEME || storedTheme === LIGHT_THEME) {
-    return storedTheme;
-  }
-  return null;
+  try {
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme === DARK_THEME || storedTheme === LIGHT_THEME) {
+      return storedTheme;
+    }
+  } catch {}
+  return inMemoryTheme;
 }
 
 function getSystemTheme(mediaQuery = window.matchMedia(COLOR_SCHEME_QUERY)): Theme {
@@ -24,10 +32,13 @@ function applyTheme(theme: Theme) {
 
 function persistTheme(theme: Theme) {
   applyTheme(theme);
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  inMemoryTheme = theme;
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {}
 }
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ label }: Props) {
   const [resolvedTheme, setResolvedTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
@@ -57,7 +68,7 @@ export default function ThemeToggle() {
 
   if (!resolvedTheme) {
     return (
-      <button type="button" className="theme-toggle" aria-label="Toggle theme" disabled>
+      <button type="button" className="theme-toggle" aria-label={label} disabled>
         <span className="theme-toggle-placeholder" />
       </button>
     );
@@ -73,7 +84,7 @@ export default function ThemeToggle() {
         setResolvedTheme(nextTheme);
       }}
       className="theme-toggle"
-      aria-label={`Switch to ${nextTheme} mode`}
+      aria-label={label}
       aria-pressed={resolvedTheme === DARK_THEME}
     >
       {resolvedTheme === LIGHT_THEME ? <Moon size={20} /> : <Sun size={20} />}

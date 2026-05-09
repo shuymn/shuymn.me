@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!**/*.json", "!emdash-env.d.ts"]
+    "includes": ["**", "!**/*.json"]
   },
   "formatter": {
     "enabled": true,
@@ -30,6 +30,12 @@
       "tailwindDirectives": true
     }
   },
+  "html": {
+    "formatter": {
+      "enabled": true
+    },
+    "experimentalFullSupportEnabled": true
+  },
   "assist": {
     "enabled": true,
     "actions": {
@@ -45,7 +51,8 @@
         "rules": {
           "correctness": {
             "noUnusedImports": "off",
-            "noUnusedVariables": "off"
+            "noUnusedVariables": "off",
+            "useJsxKeyInIterable": "off"
           }
         }
       }

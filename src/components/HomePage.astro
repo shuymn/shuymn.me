@@ -1,93 +1,82 @@
 ---
-import { getEmDashCollection, getEmDashEntry } from "emdash";
-import { PortableText } from "emdash/ui";
+import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
-import {
-    formatDate,
-    getContentSlug,
-    getCurrentLocale,
-    getHomePath,
-    getPostPath,
-    getPublicText,
-    HOME_ABOUT_SLUG,
-} from "../lib/i18n";
+import { DEFAULT_LOCALE, formatDate, getCurrentLocale, getPublicText } from "../lib/i18n";
+import { getHomePath, getPostPath } from "../lib/i18n-routing";
+import { SITE_TITLE } from "../lib/seo";
 
 type ProfileLink = {
     label: string;
     url: string;
 };
 
-const locale = getCurrentLocale(Astro.currentLocale);
-const [aboutResult, postsResult] = await Promise.all([
-    getEmDashEntry("site_sections", HOME_ABOUT_SLUG, { locale }),
-    getEmDashCollection("posts", { locale, status: "published" }),
-]);
-const { entry: about } = aboutResult;
-const { entries: posts } = postsResult;
+const PROFILE_LINKS: readonly ProfileLink[] = [
+    { label: "Twitter", url: "https://x.com/shuymn" },
+    { label: "GitHub", url: "https://github.com/shuymn" },
+    { label: "mail", url: "mailto:mail@shuymn.me" },
+];
 
-for (const cacheHint of [aboutResult.cacheHint, postsResult.cacheHint]) {
-    if (cacheHint) {
-        Astro.cache.set(cacheHint);
-    }
-}
+const locale = getCurrentLocale(Astro.currentLocale);
+const posts = await getCollection("posts", ({ data }) => data.locale === locale);
 
 const sortedPosts = posts
-    .filter((post) => getContentSlug(post).length > 0)
-    .toSorted((a, b) => {
-        const dateA = a.data.publishedAt?.getTime() ?? 0;
-        const dateB = b.data.publishedAt?.getTime() ?? 0;
-        return dateB - dateA;
-    });
+    .map((post) => ({ post, time: post.data.publishedAt.getTime() }))
+    .sort((a, b) => (a.time !== b.time ? b.time - a.time : b.post.data.slug.localeCompare(a.post.data.slug)))
+    .map((entry) => entry.post);
 
-function isProfileLink(value: unknown): value is ProfileLink {
-    if (!value || typeof value !== "object") return false;
-    const link = value as Record<string, unknown>;
-    return typeof link.label === "string" && typeof link.url === "string";
-}
-
-const profileLinks = Array.isArray(about?.data.links) ? about.data.links.filter(isProfileLink) : [];
 const publicText = getPublicText(locale);
 ---
 
-<Base title="shuymn.me" path={getHomePath(locale)}>
-  <main>
-    {
-      about && (
+<Base title={SITE_TITLE} path={getHomePath(locale)}>
+    <main>
         <section class="about" aria-label={publicText.aboutLabel}>
-          {about.data.content ? <PortableText value={about.data.content} /> : null}
-          {
-            profileLinks.length > 0 && (
-              <ul class="profile-links">
-                {profileLinks.map((link) => (
-                  <li>
-                    <a href={link.url}>{link.label}</a>
-                  </li>
-                ))}
-              </ul>
-            )
-          }
+            {locale === DEFAULT_LOCALE ? (
+          <>
+            <p>
+              ソフトウェアエンジニア。主にバックエンド領域を主戦場としています。<br/>
+              SNSキュレーション事業会社、VTuber運営会社を経て現在はBtoBのSaaS企業に在籍。
+            </p>
+
+            <p>
+              このサイトは自分のための備忘録であり、内容の正確性は保証しません。<br />
+              投稿は全て個人の意見であり、所属する組織の意見ではありません。<br/>
+              お問い合わせの際は、下記のリンク先からご連絡ください。
+            </p>
+          </>
+        ) : (
+          <>
+            <p>
+                Software engineer primarily focused on backend systems.<br/>
+                Previously worked at a social media curation company and a VTuber management company, and currently work at a B2B SaaS company.
+            </p>
+
+            <p>
+                This site is a personal knowledge base, and I do not guarantee the accuracy of its content.<br/>
+                All posts are personal opinions and do not represent the views of any organization I belong to.<br/>
+                For inquiries, please contact me through the links below.
+            </p>
+          </>
+        )}
+            <ul class="profile-links">
+                {PROFILE_LINKS.map((link) => (
+          <li>
+            <a href={link.url}>{link.label}</a>
+          </li>
+        ))}
+            </ul>
         </section>
-      )
-    }
-    {
-      about && (
-        <hr class="site-rule page-rule" />
-      )
-    }
-    <section aria-label={publicText.postsLabel}>
-      {
-        sortedPosts.length === 0 ? (
+        <hr class="site-rule page-rule">
+        <section aria-label={publicText.postsLabel}>
+            {sortedPosts.length === 0 ? (
           <p class="empty-posts">{publicText.emptyPosts}</p>
         ) : (
           sortedPosts.map((post) => (
             <article class="post-link">
               <p class="post-date">{formatDate(post.data.publishedAt)}</p>
-              <a href={getPostPath(getContentSlug(post), locale)}>{post.data.title}</a>
-              {post.data.description && <p class="post-description">{post.data.description}</p>}
+              <a href={getPostPath(post.data.slug, locale)}>{post.data.title}</a>
             </article>
           ))
-        )
-      }
-    </section>
-  </main>
+        )}
+        </section>
+    </main>
 </Base>

@@ -21,7 +21,7 @@
 
 - Develop with TDD: exploration -> Red -> Green -> Refactoring.
 - When KPI or coverage targets are given, keep iterating until they are met.
-- Use `pnpm` for Node.js package commands. This repository declares `packageManager: pnpm@10.26.1`.
+- Use `pnpm` for Node.js package commands. This repository declares `packageManager: pnpm@10.33.3`.
 - Use Node.js 24 from `.node-version`.
 - Before marking non-trivial code changes done, run the narrowest relevant verification first, then widen only when the blast radius justifies it.
 - CI runs `pnpm run lint`, `pnpm run fmt`, `pnpm run typecheck`, and `pnpm run build`.
@@ -32,13 +32,15 @@
 - Separate state from logic.
 - Prioritize readability and maintainability.
 - Define the contract layer strictly, and keep the implementation layer regenerable.
-- This is an Astro + EmDash CMS site, not a Next.js app.
-- EmDash content is server-rendered. Keep `output: "server"` and do not add static-generation assumptions for CMS content.
-- Local EmDash uses SQLite at `data.db` and local media under `uploads/`; Cloudflare mode is selected with `EMDASH_RUNTIME=cloudflare`.
-- Treat `seed/seed.json` as the local schema/content seed source. After changing schema or seed content, run the seed/bootstrap flow needed to verify it.
-- For EmDash pages, pass returned `cacheHint` values to `Astro.cache.set(cacheHint)` when using APIs that provide cache hints.
-- Use unprefixed content slugs (`entry.slug` at runtime or `entry.data.slug` in generated types) for public URLs; `entry.id` may include the locale prefix such as `en/<slug>`. Use `entry.data.id` for database IDs used by EmDash APIs.
-- For EmDash image fields, render with the `Image` component from `emdash/ui` instead of treating image values as strings.
+- This is an Astro site built from Markdown author source, not a Next.js app.
+- The target content contract keeps blog author source as title/body Markdown under root `posts/*.md`; derive slug from the extensionless filename and do not store slug in source frontmatter.
+- Keep `src/content/posts/` as the Astro build projection only. Generated projection frontmatter may contain derived metadata needed by Astro/public rendering, but it is not the authoring contract.
+- Public posts project into Astro content collections under `src/content/posts/`; preserve `/posts/<slug>`. `/en/posts/<slug>` is reserved for future generated translations but is not required for the current cutover.
+- Static home/profile copy is component-owned locale content, not an Astro content collection.
+- Public content routes should prerender from repository files and must not query a CMS at render time.
+- Do not treat a branch that needs CMS runtime/admin surfaces as deployable for the current cutover.
+- Historical CMS export/deploy/bootstrap/seed code has been removed from the deployable target; use git history, not live CMS state, for migration evidence.
+- Agents must not run production deployment commands such as `wrangler deploy` or `pnpm run deploy`. Stop at build or dry-run validation unless the owner explicitly authorizes deployment in the current turn.
 
 ## Project Commands
 
@@ -47,30 +49,26 @@ pnpm install
 pnpm run dev
 pnpm run build
 pnpm run preview
+pnpm run deploy:dry-run
 pnpm run lint
 pnpm run lint:fix
 pnpm run fmt
 pnpm run fmt:fix
 pnpm run typecheck
-pnpm run bootstrap
-pnpm run seed
-pnpm run deploy:emdash -- --dry-run --dev-bypass
-pnpm run test:emdash-deploy
+pnpm run project:content -- --check
+pnpm run project:content -- --apply
+pnpm run test:local-content
 ```
 
 ## Environment Variables
 
-- `.envrc` uses direnv `dotenv`; create `.env` from `.env.example`, fill local values, and run `direnv allow`.
-- EmDash connection: `EMDASH_BASE_URL`, `EMDASH_API_TOKEN`, `EMDASH_DEV_BYPASS`, `EMDASH_HEADERS`.
-- EmDash runtime/access: `EMDASH_RUNTIME`, `EMDASH_ACCESS_DEFAULT_ROLE`, `CF_ACCESS_TEAM_DOMAIN`.
-- English generation: `ENGLISH_GENERATION_API_KEY`, `ENGLISH_GENERATION_MODEL`, `ENGLISH_EDIT_MODEL`, `ENGLISH_REVIEW_MODEL`, `ENGLISH_GENERATION_LIMIT`, `ENGLISH_GENERATION_MAX_FIX_ATTEMPTS`, `ENGLISH_GENERATION_TEMPERATURE`.
-- Cloudflare AI Gateway: `CF_AIG_ACCOUNT_ID`, `CF_AIG_GATEWAY`, `CF_AIG_TOKEN`.
+- No environment variables are required for the current author source deploy target.
+- `.envrc` may still load a local `.env`; keep real values out of git.
 
 ## Skills
 
-- Use `building-emdash-site` for Astro + EmDash site work.
-- Use `creating-plugins` before building or changing EmDash plugins.
-- Use `emdash-cli` before using the EmDash CLI for content, schema, media, or remote-instance operations.
+- No project-specific skill is required for normal Markdown author source work.
+- Use Cloudflare-related skills when changing Worker deployment behavior.
 
 ## Critical Recap
 

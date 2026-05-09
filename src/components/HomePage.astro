@@ -1,10 +1,9 @@
 ---
 
-
-
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
-import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText } from "../lib/i18n";
+import { formatDate, getCurrentLocale, getPublicText } from "../lib/i18n";
+import { getHomePath, getPostPath } from "../lib/i18n-routing";
 import { SITE_TITLE } from "../lib/seo";
 
 type ProfileLink = {

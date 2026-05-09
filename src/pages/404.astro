@@ -1,7 +1,8 @@
 ---
 
 import Base from "../layouts/Base.astro";
-import { getCurrentLocale, getHomePath, getPublicText } from "../lib/i18n";
+import { getCurrentLocale, getPublicText } from "../lib/i18n";
+import { getHomePath } from "../lib/i18n-routing";
 
 const locale = getCurrentLocale(Astro.currentLocale);
 const publicText = getPublicText(locale);

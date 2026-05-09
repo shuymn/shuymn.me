@@ -49,37 +49,14 @@ export function getPublicText(locale: string | undefined): PublicText {
   return PUBLIC_TEXT_BY_LOCALE[getCurrentLocale(locale)];
 }
 
-export function localizePath(path: string, locale?: string): string {
-  const currentLocale = getCurrentLocale(locale);
-  const normalizedPath = stripLocalePrefix(normalizeAbsolutePath(path));
-  if (currentLocale === DEFAULT_LOCALE) return normalizedPath;
-  if (normalizedPath === "/") return `/${currentLocale}`;
-  return `/${currentLocale}${normalizedPath}`;
-}
-
-export function getHomePath(locale?: string): string {
-  return localizePath("/", locale);
-}
-
 export function getContentSlug(entry: { id?: unknown; slug?: unknown; data?: { slug?: unknown } }): string {
   const rawSlug = [entry.slug, entry.data?.slug, entry.id].find((value) => typeof value === "string");
   return normalizeContentSlug(typeof rawSlug === "string" ? rawSlug : "");
 }
 
-export function getPostPath(slug: string, locale?: string): string {
-  const normalizedSlug = normalizeContentSlug(slug);
-  return localizePath(`/posts/${normalizedSlug}`, locale);
-}
-
 export function formatDate(date: Date | null | undefined): string {
   if (!date) return "";
   return date.toISOString().slice(0, 10).replace(/-/g, ".");
-}
-
-function normalizeAbsolutePath(path: string): string {
-  if (!path) return "/";
-  const absolutePath = path.startsWith("/") ? path : `/${path}`;
-  return absolutePath.replace(/\/{2,}/g, "/");
 }
 
 function stripLocalePrefix(path: string): string {

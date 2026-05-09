@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -88,6 +88,25 @@ test("check mode detects stale projections", async () => {
   await projectLocalContent({ sourceDir, projectionDir, check: false, apply: true });
   const projected = await readFile(join(projectionDir, "2026-05-10-runtime-notes.md"), "utf8");
   assert.match(projected, /title: "Runtime Notes"/);
+});
+
+test("rejects and removes orphan projections without matching source", async () => {
+  const root = await mkdtemp(join(tmpdir(), "local-content-"));
+  const sourceDir = join(root, "source");
+  const projectionDir = join(root, "posts");
+
+  await Promise.all([mkdir(sourceDir, { recursive: true }), mkdir(projectionDir, { recursive: true })]);
+  await writeFile(join(sourceDir, "2026-05-10-runtime-notes.md"), '---\ntitle: "Runtime Notes"\n---\n\n本文です。\n');
+  const orphanPath = join(projectionDir, "2024-01-01-removed-post.md");
+  await writeFile(orphanPath, "stale orphan\n");
+
+  await assert.rejects(
+    () => projectLocalContent({ sourceDir, projectionDir, check: true, apply: false }),
+    /local content projection is stale:.*2024-01-01-removed-post\.md/,
+  );
+
+  await projectLocalContent({ sourceDir, projectionDir, check: false, apply: true });
+  await assert.rejects(() => access(orphanPath), /ENOENT/);
 });
 
 test("omits seo.description when body has no extractable paragraph", async () => {

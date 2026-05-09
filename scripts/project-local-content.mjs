@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { z } from "zod";
 
@@ -61,6 +61,13 @@ export async function projectLocalContent(options) {
   );
   projections.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
 
+  const expectedRelativePaths = new Set(projections.map((projection) => projection.relativePath));
+  const existingProjectionPaths = await listFiles(projectionDir, ".md");
+  const orphanRelativePaths = existingProjectionPaths
+    .map((path) => normalizeRelativePath(relative(projectionDir, path)))
+    .filter((rel) => !expectedRelativePaths.has(rel))
+    .sort();
+
   if (options.check) {
     const staleResults = await Promise.all(
       projections.map(async (projection) => {
@@ -69,16 +76,18 @@ export async function projectLocalContent(options) {
       }),
     );
     const stale = staleResults.filter((entry) => entry !== null);
-    if (stale.length > 0) {
-      throw new Error(`local content projection is stale: ${stale.join(", ")}`);
+    const issues = [...stale, ...orphanRelativePaths];
+    if (issues.length > 0) {
+      throw new Error(`local content projection is stale: ${issues.join(", ")}`);
     }
   } else {
-    await Promise.all(
-      projections.map(async (projection) => {
+    await Promise.all([
+      ...projections.map(async (projection) => {
         await mkdir(dirname(projection.filePath), { recursive: true });
         await writeFile(projection.filePath, projection.content);
       }),
-    );
+      ...orphanRelativePaths.map((rel) => unlink(join(projectionDir, rel))),
+    ]);
   }
 
   return {

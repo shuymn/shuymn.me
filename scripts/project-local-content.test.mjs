@@ -118,6 +118,17 @@ test("rejects invalid workflow-generated post metadata", async () => {
       }),
     /tags must not contain duplicate values: runtime/,
   );
+
+  await assert.rejects(
+    () =>
+      buildProjectionFromSource({
+        generateMetadata: () => ({ relatedPostSlugs: ["post-a", "post-a"] }),
+        projectionDir,
+        sourceDir,
+        sourcePath: join(sourceDir, "2026-05-10-runtime-notes.md"),
+      }),
+    /relatedPostSlugs must not contain duplicate values: post-a/,
+  );
 });
 
 test("omits missing workflow-generated post metadata", async () => {

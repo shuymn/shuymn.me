@@ -38,7 +38,12 @@ export const postSchema = z
       .strict()
       .default({ disabled: false }),
     statusNote: optionalTextSchema,
-    relatedPostSlugs: z.array(z.string().min(1)).default([]),
+    relatedPostSlugs: z
+      .array(z.string().min(1))
+      .refine((slugs) => new Set(slugs).size === slugs.length, {
+        message: "relatedPostSlugs must not contain duplicate values",
+      })
+      .default([]),
   })
   .strict();
 

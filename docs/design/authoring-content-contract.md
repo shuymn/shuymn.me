@@ -129,7 +129,7 @@ before Astro builds.
 
 The projection may contain frontmatter because Astro's Markdown content
 collection expects it. That frontmatter is implementation output, not the
-authoring contract. The current post projection frontmatter includes:
+authoring contract. The current post-projection frontmatter includes:
 
 - `slug`, derived from the source filename
 - `locale`, fixed to `ja` for the current cutover

@@ -19,19 +19,19 @@ generation, OGP automation, editor UI, and image handling remain follow-up work.
 Author source:
 
 ```text
-src/content/source/posts/<locale>/<slug>.md
+content/source/posts/<locale>/<slug>.md
 ```
 
 Accepted metadata:
 
 ```text
-src/content/metadata/posts/<locale>/<slug>.json
+content/metadata/posts/<locale>/<slug>.json
 ```
 
 Generated state:
 
 ```text
-src/content/generated/posts/<locale>/<slug>/*.json
+content/generated/posts/<locale>/<slug>/*.json
 ```
 
 Astro build projection:
@@ -40,9 +40,11 @@ Astro build projection:
 src/content/posts/<locale>/<slug>.md
 ```
 
-Only the projection is consumed by Astro content collections. Author source and
-accepted metadata are the local source of truth. Generated state is never read by
-public routes unless a value is first accepted into metadata.
+Only the projection is consumed by Astro content collections and lives under
+`src/`. Author source, accepted metadata, and future generated state live outside
+`src/` because they are the local source of truth rather than Astro
+implementation input. Generated state is never read by public routes unless a
+value is first accepted into metadata.
 
 ## Author Source
 

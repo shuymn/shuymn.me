@@ -11,7 +11,7 @@ pnpm install
 pnpm run dev
 ```
 
-Build and validate the Cloudflare Worker output with:
+Build and validate the Cloudflare Worker output without deploying with:
 
 ```bash
 pnpm run deploy:dry-run

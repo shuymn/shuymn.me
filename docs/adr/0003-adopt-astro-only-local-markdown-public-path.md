@@ -141,9 +141,10 @@ layer may be evaluated later only if normal posting needs a browser UI:
 As of 2026-05-10, the deployable cutover target is implemented for the Japanese
 site:
 
-- Japanese author source lives under `src/content/source/posts/ja/<slug>.md`.
+- Japanese author source lives under `content/source/posts/ja/<slug>.md`,
+  outside `src/`.
 - Accepted Japanese post metadata lives under
-  `src/content/metadata/posts/ja/<slug>.json`.
+  `content/metadata/posts/ja/<slug>.json`, outside `src/`.
 - `pnpm run project:content -- --check` verifies that
   `src/content/posts/ja/<slug>.md` is the current Astro build projection.
 - Historical Japanese Markdown was recovered from git history and recorded in

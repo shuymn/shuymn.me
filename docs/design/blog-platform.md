@@ -57,6 +57,8 @@ Atomic cutover status:
 - The replacement target is no longer a mixed EmDash/local-Markdown branch.
 - The deployable target uses Astro local source, accepted metadata, and a build
   projection for Japanese posts.
+- Blog author source and accepted metadata live under root `content/`, outside
+  `src/`. `src/content/posts/` is the Astro projection, not the canonical source.
 - Japanese canonical post bodies have been reconciled with the historical
   Markdown sources available in git history under `_posts/`.
 - EmDash runtime, scripts, dependencies, seed/bootstrap/deploy paths,
@@ -586,8 +588,8 @@ The future baseline implementation path should be a local-source command. It
 will scan published Japanese author source and accepted metadata, skip posts
 whose accepted metadata disables translation, call a translator and separate
 review pass, write generated candidates as generated state, then promote passing
-results into `src/content/source/posts/en/<slug>.md` and
-`src/content/metadata/posts/en/<slug>.json`. The English title never drives the
+results into `content/source/posts/en/<slug>.md` and
+`content/metadata/posts/en/<slug>.json`. The English title never drives the
 localized slug; URLs remain stable across locales. The translator should perform
 field-to-field metadata translation instead of synthesizing descriptions from
 the body: source `title` becomes English `title`, source `description` becomes

@@ -8,7 +8,6 @@
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
     "build": "node scripts/project-local-content.mjs --check && ASTRO_TELEMETRY_DISABLED=1 astro build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
-    "deploy": "pnpm run build && wrangler deploy --config dist/server/wrangler.json",
     "deploy:dry-run": "pnpm run build && wrangler deploy --dry-run --config dist/server/wrangler.json",
     "lint": "biome check --error-on-warnings .",
     "lint:fix": "biome check --write .",

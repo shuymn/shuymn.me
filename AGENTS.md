@@ -34,10 +34,12 @@
 - Define the contract layer strictly, and keep the implementation layer regenerable.
 - This is an Astro local-source site, not a Next.js app.
 - The target content contract separates author source, accepted metadata, generated state, and Astro build projection; do not make rich post frontmatter the primary home for generated metadata.
+- Blog author source and accepted metadata live under root `content/`, outside `src/`. Keep `src/content/posts/` as the Astro build projection only.
 - Public posts and site sections may project into Astro content collections under `src/content/posts/` and `src/content/site-sections/`; preserve `/posts/<slug>`. `/en/posts/<slug>` is reserved for future generated translations but is not required for the current cutover.
 - Public content routes should prerender from local files and must not query a CMS at render time.
 - Do not treat a branch that needs CMS runtime/admin surfaces as deployable for the current cutover.
 - Historical CMS export/deploy/bootstrap/seed code has been removed from the deployable target; use git history, not live CMS state, for migration evidence.
+- Agents must not run production deployment commands such as `wrangler deploy` or `pnpm run deploy`. Stop at build or dry-run validation unless the owner explicitly authorizes deployment in the current turn.
 
 ## Project Commands
 
@@ -47,7 +49,6 @@ pnpm run dev
 pnpm run build
 pnpm run preview
 pnpm run deploy:dry-run
-pnpm run deploy
 pnpm run lint
 pnpm run lint:fix
 pnpm run fmt

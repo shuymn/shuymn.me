@@ -5,11 +5,11 @@
 .pnpm-store/
 .pnpm-debug.log*
 
-# Astro / EmDash build output
+# Astro build output
 /.astro/
 /dist/
 
-# EmDash local runtime
+# Historical local CMS runtime artifacts
 /data.db
 /data.db-*
 /uploads/

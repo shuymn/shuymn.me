@@ -5,8 +5,8 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { z } from "zod";
 
-const DEFAULT_SOURCE_DIR = "src/content/source/posts";
-const DEFAULT_METADATA_DIR = "src/content/metadata/posts";
+const DEFAULT_SOURCE_DIR = "content/source/posts";
+const DEFAULT_METADATA_DIR = "content/metadata/posts";
 const DEFAULT_PROJECTION_DIR = "src/content/posts";
 const SUPPORTED_LOCALES = new Set(["ja", "en"]);
 

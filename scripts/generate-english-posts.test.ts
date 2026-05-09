@@ -896,6 +896,21 @@ test("CLI options read Cloudflare AI Gateway config from env and flags", () => {
   });
 });
 
+test("CLI --no-dev-bypass overrides EMDASH_DEV_BYPASS=true through resolveHostCliValues", () => {
+  const options = testInternals.parseArgs(["--no-dev-bypass"], {
+    EMDASH_DEV_BYPASS: "true",
+    EMDASH_API_TOKEN: "emdash-token",
+    ENGLISH_GENERATION_API_KEY: "openrouter-token",
+    ENGLISH_GENERATION_MODEL: "translation-model",
+    CF_AIG_ACCOUNT_ID: "account-id",
+    CF_AIG_GATEWAY: "gateway-name",
+    CF_AIG_TOKEN: "cf-token",
+  });
+
+  assert.equal(options.devBypass, false);
+  assert.equal(options.token, "emdash-token");
+});
+
 test("CLI --model becomes the default edit and review model when dedicated models are unset", () => {
   const options = testInternals.parseArgs(["--model", "translation-flag"], {
     EMDASH_API_TOKEN: "emdash-token",

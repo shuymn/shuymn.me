@@ -44,8 +44,14 @@ function assertKnownOptions(schema: Args, tokens: ArgToken[]): void {
   for (const [name, arg] of Object.entries(schema)) {
     knownLongOptions.add(name);
     knownLongOptions.add(kebabnize(name));
-    if (isArgSchema(arg) && arg.short) {
-      knownShortOptions.add(arg.short);
+    if (isArgSchema(arg)) {
+      if (arg.short) {
+        knownShortOptions.add(arg.short);
+      }
+      if (arg.type === "boolean" && arg.negatable) {
+        knownLongOptions.add(`no-${name}`);
+        knownLongOptions.add(`no-${kebabnize(name)}`);
+      }
     }
   }
 

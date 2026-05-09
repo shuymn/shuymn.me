@@ -73,6 +73,13 @@ test("EmDash connection helper lets --no-dev-bypass override EMDASH_DEV_BYPASS=t
   assert.equal(options.token, "flag-token");
 });
 
+test("EmDash connection helper rejects malformed EMDASH_DEV_BYPASS values", () => {
+  assert.throws(
+    () => resolveEmDashConnectionOptions({}, { EMDASH_DEV_BYPASS: "yes", EMDASH_API_TOKEN: "token" }),
+    /EMDASH_DEV_BYPASS must be one of true\/false\/1\/0/,
+  );
+});
+
 test("EmDash connection helper rejects base URLs without a usable http(s) protocol", () => {
   assert.throws(
     () => resolveEmDashConnectionOptions({ baseUrl: "localhost:4321", devBypass: true }, {}),
@@ -88,8 +95,8 @@ test("EmDash connection helper rejects base URLs without a usable http(s) protoc
 test("EmDash connection helper attaches custom headers to API requests", async () => {
   const originalFetch = globalThis.fetch;
   const requests: Request[] = [];
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
-    const request = input instanceof Request ? input : new Request(input);
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const request = input instanceof Request ? input : new Request(input, init);
     requests.push(request);
     return new Response(JSON.stringify({ success: true, data: { items: [] } }), {
       headers: { "content-type": "application/json" },

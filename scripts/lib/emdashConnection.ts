@@ -137,7 +137,10 @@ function normalizeHeaderValues(value: string | string[] | undefined): string[] {
 
 function parseBooleanEnv(value: string | undefined): boolean {
   const normalized = readOptionalString(value)?.toLowerCase();
-  return normalized === "1" || normalized === "true";
+  if (normalized === undefined) return false;
+  if (normalized === "true" || normalized === "1") return true;
+  if (normalized === "false" || normalized === "0") return false;
+  throw new Error(`EMDASH_DEV_BYPASS must be one of true/false/1/0 (got ${JSON.stringify(value)})`);
 }
 
 function stripTrailingSlash(value: string): string {

@@ -3,7 +3,7 @@
 import ThemeToggle from "../components/ThemeToggle";
 import { getCurrentLocale, getPublicText, LOCALE_LABELS, SUPPORTED_LOCALES } from "../lib/i18n";
 import { getHomePath, localizePath } from "../lib/i18n-routing";
-import { DEFAULT_OG_IMAGE_URL, SITE_TITLE } from "../lib/seo";
+import { DEFAULT_OG_IMAGE_URL, SITE_TITLE, SITE_URL } from "../lib/seo";
 import { DARK_THEME, LIGHT_THEME, THEME_STORAGE_KEY } from "../lib/theme";
 import "../styles/site.css";
 
@@ -31,6 +31,7 @@ const pageTitle = title ?? siteTitle;
 const fullTitle = pageTitle === siteTitle ? siteTitle : `${pageTitle} | ${siteTitle}`;
 const currentLocale = getCurrentLocale(Astro.currentLocale);
 const currentPath = path ?? getHomePath(currentLocale);
+const canonicalUrl = new URL(currentPath, SITE_URL).href;
 const homeUrl = getHomePath(currentLocale);
 const languageLinks = SUPPORTED_LOCALES.map((locale) => ({
     locale,
@@ -47,9 +48,12 @@ const publicText = getPublicText(currentLocale);
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="robots" content="follow, index">
         <title>{fullTitle}</title>
+        <link rel="canonical" href={canonicalUrl}>
+        <link rel="sitemap" href="/sitemap-index.xml">
         {description && <meta name="description" content={description} />}
         <link rel="shortcut icon" href="/favicon.ico">
         <meta property="og:type" content={type}>
+        <meta property="og:url" content={canonicalUrl}>
         <meta property="og:site_name" content={siteTitle}>
         <meta property="og:title" content={fullTitle}>
         {description && <meta property="og:description" content={description} />}

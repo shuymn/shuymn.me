@@ -2,9 +2,9 @@
 description: Use the EmDash CLI to manage content, schema, media, and more. Use this skill when you need to interact with a running EmDash instance from the command line — creating content, managing collections, uploading media, generating types, or scripting CMS operations.
 metadata:
     github-path: skills/emdash-cli
-    github-ref: refs/tags/@emdash-cms/blocks@0.7.0
+    github-ref: refs/tags/@emdash-cms/plugin-forms@0.2.1
     github-repo: https://github.com/emdash-cms/emdash
-    github-tree-sha: 1f975af6b5e2ae2ccb2883960aacdec89c94cc00
+    github-tree-sha: fbdedf96d07a0efe2a85101b1ff32ddbd2d0f6d1
 name: emdash-cli
 ---
 # EmDash CLI
@@ -74,22 +74,21 @@ npx emdash login --url https://example.com -H "X-API-Key: secret123"
 
 ### Database Setup
 
-```bash
-# Initialize database with migrations
-npx emdash init
+Migrations and seed application happen automatically inside the runtime — there's no separate init/seed step. Just start the dev server (or deploy) and the first request runs pending migrations and applies the bundled seed if the database is empty.
 
-# Start dev server (runs migrations, starts Astro)
+```bash
+# Start dev server (runs migrations, applies seed on empty DB, starts Astro)
 npx emdash dev
 
 # Start dev server and generate types from remote
 npx emdash dev --types
 
-# Apply a seed file
-npx emdash seed .emdash/seed.json
-
-# Export database as seed
-npx emdash export-seed > seed.json
-npx emdash export-seed --with-content > seed.json
+# Export an existing database as a seed file
+# (the runtime auto-discovers .emdash/seed.json on first boot;
+# `mkdir -p` because the directory may not exist yet)
+mkdir -p .emdash
+npx emdash export-seed > .emdash/seed.json
+npx emdash export-seed --with-content > .emdash/seed.json
 ```
 
 ### Type Generation
@@ -181,7 +180,7 @@ npx emdash schema add-field posts featured --type boolean --required
 npx emdash schema remove-field posts featured
 ```
 
-Field types: `string`, `text`, `number`, `integer`, `boolean`, `datetime`, `image`, `reference`, `portableText`, `json`.
+Field types: `string`, `text`, `number`, `integer`, `boolean`, `datetime`, `select`, `multiSelect`, `image`, `file`, `reference`, `portableText`, `json`, `slug`, `url`. See `FIELD_TYPE_TO_COLUMN` in `packages/core/src/schema/types.ts` for the authoritative list.
 
 ### Media
 

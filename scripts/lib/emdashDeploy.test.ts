@@ -162,10 +162,9 @@ class InMemoryDeployApi implements EmDashDeployApi {
     return structuredClone(this.settings);
   }
 
-  async updateSettings(settings: SiteSettings): Promise<SiteSettings> {
+  async updateSettings(settings: SiteSettings): Promise<void> {
     this.calls.push({ action: "updateSettings", args: [structuredClone(settings)] });
     this.settings = { ...this.settings, ...structuredClone(settings) };
-    return structuredClone(this.settings);
   }
 
   async listCollections(): Promise<ExistingCollectionWithFields[]> {
@@ -176,22 +175,20 @@ class InMemoryDeployApi implements EmDashDeployApi {
     return structuredClone(this.collections.get(slug) ?? null);
   }
 
-  async createCollection(input: ExistingCollectionWithFields): Promise<ExistingCollectionWithFields> {
+  async createCollection(input: ExistingCollectionWithFields): Promise<void> {
     this.calls.push({ action: "createCollection", args: [structuredClone(input)] });
     const created = { ...collection(input.slug, []), ...structuredClone(input), fields: [] };
     this.collections.set(input.slug, created);
-    return structuredClone(created);
   }
 
   async updateCollection(
     slug: string,
     input: Partial<Omit<ExistingCollectionWithFields, "fields" | "slug">>,
-  ): Promise<ExistingCollectionWithFields> {
+  ): Promise<void> {
     this.calls.push({ action: "updateCollection", args: [slug, structuredClone(input)] });
     const existing = this.requireCollection(slug);
     const updated = { ...existing, ...structuredClone(input) };
     this.collections.set(slug, updated);
-    return structuredClone(updated);
   }
 
   async createField(collectionSlug: string, input: ExistingCollectionWithFields["fields"][number]): Promise<void> {

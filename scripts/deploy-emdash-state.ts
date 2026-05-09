@@ -129,7 +129,7 @@ function parseArgs(args: string[], env: NodeJS.ProcessEnv): DeployCliOptions {
 function resolveOptions(values: DeployCliValues, env: NodeJS.ProcessEnv): DeployCliOptions {
   const dryRun = values.dryRun ?? false;
   const apply = values.apply ?? false;
-  if (Number(dryRun) + Number(apply) !== 1) {
+  if (dryRun === apply) {
     throw new Error("Pass exactly one of --dry-run or --apply");
   }
 

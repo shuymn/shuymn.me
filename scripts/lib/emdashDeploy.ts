@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from "node:util";
+import { EmDashApiError } from "emdash/client";
 import { z } from "zod";
 
 const COLLECTION_SUPPORT_VALUES = ["drafts", "revisions", "preview", "scheduling", "search", "seo"] as const;
@@ -288,14 +290,11 @@ export type DeploymentApplyResult = DeploymentPlan & {
 
 export type EmDashDeployApi = {
   getSettings(): Promise<SiteSettings>;
-  updateSettings(settings: SiteSettings): Promise<SiteSettings>;
+  updateSettings(settings: SiteSettings): Promise<void>;
   listCollections(): Promise<ExistingCollection[]>;
   getCollection(slug: string): Promise<ExistingCollectionWithFields | null>;
-  createCollection(input: DesiredCollection): Promise<ExistingCollectionWithFields>;
-  updateCollection(
-    slug: string,
-    input: Partial<Omit<ExistingCollection, "slug">>,
-  ): Promise<ExistingCollectionWithFields>;
+  createCollection(input: DesiredCollection): Promise<void>;
+  updateCollection(slug: string, input: Partial<Omit<ExistingCollection, "slug">>): Promise<void>;
   createField(collectionSlug: string, input: DesiredField): Promise<void>;
   updateField(collectionSlug: string, fieldSlug: string, input: Partial<DesiredField>): Promise<void>;
   reorderFields(collectionSlug: string, fieldSlugs: string[]): Promise<void>;
@@ -362,13 +361,16 @@ export function buildDeployableState(seedInput: unknown): DeployableState {
 export async function planEmDashDeployment(api: EmDashDeployApi, desired: DeployableState): Promise<DeploymentPlan> {
   const changes: DeployChange[] = [];
   const unsupported: UnsupportedDeployOperation[] = [];
-  if (desired.settings) {
-    const currentSettings = await api.getSettings();
+  const [currentSettings, collectionList] = await Promise.all([
+    desired.settings ? api.getSettings() : Promise.resolve(undefined),
+    api.listCollections(),
+  ]);
+  if (desired.settings && currentSettings) {
     const settingsChange = buildSettingsChange(currentSettings, desired.settings);
     if (settingsChange) changes.push(settingsChange);
   }
 
-  const existingCollections = new Map((await api.listCollections()).map((collection) => [collection.slug, collection]));
+  const existingCollections = new Map(collectionList.map((collection) => [collection.slug, collection]));
   for (const desiredCollection of desired.collections) {
     if (!existingCollections.has(desiredCollection.slug)) {
       changes.push({
@@ -463,7 +465,9 @@ export async function applyEmDashDeploymentPlan(
 export function createEmDashDeployApi(client: JsonEmDashApiClient): EmDashDeployApi {
   return {
     getSettings: () => client.request<SiteSettings>("GET", "/settings"),
-    updateSettings: (settings) => client.request<SiteSettings>("POST", "/settings", settings),
+    async updateSettings(settings) {
+      await client.request<SiteSettings>("POST", "/settings", settings);
+    },
     async listCollections() {
       const response = await client.request<{ items: ExistingCollection[] }>("GET", "/schema/collections");
       return response.items;
@@ -481,19 +485,17 @@ export function createEmDashDeployApi(client: JsonEmDashApiClient): EmDashDeploy
       }
     },
     async createCollection(input) {
-      const response = await client.request<{ item: ExistingCollectionWithFields }>("POST", "/schema/collections", {
+      await client.request<{ item: ExistingCollectionWithFields }>("POST", "/schema/collections", {
         ...collectionMutationInput(input),
         source: COLLECTION_SOURCE_SEED,
       });
-      return { ...response.item, fields: [] };
     },
     async updateCollection(slug, input) {
-      const response = await client.request<{ item: ExistingCollectionWithFields }>(
+      await client.request<{ item: ExistingCollectionWithFields }>(
         "PUT",
         `/schema/collections/${encodeURIComponent(slug)}`,
         input,
       );
-      return { ...response.item, fields: [] };
     },
     async createField(collectionSlug, input) {
       await client.request<{ item: ExistingField }>(
@@ -524,7 +526,7 @@ function buildSettingsChange(current: SiteSettings, desired: SiteSettings): Depl
   const after: SiteSettings = {};
   for (const key of SETTINGS_KEYS) {
     if (!(key in desired)) continue;
-    if (!deepEqual(current[key], desired[key])) {
+    if (!isDeepStrictEqual(current[key], desired[key])) {
       before[key] = current[key] as never;
       after[key] = desired[key] as never;
     }
@@ -548,7 +550,7 @@ function buildCollectionChange(
   const normalizedDesired = normalizeCollectionForCompare(desired);
   for (const key of COLLECTION_UPDATE_KEYS) {
     if (!(key in normalizedDesired)) continue;
-    if (!deepEqual(normalizedCurrent[key], normalizedDesired[key])) {
+    if (!isDeepStrictEqual(normalizedCurrent[key], normalizedDesired[key])) {
       before[key] = normalizedCurrent[key] as never;
       after[key] = normalizedDesired[key] as never;
     }
@@ -568,7 +570,7 @@ function buildFieldChange(
   const normalizedCurrent = normalizeFieldForCompare(current);
   const normalizedDesired = normalizeFieldForCompare(desired);
   for (const key of FIELD_UPDATE_KEYS) {
-    if (!deepEqual(normalizedCurrent[key], normalizedDesired[key])) {
+    if (!isDeepStrictEqual(normalizedCurrent[key], normalizedDesired[key])) {
       before[key] = normalizedCurrent[key] as never;
       after[key] = normalizedDesired[key] as never;
     }
@@ -724,17 +726,11 @@ function summarizeChanges(changes: DeployChange[]): DeploymentSummary {
 }
 
 function isNotFoundError(error: unknown): boolean {
-  return Boolean(
-    error && typeof error === "object" && "status" in error && (error as { status?: unknown }).status === 404,
-  );
+  return error instanceof EmDashApiError && error.status === 404;
 }
 
 function arrayEqual(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-
-function deepEqual(left: unknown, right: unknown): boolean {
-  return stableStringify(left) === stableStringify(right);
 }
 
 function stripUndefined(value: unknown): unknown {
@@ -753,18 +749,4 @@ function stripUndefined(value: unknown): unknown {
 
 function removeUndefinedFields<T extends JsonRecord>(fields: T): T {
   return stripUndefined(fields) as T;
-}
-
-function stableStringify(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
-  }
-  if (value && typeof value === "object") {
-    const record = value as JsonRecord;
-    return `{${Object.keys(record)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(value) ?? "undefined";
 }

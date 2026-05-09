@@ -100,10 +100,10 @@ export async function buildProjectionFromSource({ projectionDir, sourceDir, sour
     locale: DEFAULT_LOCALE,
     title: source.title,
     publishedAt: publishedAtFromSlug(slug),
-    seo: {
+    seo: compactObject({
       title: source.title,
       description: generateSeoDescription(source.body),
-    },
+    }),
   });
 
   return {

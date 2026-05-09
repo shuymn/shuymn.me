@@ -89,3 +89,19 @@ test("check mode detects stale projections", async () => {
   const projected = await readFile(join(projectionDir, "2026-05-10-runtime-notes.md"), "utf8");
   assert.match(projected, /title: "Runtime Notes"/);
 });
+
+test("omits seo.description when body has no extractable paragraph", async () => {
+  const root = await mkdtemp(join(tmpdir(), "local-content-"));
+  const sourceDir = join(root, "source");
+  const projectionDir = join(root, "posts");
+
+  await mkdir(sourceDir, { recursive: true });
+  const sourcePath = join(sourceDir, "2026-05-10-image-only.md");
+  await writeFile(sourcePath, '---\ntitle: "Image Only"\n---\n\n![alt](x.png)\n');
+
+  const projection = await buildProjectionFromSource({ projectionDir, sourceDir, sourcePath });
+
+  assert.match(projection.content, /seo:\n {2}title: "Image Only"\n---/);
+  assert.doesNotMatch(projection.content, /description:/);
+  assert.doesNotMatch(projection.content, /undefined/);
+});

@@ -21,6 +21,10 @@ Current implementation baseline:
 - Canonical Japanese post source lives under root `posts/*.md`.
 - Author source frontmatter contains only `title`.
 - Slug and publication date are derived from the filename.
+- Post-scoped recall metadata is generated into projection frontmatter by
+  `project:content`; cross-post recall data may use additional generated
+  artifacts when a feature needs them. Commit/deploy is the acceptance boundary
+  for generated public metadata.
 - Astro build projection lives under `src/content/posts/ja/*.md`.
 - Public home and Japanese post detail routes render from Astro files and
   content collections.
@@ -54,22 +58,46 @@ Author source:
 - remains the part Coding Agents and editors primarily draft, review, and
   translate
 
+Generated state:
+
+- stores prompt versions, provider output, validation failures, rejected
+  candidates, and retry state separately from author source and build projection
+- is not a public metadata layer and does not affect public pages directly
+- may be committed when it is useful evidence, but it is never the hidden source
+  of published truth
+
 Build projection:
 
 - is generated into `src/content/posts/ja/*.md`
 - contains Astro/public-rendering fields such as `slug`, `locale`,
-  `publishedAt`, and SEO metadata
+  `publishedAt`, generated recall metadata, and SEO metadata
 - is regenerable implementation output, not hand-authored canonical source
+- is a do-not-edit artifact; changes must come from author source or the
+  documented generation workflow
 - is the only layer that adapts to Astro-specific schema/frontmatter constraints
+- is the committed publish artifact for generated metadata; commit/deploy is the
+  acceptance boundary
+- must stay current through `pnpm run project:content -- --check` in commit/build
+  gates
 
-Generated state:
+Generated public data artifacts:
 
-- stores suggestions, prompt versions, provider output, validation failures,
-  rejected candidates, and retry state separately from author source and build
-  projection
-- affects public pages only after explicit acceptance or deterministic promotion
-- may be committed when it is useful evidence, but it is never the hidden source
-  of published truth
+- may be added by recall features when a cross-post view would otherwise need to
+  scan every Markdown projection at runtime
+- include examples such as tag indexes, archive indexes, related-navigation
+  indexes, RSS, sitemap, and compact search indexes
+- must be generated from author source plus committed projection metadata by
+  `project:content` or another documented build workflow
+- must remain regenerable implementation output, not hand-authored source
+
+Deploy-time public data artifacts:
+
+- may be added when metadata cannot be computed accurately before the source
+  commit exists
+- include `updatedAt` if it is generated from the latest git commit that changes
+  `posts/<slug>.md`
+- must be produced by documented CD/deploy workflow steps and treated as
+  regenerable public output
 
 ## Goals
 
@@ -106,19 +134,23 @@ The requirements use EARS notation.
 
 - When the author publishes a post, the system shall preserve title, content,
   slug, derived publication date, and SEO metadata.
-- When a post covers a durable topic, the system shall infer or suggest flat
-  tags without requiring the author to maintain them manually.
-- When a post belongs to an ongoing line of thought, the author shall be able to
-  accept, reject, or adjust a suggested series and readers shall be able to
+- When a post covers a durable topic, the system shall support flat tags without
+  requiring them in author source frontmatter.
+- When a post belongs to an ongoing line of thought, generated projection
+  frontmatter shall be able to record the series and readers shall be able to
   navigate the series.
-- When the system generates editorial metadata, the author shall be able to
-  inspect and override it before it becomes durable published metadata.
+- When tooling generates editorial metadata candidates, the candidates shall
+  remain outside public metadata until written into projection frontmatter or
+  another documented generated public data artifact and committed, or until a
+  deploy workflow writes a documented publish-time public artifact.
 - When a reader wants prior thinking on a topic, the system shall expose search,
   tags, archives, and related posts before relying on external search engines.
 - When a post is long-form, the system shall expose a table of contents derived
   from headings without requiring duplicated manual markup.
 - When a post needs a visible lifecycle note, the system shall use an explicit
-  status note rather than storing update date or revision metadata by default.
+  status note and shall display an update date only when a deploy workflow writes
+  `updatedAt` from the latest git commit that changes the canonical
+  `posts/<slug>.md` source file.
 - When a post is shared externally, the system shall provide a post-specific OGP
   image generated from durable post metadata.
 - When a Japanese post is published and not explicitly excluded, the system shall
@@ -147,8 +179,8 @@ The requirements use EARS notation.
 | WordPress pattern | Useful idea | Author-source translation |
 | --- | --- | --- |
 | SEO metadata and structured data | Metadata, canonical URLs, XML sitemaps, schema, previews, and content health checks | Generate SEO metadata into the Astro projection; render and validate sitemap/RSS/schema/OGP from that projection |
-| Custom fields and content modeling | Add structured editorial fields without hardcoding theme behavior | Add structured generated fields only when they drive rendering or editorial decisions, and keep them out of author source |
-| Taxonomy and internal discovery | Help readers and the author traverse old posts | Generate flat tags and optional series after writing before asking for manual upkeep |
+| Custom fields and content modeling | Add structured editorial fields without hardcoding theme behavior | Generate structured projection fields only when they drive rendering or editorial decisions, and keep them out of author source |
+| Taxonomy and internal discovery | Help readers and the author traverse old posts | Generate flat tags and optional series into committed projection frontmatter, with cross-post index artifacts when useful |
 | Multilingual publishing | Keep translated versions discoverable without making every translation a separate manual project | Generate English source/projection outputs from Japanese source posts and expose locale-specific URLs and OGP images |
 | Table of contents | Derive navigation from headings for long-form posts | Generate TOC from rendered Markdown headings in `PostPage.astro` or a focused component |
 | Redirect and 404 maintenance | Preserve old links and surface broken URLs | Start with repository redirect config or Cloudflare rules; add editor support only if manual maintenance becomes frequent |
@@ -162,9 +194,11 @@ Baseline capabilities:
   and localized routes
 - retrieval backbone: tags, archive, search entry point, RSS/sitemap checks, and
   simple related navigation based on deterministic signals
-- editorial automation state for generated tags, series, summaries,
-  related-post hints, English versions, OGP inputs, and publish-check results
-- deterministic OGP generation from a base image and accepted text, with
+- generated projection metadata for tags, series, workflow-derived updated dates,
+  status notes, and related-post input slugs
+- editorial automation state for temporary metadata candidates, summaries,
+  English versions, OGP inputs, and publish-check results
+- deterministic OGP generation from a base image and durable text, with
   locale-aware wrapping and cache-safe URLs
 - English auto-publication after automated translation, automated review, and
   deterministic checks pass, with a visible translation note
@@ -189,6 +223,36 @@ Adaptive capabilities should remain reversible. If a feature creates maintenance
 burden, low-quality metadata, or little recall value after real use, remove it or
 fold it back into a simpler workflow.
 
+## Projection Metadata Boundaries
+
+The recall metadata contract defines field shape and ownership before the
+individual recall surfaces are implemented. `project:content` owns writing
+post-scoped generated metadata into projection frontmatter. Recall features may
+also add cross-post generated artifacts when those artifacts avoid inefficient
+runtime scans or make a public surface clearer. This issue defines the shared
+field boundary; the child implementation issues own field-specific generation,
+index artifacts, and UI behavior:
+
+- `tags`: shape and public meaning are part of this contract; generation,
+  normalization, tag index artifacts, archive routes, and tag URLs belong to
+  `shuymn_me-1er.2.2`.
+- `updatedAt`: shape and canonical-source git commit basis are part of this
+  contract; the deploy-time artifact shape, source-commit lookup, and
+  date-display behavior belong to `shuymn_me-1er.2.3`.
+- `relatedPostSlugs`: shape and deterministic-input meaning are part of this
+  contract; signal selection and generation belong to `shuymn_me-1er.2.6`.
+- `series` and `statusNote`: shape and projection location are part of this
+  contract; thought-continuity semantics and rendering belong to
+  `shuymn_me-1er.3`.
+- Search-specific index data is not part of this baseline metadata contract
+  until `shuymn_me-1er.2.5` chooses the compact search surface.
+
+All baseline projection metadata fields are optional. Invalid present metadata
+or generated public data should fail the projection workflow. Missing metadata
+should be omitted and handled by consumers as absent, not inferred from author
+source frontmatter, filesystem timestamps, page-render-time git calls, or
+runtime LLM calls.
+
 ## Editorial Automation
 
 Direct writing remains human-centered: title, core argument, examples, and final
@@ -197,7 +261,7 @@ be automated when it can be derived from the post or from existing site
 structure:
 
 - tags
-- series suggestions
+- series metadata
 - summaries and descriptions
 - OGP image text and layout inputs
 - related posts
@@ -217,8 +281,10 @@ Use a layered automation approach:
    related posts, and editorial findings.
 
 LLM-generated editorial metadata is proposed metadata, not hidden authority. It
-should live as generated state until explicit acceptance or deterministic
-promotion makes it part of the projection inputs.
+may live as generated state while being evaluated, but it becomes public
+metadata only when the workflow writes it into projection frontmatter or another
+documented generated public data artifact, or when the deploy workflow writes a
+documented publish-time public artifact.
 
 ## OGP Image Generation
 
@@ -234,7 +300,7 @@ Start with deterministic template generation from a stable visual template:
 - primary tag or series when available and visually useful
 - locale
 
-The OGP URL should include a stable version component derived from accepted
+The OGP URL should include a stable version component derived from durable
 metadata or source content. Social preview caches are often outside the site's
 control, so changing post metadata must be able to produce a new image URL
 without relying only on cache purge.
@@ -298,7 +364,7 @@ operate the content:
 - identifying old posts that still receive traffic and may need updates
 - identifying broken links or missing redirects
 - finding topic clusters that are repeatedly referenced
-- comparing Cloudflare path data with accepted publication metadata
+- comparing Cloudflare path data with committed publication metadata
 
 Do not build first-party pageview collection unless Cloudflare cannot provide a
 required signal.
@@ -353,9 +419,9 @@ Next product work:
 For each implementation slice:
 
 - Run the narrowest relevant check first.
-- For author source contract changes, validate author source parsing,
-  generated state isolation, and build projection output with focused tests
-  before changing routes.
+- For author source contract changes, validate author source parsing, generated
+  metadata validation, generated state isolation, and build projection output
+  with focused tests before changing routes.
 - For future English generation, test the full auto-publish path against local
   source/projection data and verify note rendering, source linkage, slug
   stability, preserved code blocks, preserved links, preserved Markdown tables,

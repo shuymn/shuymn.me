@@ -1,18 +1,17 @@
 # Local Source Contract
 
-Status: Draft
+Status: Accepted
 Date: 2026-05-10
 Issue: `shuymn_me-1er.16`
 
 ## Purpose
 
-Define the minimum local content contract needed to deploy the EmDash-free Astro
-site without making rich post frontmatter the canonical source of generated or
-derived metadata.
+Define the local content contract for the Astro site without making rich post
+frontmatter the canonical source of generated or derived metadata.
 
-This contract is intentionally narrower than the full blog-platform baseline. It
-exists to unblock the Astro/Cloudflare cutover. Tags, series, English
-generation, OGP automation, editor UI, and image handling remain follow-up work.
+This contract is intentionally narrower than the full blog-platform baseline.
+Tags, series, English generation, OGP automation, editor UI, and image handling
+remain follow-up work.
 
 ## Layout
 
@@ -96,5 +95,4 @@ modes. Recovery provenance belongs in migration evidence. See
 - Current deployment only needs Japanese source posts.
 - English generated posts are not part of the cutover.
 - `src/content/posts/en/*.md` may be absent.
-- EmDash export files remain migration evidence only.
 - Future editor/CMS work must edit author source, not own the canonical body.

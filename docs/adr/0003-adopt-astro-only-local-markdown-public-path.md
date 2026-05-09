@@ -2,29 +2,21 @@
 
 Status: Accepted
 Date: 2026-05-09
+Updated: 2026-05-10
 
 ## Context
 
-ADR 0002 started a local Markdown-family canonical source spike before investing
-further in EmDash-specific extension work or a Sanity migration. The spike
-proved that Astro can render a strict local Markdown content collection and can
-pre-render a route while the current project still uses `output: "server"`.
+ADR 0002 evaluated local Markdown-family author source before adding more
+CMS-specific blog-platform work. The spike showed that Astro can render local
+post content and that Markdown is the right body boundary for Coding Agent
+drafting, review, translation, and deterministic validation.
 
-The spike also clarified a sharper architectural point: if local Markdown is the
-canonical post source, EmDash should not remain a long-term public content
-runtime. Keeping EmDash only to work around a CMS surface would preserve the same
-maintenance pressure that motivated the spike.
+The important correction from the spike is that the accepted target is not "one
+Markdown file with every durable and generated field in frontmatter." The normal
+writing flow starts with title and body. Generated editorial metadata should be
+separate until it is accepted or deterministically promoted.
 
-The follow-up review corrected one important assumption from the first proof:
-the target is not "one Markdown file with every durable and generated field in
-frontmatter." The intended writing flow starts with title and body. Metadata such
-as tags, series, summaries, SEO text, OGP inputs, and translation state should be
-generated or suggested after writing, then accepted explicitly before it becomes
-durable publishing input. Putting all of that into post frontmatter would make
-generated state look like author-written source and would make the LLM output
-contract larger than necessary.
-
-The target still needs to support:
+The target needs to support:
 
 - Coding Agent assisted drafting, review, and translation
 - a canonical body that remains local, diffable, and Markdown-family
@@ -38,54 +30,42 @@ Image upload and external asset storage remain deferred.
 
 ## Decision
 
-Adopt an Astro-only local-source architecture as the next public-content target.
+Adopt an Astro-only local-source architecture as the public-content target.
 
-The public blog path should be implemented from repository-local
-Markdown-family author source, projected into Astro's rendering/build contract.
-This is an atomic cutover target, not a staged deployment plan: a branch that
-still requires EmDash scripts, dependencies, environment variables, Portable
-Text storage, or CMS runtime surfaces is still migration work in progress and
-must not be treated as the deployable replacement.
-
-The existing EmDash implementation may remain only as the currently deployed
-site or as local migration evidence while the replacement is prepared. It should
-not coexist with local Markdown in a deployed target architecture.
+The public blog path is implemented from repository-local author source,
+projected into Astro's rendering/build contract. A deployable branch must not
+require CMS runtime reads, CMS scripts, CMS dependencies, CMS environment
+variables, or a remote structured body store for normal public rendering.
 
 The local source contract has three layers:
 
-- Author source: title and body in Markdown-family files, plus only the minimal
-  publish envelope needed to keep the file addressable. The slug is derived from
-  the extensionless filename and starts with the publication date. Generated
-  editorial metadata should not be authored into this layer.
+- Author source: title and body in Markdown files, plus only the minimal publish
+  envelope needed to keep the file addressable. The slug is derived from the
+  extensionless filename and starts with the publication date.
 - Generated state: separate suggestion or run records for prompt versions,
   provider output, confidence, validation failures, and rejected candidates. This
   state is not public metadata until accepted or deterministically promoted.
 - Build projection: a regenerable Astro input layer that combines author source
-  with deterministic derived metadata into the shape Astro pages, content
-  collections, or loaders need. This projection is implementation output, not
-  hand-authored canonical content.
+  with deterministic derived metadata into the shape Astro pages and content
+  collections need.
 
-Frontmatter may still be used as a thin compatibility envelope when it is the
-lowest-risk bridge into Astro, but it must not become the primary storage
-location for generated editorial state.
+Frontmatter may be used in the Astro projection, but it must not become the
+primary storage location for generated editorial state.
 
-The target route strategy is explicit and locale-aware:
+The route strategy is explicit and locale-aware:
 
-- Japanese source posts live as root `posts/<slug>.md`. The current cutover
-  has no locale directory in author source because only Japanese source is
+- Japanese source posts live as root `posts/<slug>.md`.
+- The current source tree has no locale directory because only Japanese source is
   canonical.
-- English generated posts are out of this cutover. `/en/posts/<slug>` remains
-  the reserved public route contract for future translations, but this branch
-  does not require `en/*.md` files or an English generation pipeline before
-  deployment.
-- Content collection IDs must preserve locale path segments so localized posts
-  cannot collide.
-- Public URLs should remain `/posts/<slug>` for the default locale and
+- English generated posts are outside the current deployment gate.
+- `/en/posts/<slug>` remains the reserved public route contract for future
+  translations.
+- Public URLs remain `/posts/<slug>` for the default locale and
   `/en/posts/<slug>` for English.
-- Static paths should be generated from local projected entries, not from empty
-  global i18n route duplication.
+- Static paths come from local projected entries, not from empty global i18n
+  route duplication.
 
-The target rendering model is static-first:
+The rendering model is static-first:
 
 - Published post detail pages, home pages, tag pages, archive pages, RSS,
   sitemap, deterministic related posts, and deterministic OGP outputs should be
@@ -93,56 +73,34 @@ The target rendering model is static-first:
 - SSR remains available only for surfaces with real request-time state, such as
   authenticated preview, generation endpoints, admin/editor helpers, or
   telemetry interpretation.
-- If no request-time surface is needed after EmDash removal, the site should move
-  toward Astro static output and Cloudflare static asset hosting.
 - If request-time surfaces remain useful, keep the Cloudflare adapter and mark
-  public content routes with explicit pre-rendering rather than making public
-  content depend on runtime CMS reads.
+  public content routes with explicit pre-rendering.
 
-Do not introduce a CMS as the primary source of truth now. A supporting editor
-layer may be evaluated later only if normal posting needs a browser UI:
-
-- Keystatic is the best first editor candidate because it supports Astro and can
-  save content to the local file system or GitHub, but it must be evaluated as an
-  editor over the local source contract, not as a reason to switch the body
-  format or own canonical content.
-- TinaCMS is a possible editor candidate because it is Git-backed and supports
-  Markdown/MDX/JSON, but its GraphQL/backend and visual editing model add more
-  moving parts than are justified for the next slice.
-- Decap CMS and Pages CMS are Git-backed browser editing layers, but their normal
-  workflow writes through GitHub or pull requests. They are not first-choice
-  foundations for a workflow that should avoid posting through GitHub-centered
-  UI steps.
+Do not introduce a CMS as the primary source of truth. A supporting editor layer
+may be evaluated later only if normal posting needs a browser UI, and it must
+write the local source contract rather than own the canonical body.
 
 ## Consequences
 
-- The next implementation work should finish the full cutover away from EmDash,
-  not make EmDash and local Markdown coexist as peers.
-- Existing EmDash code, seed files, and host-side scripts remain useful only as
-  unpublished migration references and must be removed from the deployable
-  target unless a later ADR explicitly reintroduces a different CMS boundary.
-- English generation is deferred until after the EmDash-free Japanese-source
-  deployment. When reintroduced, it should write through the same local
-  source/projection contract instead of EmDash APIs or Portable Text.
-- The Japanese canonical body should be reconciled against the historical
-  Markdown sources in git history instead of treating an EmDash export as final
-  truth by default.
+- Public blog implementation work targets Astro local source and generated
+  projection.
+- Historical CMS implementation details are migration evidence, not current
+  instructions.
+- English generation is deferred until after the Japanese local-source deployment
+  and should write through the same local source/projection contract.
 - Browser-based editing is deferred. Local editor, Coding Agent, and command-line
   workflows are sufficient until actual posting friction proves otherwise.
 - Any future editor/CMS must preserve local Markdown as the canonical source and
   must be replaceable without changing public rendering contracts.
-- Existing bd issues that are EmDash-specific should be replaced or superseded
-  by local-source implementation issues as migration work begins.
+- Existing bd issues that still assume the old implementation boundary should be
+  replaced, superseded, or rewritten against the local-source architecture.
 
 ## Implementation Status And Release Gate
 
-As of 2026-05-10, the deployable cutover target is implemented for the Japanese
-site:
+As of 2026-05-10, the deployable target is implemented for the Japanese site:
 
 - Japanese author source lives under root `posts/<slug>.md`, outside `src/`,
   with source frontmatter containing only `title`.
-- Post metadata JSON sidecars have been removed. Projection frontmatter is
-  generated from source filename and body content.
 - `pnpm run project:content -- --check` verifies that
   `src/content/posts/ja/<slug>.md` is the current Astro build projection.
 - Historical Japanese Markdown was recovered from git history and recorded in
@@ -150,10 +108,8 @@ site:
 - Static `home-about` copy is owned by the home page component with locale
   branches because it shares links and is not independently authored content.
 - Public home and post detail rendering reads local Astro files and post content
-  collections instead of runtime CMS APIs.
-- The Astro config uses the Cloudflare adapter directly. The Node adapter,
-  EmDash package dependency, seed/bootstrap/deploy/export scripts, patches, and
-  EmDash environment variables are removed from the deployable target.
+  collections.
+- The Astro config uses the Cloudflare adapter directly.
 - English generated post files and English generation automation remain outside
   this release gate.
 

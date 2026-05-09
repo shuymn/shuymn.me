@@ -6,6 +6,10 @@ type Theme = typeof DARK_THEME | typeof LIGHT_THEME;
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
+type Props = {
+  label: string;
+};
+
 function getStoredTheme(): Theme | null {
   let storedTheme: string | null;
   try {
@@ -36,7 +40,7 @@ function persistTheme(theme: Theme) {
   }
 }
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ label }: Props) {
   const [resolvedTheme, setResolvedTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
@@ -66,7 +70,7 @@ export default function ThemeToggle() {
 
   if (!resolvedTheme) {
     return (
-      <button type="button" className="theme-toggle" aria-label="Toggle theme" disabled>
+      <button type="button" className="theme-toggle" aria-label={label} disabled>
         <span className="theme-toggle-placeholder" />
       </button>
     );
@@ -82,7 +86,7 @@ export default function ThemeToggle() {
         setResolvedTheme(nextTheme);
       }}
       className="theme-toggle"
-      aria-label={`Switch to ${nextTheme} mode`}
+      aria-label={label}
       aria-pressed={resolvedTheme === DARK_THEME}
     >
       {resolvedTheme === LIGHT_THEME ? <Moon size={20} /> : <Sun size={20} />}

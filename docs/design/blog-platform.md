@@ -52,20 +52,16 @@ Foundation reconsideration:
 - Image upload and external asset storage are intentionally deferred from that
   spike.
 
-Atomic cutover gate:
+Atomic cutover status:
 
-- Do not deploy a mixed EmDash/local-Markdown branch as the replacement site.
-- The currently deployed EmDash site may remain live until the replacement is
-  complete, but the replacement branch must remove EmDash runtime, scripts,
-  dependencies, environment requirements, and operational docs before release,
-  except for archived ADR history.
-- The local Markdown files exported from EmDash are migration evidence. Japanese
-  canonical post bodies must be reconciled with the historical Markdown sources
-  available in git history under `_posts/` and `posts/` before finalizing the
-  cutover.
-- The cutover must implement a local source/metadata/projection boundary so
-  generated editorial metadata does not need to live in hand-authored post
-  frontmatter.
+- The replacement target is no longer a mixed EmDash/local-Markdown branch.
+- The deployable target uses Astro local source, accepted metadata, and a build
+  projection for Japanese posts.
+- Japanese canonical post bodies have been reconciled with the historical
+  Markdown sources available in git history under `_posts/`.
+- EmDash runtime, scripts, dependencies, seed/bootstrap/deploy paths,
+  environment requirements, and operational instructions have been removed from
+  the deployable target, except for archived ADR/design history.
 - English generation is a post-cutover follow-up. No generated `en/*.md` files
   are required for the EmDash-free deployment.
 
@@ -362,68 +358,19 @@ boundary. It is retained as evidence for why durable publishing writes should be
 owned by a narrower first-party contract, not as the current implementation
 target.
 
-Host-side automation is the preferred baseline for durable operations that need
-more authority than the current standard plugin surface provides but do not yet
-justify a standalone Cloudflare Worker or CD integration. The existing
-`pnpm run generate:english` command is the model: a script connects to an EmDash
-HTTP endpoint, performs deterministic prechecks, makes narrowly scoped writes,
-verifies the returned records, and can later be triggered by cron, GitHub
-Actions, or a Cloudflare-native workflow without changing the core operation.
+The removed implementation used host-side scripts for schema deployment and
+English generation against an EmDash HTTP endpoint. Those scripts, seed files,
+environment variables, and package dependencies are no longer part of the
+deployable target. The durable lesson that remains is narrower: future
+automation should read local author source and accepted metadata, produce a
+reviewable diff or generated-state record, and write accepted values through the
+local source contract rather than through a CMS-owned body store.
 
-New host-side scripts should follow the same connection model instead of adding
-their own `local` or `prod` target concept:
-
-- choose the EmDash instance with `EMDASH_BASE_URL` or `--base-url`
-- authenticate with `EMDASH_API_TOKEN` or `--token`
-- allow local trusted execution through `EMDASH_DEV_BYPASS` or `--dev-bypass`
-- support generic request headers through newline-separated `EMDASH_HEADERS`
-  and repeated `--header` / `-H` flags for reverse proxies such as Cloudflare
-  Access rather than hardcoding a production environment name
-- express safety through `--dry-run`, explicit apply flags, diff output,
-  idempotency, fail-fast behavior, and post-write verification rather than
-  environment-specific branches
-
-For local validation, the same script can point at `http://localhost:4321` and use
-dev-bypass against the local SQLite-backed EmDash instance. For production, it
-can point at the deployed Cloudflare Worker URL and use an EmDash API token plus
-Cloudflare Access service-token headers via `EMDASH_HEADERS` or repeated
-`--header` / `-H` flags when `/_emdash/*` is protected. This
-keeps the operational model consistent across English generation, schema/content
-deployment, taxonomy acceptance, and any future host-side maintenance scripts.
-
-`seed/seed.json` remains the bootstrap and local reproducibility source. It
-should not be treated as the only ongoing production deployment mechanism after a
-site has existing remote state. Ongoing schema or configuration changes need a
-separate host-side migration/deploy script that can compare desired state against
-the selected EmDash instance, apply only the missing or changed pieces, and
-verify the result.
-
-The initial supported command is:
-
-```bash
-pnpm run deploy:emdash -- --dry-run --dev-bypass
-pnpm run deploy:emdash -- --apply --dev-bypass
-```
-
-The command reads `seed/seed.json` by default and currently treats only
-`settings` plus `collections` / `fields` as deployable state. It uses EmDash REST
-APIs for settings, collection metadata, field create/update, and field ordering.
-It deliberately does not publish seed `content`, delete remote-only fields or
-collections, or write directly to SQLite/D1. If the seed requests a section
-outside the supported surface, or if an existing field would need an immutable
-type change, the command returns an unsupported-operation result instead of
-trying a destructive workaround.
-
-Cloudflare preview and EmDash preview are useful but not the first implementation
-boundary for this migration path. Cloudflare Workers Git integration and Preview
-URLs can create non-production Worker versions or branch previews, but stateful
-D1, R2, KV, and secrets are still determined by bindings and are not automatically
-cloned per pull request. EmDash `previewDatabase()` is a read-only Durable Object
-snapshot for content preview, not a writable schema migration target.
-`playgroundDatabase()` is seed-backed and writable but represents a demo/playground
-database, not production state. Therefore, build the host-side script first,
-prove it against local EmDash and an explicitly selected remote EmDash instance,
-then decide whether to wrap it in CD.
+If a future Cloudflare-native workflow or GitHub Action is added, it should call
+the same local-source command used by humans and should keep credentials,
+idempotency, dry-run behavior, fail-fast validation, and post-write verification
+explicit. Do not recreate a separate CMS deployment path unless a later ADR
+reintroduces a CMS boundary.
 
 ## Historical EmDash Content Model Direction
 
@@ -614,22 +561,18 @@ The generated English workflow should:
 
 The current public route shape makes rendering the English page feasible:
 localized paths are already distinct. The harder contract is durable content
-creation: a translated sibling needs locale, slug, and source/translation linkage
-that may not be writable through the current standard plugin content API. If the
-standard plugin cannot create that record correctly, use the smallest trusted
-plugin or host-side API extension needed to write the localized content
-explicitly.
+creation: a translated sibling needs locale, slug, source/translation linkage,
+generated-state provenance, and accepted metadata promotion without making the
+LLM output a large JSON document tree.
 
 English generation should be two-stage, but not human-gated by default. Stage one
 creates a source-versioned generated candidate with translated fields and gate
-metadata. Stage two automatically publishes the English record when translation
-review and deterministic checks pass, using an API surface that can set `slug`,
-`locale`, `translationOf`, and the Japanese source `publishedAt`, then verifies
-that the returned record is linked to the Japanese source as intended. If
-measured quality, failure rate, or operational noise is not good enough, add a
-human review gate at that point. Regeneration should be explicit when the
-Japanese source changes; it should not silently overwrite an edited English
-version.
+metadata under generated state. Stage two promotes a passing candidate into
+English author source and accepted metadata, preserving `slug`, `locale`,
+source/translation linkage, and the Japanese source `publishedAt`. If measured
+quality, failure rate, or operational noise is not good enough, add a human
+review gate at that point. Regeneration should be explicit when the Japanese
+source changes; it should not silently overwrite an edited English version.
 
 The human gate decision should be evidence-driven rather than precautionary by
 default. Add mandatory human approval only after observed failures such as
@@ -639,58 +582,28 @@ the visible translation note and automated review are insufficient. Until then,
 failed or unsupported generations should stop as unpublished candidates while the
 Japanese publication flow remains unblocked.
 
-The baseline implementation path is the host-side
-`pnpm run generate:english` command. It scans published Japanese posts, skips
-posts with `english_generation_disabled`, calls OpenRouter through Cloudflare AI
-Gateway for translation and a separate review pass, writes English candidates
-through the EmDash REST client with `locale: "en"`, `translationOf`, and the
-exact same `slug` as the Japanese source, publishes with the Japanese source
-`publishedAt` only after review and deterministic gates pass, and stores failure
-reasons in the English draft candidate. The English title never drives the
-localized slug; URLs remain stable across locales. The translator performs
+The future baseline implementation path should be a local-source command. It
+will scan published Japanese author source and accepted metadata, skip posts
+whose accepted metadata disables translation, call a translator and separate
+review pass, write generated candidates as generated state, then promote passing
+results into `src/content/source/posts/en/<slug>.md` and
+`src/content/metadata/posts/en/<slug>.json`. The English title never drives the
+localized slug; URLs remain stable across locales. The translator should perform
 field-to-field metadata translation instead of synthesizing descriptions from
 the body: source `title` becomes English `title`, source `description` becomes
 English `description` only when it is set, and source SEO meta description
 becomes English SEO meta description only when it is set. English SEO title is
 derived from the English post title only when the Japanese source has SEO title
-set. If an already linked English record has slug, optional metadata, or
-published date drift, the command repairs that drift without calling the LLM.
-The OpenRouter API key and Cloudflare AI Gateway account, gateway name, and
-token are provided through environment variables or matching CLI flags.
-Translator and reviewer responses are constrained by AI SDK structured output
-with Zod schemas so the contract is enforced by the caller instead of prompt text
-alone. The automated translation review is a publishability gate, not a
-code-review or proofreading pass: it reports only blockers that mean the English
-article must not be published. If a blocker exists, `passed` is false and the
-blocker appears in `failures` so the edit loop can act on it; if no blocker
-exists, `passed` is true and `failures` is empty. When the automated review
-fails, the command makes a bounded review-fix pass through an `editTranslation`
-tool rather than asking the translator to regenerate the whole article. The edit
-tool returns exact `field` + `oldText` + `newText` diffs only; the caller applies
-them only when `oldText` appears exactly once in the target field, then re-runs
-review on the edited candidate. Existing English records are protected by
-source-version and generated-content hashes: source changes require explicit
-`--regenerate`, and apparent manual edits require `--force`. The command is
-cron/Worker-callable automation, not a pure standard plugin, because the durable
-write needs locale, slug, publish state, and translation linkage.
+set.
 
-The command uses Markdown as the LLM boundary and Portable Text as the storage
-boundary. It reads source posts from EmDash, derives `contentMarkdown`, asks the
-translator to return `contentMarkdown`, converts that Markdown back to Portable
-Text before writing, and stores the converted Portable Text in EmDash. This
-accepts the known limits of Markdown-to-Portable-Text conversion in exchange for
-a much smaller structured output schema and a body format that the translation
-and review prompts can handle reliably. EmDash table blocks are a supported
-bridge case: source tables are rendered as Markdown tables for translation,
-translated Markdown tables are converted back to EmDash table blocks, and the
-deterministic gate rejects table count drift. If an unexpected per-post error
-occurs after generation starts, the command stops the run instead of continuing
-to spend provider calls on later posts.
-
-OpenRouter-style HTTP providers fit the standard plugin model better than direct
-Cloudflare Workers AI bindings because plugin network access can be expressed as
-`network:request` with `allowedHosts`. Cloudflare Workers AI can still be a later
-host-side option if the runtime exposes the needed binding cleanly.
+Translator and reviewer responses should use small structured outputs: translated
+title, optional metadata fields, Markdown body, review pass/fail, and concrete
+failure reasons. Do not ask the model to emit complex Portable Text-like JSON.
+Markdown remains the translation body boundary and local author source remains
+the storage boundary. Existing deterministic protections still apply: preserve
+table count, code fence count, links, source-version hashes, and manual-edit
+guards; source changes require explicit regeneration, and apparent manual edits
+require explicit force.
 
 ### Infrastructure Telemetry
 
@@ -707,28 +620,29 @@ Cloudflare should own raw traffic and infrastructure signals:
 - 404s and other status codes
 - cache behavior and performance signals
 
-EmDash may consume or display derived insights only when they help operate the
-content:
+Local-source tooling may consume or display derived insights only when they help
+operate the content:
 
 - mapping paths back to `posts`, tags, and series
 - identifying old posts that still receive traffic and may need updates
 - identifying broken links or missing redirects
 - finding topic clusters that are repeatedly referenced
-- comparing Cloudflare path data with EmDash publication metadata
+- comparing Cloudflare path data with accepted publication metadata
 
-Do not build first-party pageview collection in EmDash unless Cloudflare cannot
-provide a required signal. If an EmDash plugin is added later, it should act as
-an analytics interpreter, not as the primary analytics collector.
+Do not build first-party pageview collection unless Cloudflare cannot provide a
+required signal. If a browser editor or CMS layer is added later, it should act
+as an analytics interpreter, not as the primary analytics collector.
 
 Cloudflare telemetry ingestion should not depend on the standard plugin context.
 Prefer a host-side script, scheduled job, standalone Cloudflare Worker, or another
 Cloudflare-native workflow that reads Cloudflare APIs or datasets with
-infrastructure-managed credentials, stores only derived aggregates needed for
-editorial interpretation, and exposes those aggregates to EmDash for display.
+infrastructure-managed credentials and stores only derived aggregates needed for
+editorial interpretation.
 
 ### Sections And Widgets
 
-Use EmDash sections/widgets for stable site-level surfaces:
+Use local site-section content and Astro components for stable site-level
+surfaces:
 
 - profile/about content
 - search entry points
@@ -765,12 +679,12 @@ Avoid sidebar clutter until the site has enough content to justify it.
 
 ### Cutover Slice 3: EmDash Removal
 
-- Remove EmDash runtime integration, scripts, seed/bootstrap/deploy paths,
-  dependencies, environment requirements, and operational instructions from the
-  deployable target.
-- Keep only archived ADR/design context and explicit migration evidence.
-- Prove the public Japanese home and post routes prerender from local source and
-  accepted metadata without EmDash reads.
+- Completed for the deployable target: EmDash runtime integration, scripts,
+  seed/bootstrap/deploy paths, dependencies, environment requirements, and
+  operational instructions were removed.
+- Archived ADR/design context remains as historical evidence only.
+- Public Japanese post routes prerender from local source and accepted metadata
+  without EmDash reads.
 
 ### Product Baseline After Cutover
 

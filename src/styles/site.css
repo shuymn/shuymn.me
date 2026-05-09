@@ -88,14 +88,6 @@ body {
   --tw-prose-td-borders: var(--color-border);
 }
 
-:where(.site-shell) .emdash-table tbody tr:hover {
-  background: transparent !important;
-}
-
-:where(.site-shell) .emdash-table tbody tr:nth-child(even):hover {
-  background: var(--color-bg-subtle) !important;
-}
-
 .site-shell {
   max-width: 48rem;
   margin-inline: auto;

@@ -138,29 +138,24 @@ layer may be evaluated later only if normal posting needs a browser UI:
 
 ## Implementation Status And Release Gate
 
-As of 2026-05-09, the first public rendering proof is complete but not
-deployable as the final replacement:
+As of 2026-05-10, the deployable cutover target is implemented for the Japanese
+site:
 
-- Published EmDash posts are exported to `src/content/posts/<locale>/<slug>.md`
-  as an intermediate migration snapshot.
+- Japanese author source lives under `src/content/source/posts/ja/<slug>.md`.
+- Accepted Japanese post metadata lives under
+  `src/content/metadata/posts/ja/<slug>.json`.
+- `pnpm run project:content -- --check` verifies that
+  `src/content/posts/ja/<slug>.md` is the current Astro build projection.
+- Historical Japanese Markdown was recovered from git history and recorded in
+  `docs/design/japanese-source-recovery.md`.
 - Published `home-about` site sections are exported to
   `src/content/site-sections/<locale>/home-about.md`.
 - Public home and post detail rendering read Astro content collections instead
-  of EmDash runtime APIs.
-- The Astro config no longer installs the EmDash integration, so prerendered
-  public content routes are not coupled to EmDash request/session hooks.
-
-The release gate for this ADR is stricter than that proof. Before this branch can
-be considered a deployable cutover:
-
-- The local source/metadata/projection contract must be implemented so generated
-  metadata does not need to live in hand-authored post frontmatter.
-- Japanese posts must be reconciled with historical Markdown sources from git
-  history where those sources exist.
-- EmDash export/deploy/bootstrap/seed/plugin code, package dependencies,
-  environment variables, and operational documentation must be removed from the
-  deployable target, except for archived historical ADR context.
-- English generated post files and English generation automation are not part of
+  of runtime CMS APIs.
+- The Astro config uses the Cloudflare adapter directly. The Node adapter,
+  EmDash package dependency, seed/bootstrap/deploy/export scripts, patches, and
+  EmDash environment variables are removed from the deployable target.
+- English generated post files and English generation automation remain outside
   this release gate.
 
 ## Checked References

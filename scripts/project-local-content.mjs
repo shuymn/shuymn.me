@@ -354,7 +354,7 @@ function buildAcceptedMetadataFromProjection(frontmatter, locale, slug) {
     statusNote: optionalString(frontmatter.statusNote),
     redirects: Array.isArray(frontmatter.redirects) ? frontmatter.redirects : [],
     revision: {
-      source: "emdash-export",
+      source: "projection-init",
       reconciled: false,
     },
   });

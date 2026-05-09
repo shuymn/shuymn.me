@@ -1,12 +1,8 @@
 import cloudflare from "@astrojs/cloudflare";
-import node from "@astrojs/node";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import { DEFAULT_LOCALE, LOCALE_FALLBACK, SUPPORTED_LOCALES } from "./src/lib/i18n";
-
-const runtime = process.env.ASTRO_RUNTIME ?? process.env.EMDASH_RUNTIME ?? "local";
-const isCloudflare = runtime === "cloudflare";
 
 export default defineConfig({
   output: "server",
@@ -19,11 +15,9 @@ export default defineConfig({
       prefixDefaultLocale: false,
     },
   },
-  adapter: isCloudflare
-    ? cloudflare()
-    : node({
-        mode: "standalone",
-      }),
+  adapter: cloudflare({
+    imageService: "compile",
+  }),
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],

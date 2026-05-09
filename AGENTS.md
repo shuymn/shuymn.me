@@ -21,7 +21,7 @@
 
 - Develop with TDD: exploration -> Red -> Green -> Refactoring.
 - When KPI or coverage targets are given, keep iterating until they are met.
-- Use `pnpm` for Node.js package commands. This repository declares `packageManager: pnpm@10.26.1`.
+- Use `pnpm` for Node.js package commands. This repository declares `packageManager: pnpm@10.33.3`.
 - Use Node.js 24 from `.node-version`.
 - Before marking non-trivial code changes done, run the narrowest relevant verification first, then widen only when the blast radius justifies it.
 - CI runs `pnpm run lint`, `pnpm run fmt`, `pnpm run typecheck`, and `pnpm run build`.
@@ -32,13 +32,12 @@
 - Separate state from logic.
 - Prioritize readability and maintainability.
 - Define the contract layer strictly, and keep the implementation layer regenerable.
-- This is an Astro local-source site completing an atomic EmDash removal, not a Next.js app.
+- This is an Astro local-source site, not a Next.js app.
 - The target content contract separates author source, accepted metadata, generated state, and Astro build projection; do not make rich post frontmatter the primary home for generated metadata.
 - Public posts and site sections may project into Astro content collections under `src/content/posts/` and `src/content/site-sections/`; preserve `/posts/<slug>`. `/en/posts/<slug>` is reserved for future generated translations but is not required for the current cutover.
-- Public content routes should prerender from local files and must not query EmDash at render time.
-- Do not treat a branch that still needs EmDash scripts, dependencies, environment variables, Portable Text storage, or CMS runtime/admin surfaces as deployable.
-- Existing EmDash export/deploy/bootstrap/seed code is migration-only evidence; remove it from the deployable target once Japanese source recovery and the local source/metadata/projection contract are complete.
-- Use `pnpm run export:emdash-content -- --dry-run` only for migration evidence before re-exporting from `data.db`; use `--apply --force` only when intentionally replacing generated migration Markdown during recovery.
+- Public content routes should prerender from local files and must not query a CMS at render time.
+- Do not treat a branch that needs CMS runtime/admin surfaces as deployable for the current cutover.
+- Historical CMS export/deploy/bootstrap/seed code has been removed from the deployable target; use git history, not live CMS state, for migration evidence.
 
 ## Project Commands
 
@@ -47,6 +46,8 @@ pnpm install
 pnpm run dev
 pnpm run build
 pnpm run preview
+pnpm run deploy:dry-run
+pnpm run deploy
 pnpm run lint
 pnpm run lint:fix
 pnpm run fmt
@@ -54,28 +55,18 @@ pnpm run fmt:fix
 pnpm run typecheck
 pnpm run project:content -- --check
 pnpm run project:content -- --apply
-pnpm run export:emdash-content -- --dry-run
-pnpm run bootstrap
-pnpm run seed
-pnpm run deploy:emdash -- --dry-run --dev-bypass
-pnpm run test:emdash-export
 pnpm run test:local-content
-pnpm run test:emdash-deploy
 ```
 
 ## Environment Variables
 
-- `.envrc` uses direnv `dotenv`; create `.env` from `.env.example`, fill local values, and run `direnv allow`.
-- EmDash connection: `EMDASH_BASE_URL`, `EMDASH_API_TOKEN`, `EMDASH_DEV_BYPASS`, `EMDASH_HEADERS` are migration-only and must not remain required by the deployable target.
-- Astro adapter selection: `ASTRO_RUNTIME=cloudflare`; `EMDASH_RUNTIME=cloudflare` is migration-only compatibility and must be removed from the deployable target.
-- English generation: `ENGLISH_GENERATION_API_KEY`, `ENGLISH_GENERATION_MODEL`, `ENGLISH_EDIT_MODEL`, `ENGLISH_REVIEW_MODEL`, `ENGLISH_GENERATION_LIMIT`, `ENGLISH_GENERATION_MAX_FIX_ATTEMPTS`, `ENGLISH_GENERATION_TEMPERATURE` are post-cutover translation settings and must not gate the current EmDash-free deployment.
-- Cloudflare AI Gateway: `CF_AIG_ACCOUNT_ID`, `CF_AIG_GATEWAY`, `CF_AIG_TOKEN`.
+- No environment variables are required for the current Astro local-source deploy target.
+- `.envrc` may still load a local `.env`; keep real values out of git.
 
 ## Skills
 
-- Use `building-emdash-site` only when touching remaining EmDash migration/removal code.
-- Use `creating-plugins` only if explicitly changing historical EmDash plugin code before removal.
-- Use `emdash-cli` only for migration evidence or removal work involving remaining EmDash content, schema, media, or remote-instance operations.
+- No project-specific skill is required for normal Astro local-source work.
+- Use Cloudflare-related skills when changing Worker deployment behavior.
 
 ## Critical Recap
 

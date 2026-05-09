@@ -5,9 +5,10 @@ Date: 2026-05-08
 
 ## Context
 
-`shuymn.me` is a personal site and mostly-blog built with Astro and EmDash. The
-site should become the primary place to preserve what the author was thinking,
-building, and deciding at a point in time, especially around AI-related work.
+`shuymn.me` is a personal site and mostly-blog built with Astro and local
+Markdown content collections. The site should become the primary place to
+preserve what the author was thinking, building, and deciding at a point in
+time, especially around AI-related work.
 
 The main value is personal recall and durable reference. External publishing
 value is useful, but secondary. The platform should therefore borrow mature
@@ -16,13 +17,15 @@ conversion-driven publishing.
 
 Current implementation baseline:
 
-- The EmDash `posts` collection supports `drafts`, `revisions`, `search`, and
-  `seo`.
-- Post fields are currently limited to `title`, `description`, and `content`.
-- The site renders a home page, localized home pages, and localized post detail
-  pages.
-- The site already has Japanese and English public routes, but English post
-  generation is not automated.
+- Published posts are repository-local Markdown files under
+  `src/content/posts/<locale>/<slug>.md`.
+- Stable home/profile sections are repository-local Markdown files under
+  `src/content/site-sections/<locale>/`.
+- The site renders the home page, localized home pages, and localized post
+  detail pages from Astro content collections instead of EmDash runtime reads.
+- The site already has Japanese and English public routes. English generation is
+  still transitional and currently needs migration from EmDash API writes to
+  local Markdown file writes.
 - OGP images currently fall back to one static default image through
   `DEFAULT_OG_IMAGE_URL`.
 - There are no current taxonomies, series, archive pages, search page, related
@@ -63,9 +66,9 @@ Foundation reconsideration:
   record.
 - Treat traffic and infrastructure telemetry as a Cloudflare concern first, not
   as an EmDash content-management concern.
-- Translate proven WordPress plugin patterns into EmDash-native schema, pages,
-  and plugins only when they improve recall, readability, maintenance, or
-  distribution.
+- Translate proven WordPress plugin patterns into Astro-native routes,
+  deterministic scripts, or replaceable editor helpers only when they improve
+  recall, readability, maintenance, or distribution.
 
 ## Non-Goals
 

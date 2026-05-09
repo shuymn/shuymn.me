@@ -32,13 +32,11 @@
 - Separate state from logic.
 - Prioritize readability and maintainability.
 - Define the contract layer strictly, and keep the implementation layer regenerable.
-- This is an Astro + EmDash CMS site, not a Next.js app.
-- EmDash content is server-rendered. Keep `output: "server"` and do not add static-generation assumptions for CMS content.
-- Local EmDash uses SQLite at `data.db` and local media under `uploads/`; Cloudflare mode is selected with `EMDASH_RUNTIME=cloudflare`.
-- Treat `seed/seed.json` as the local schema/content seed source. After changing schema or seed content, run the seed/bootstrap flow needed to verify it.
-- For EmDash pages, pass returned `cacheHint` values to `Astro.cache.set(cacheHint)` when using APIs that provide cache hints.
-- Use unprefixed content slugs (`entry.slug` at runtime or `entry.data.slug` in generated types) for public URLs; `entry.id` may include the locale prefix such as `en/<slug>`. Use `entry.data.id` for database IDs used by EmDash APIs.
-- For EmDash image fields, render with the `Image` component from `emdash/ui` instead of treating image values as strings.
+- This is an Astro local Markdown site with transitional EmDash migration scripts, not a Next.js app.
+- Public posts and site sections are Astro content collections under `src/content/posts/` and `src/content/site-sections/`; preserve `/posts/<slug>` and `/en/posts/<slug>`.
+- Public content routes should prerender from local files and must not query EmDash at render time.
+- Use `pnpm run export:emdash-content -- --dry-run` before re-exporting from `data.db`; use `--apply --force` only when intentionally replacing generated local Markdown.
+- EmDash API/client code remains transitional for export, deploy, and English generation follow-up work; keep it out of public rendering paths.
 
 ## Project Commands
 
@@ -52,9 +50,11 @@ pnpm run lint:fix
 pnpm run fmt
 pnpm run fmt:fix
 pnpm run typecheck
+pnpm run export:emdash-content -- --dry-run
 pnpm run bootstrap
 pnpm run seed
 pnpm run deploy:emdash -- --dry-run --dev-bypass
+pnpm run test:emdash-export
 pnpm run test:emdash-deploy
 ```
 
@@ -62,7 +62,7 @@ pnpm run test:emdash-deploy
 
 - `.envrc` uses direnv `dotenv`; create `.env` from `.env.example`, fill local values, and run `direnv allow`.
 - EmDash connection: `EMDASH_BASE_URL`, `EMDASH_API_TOKEN`, `EMDASH_DEV_BYPASS`, `EMDASH_HEADERS`.
-- EmDash runtime/access: `EMDASH_RUNTIME`, `EMDASH_ACCESS_DEFAULT_ROLE`, `CF_ACCESS_TEAM_DOMAIN`.
+- Astro adapter selection: `ASTRO_RUNTIME=cloudflare`; `EMDASH_RUNTIME=cloudflare` is accepted only as a transitional compatibility fallback.
 - English generation: `ENGLISH_GENERATION_API_KEY`, `ENGLISH_GENERATION_MODEL`, `ENGLISH_EDIT_MODEL`, `ENGLISH_REVIEW_MODEL`, `ENGLISH_GENERATION_LIMIT`, `ENGLISH_GENERATION_MAX_FIX_ATTEMPTS`, `ENGLISH_GENERATION_TEMPERATURE`.
 - Cloudflare AI Gateway: `CF_AIG_ACCOUNT_ID`, `CF_AIG_GATEWAY`, `CF_AIG_TOKEN`.
 

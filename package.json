@@ -20,15 +20,16 @@
     "fmt:fix": "biome check --linter-enabled=false --write .",
     "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check",
     "generate:english": "node scripts/generate-english-posts.ts",
+    "export:emdash-content": "node scripts/export-emdash-content.mjs",
     "deploy:emdash": "node scripts/deploy-emdash-state.ts",
     "test:english-generation": "node --test scripts/generate-english-posts.test.ts scripts/lib/emdashConnection.test.ts",
+    "test:emdash-export": "node --test scripts/export-emdash-content.test.mjs",
     "test:emdash-deploy": "node --test scripts/deploy-emdash-state.test.ts scripts/lib/emdashDeploy.test.ts scripts/lib/emdashConnection.test.ts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.1.7",
     "@astrojs/node": "^10.0.0",
     "@astrojs/react": "^5.0.0",
-    "@emdash-cms/cloudflare": "^0.9.0",
     "ai": "^6.0.176",
     "ai-gateway-provider": "^3.1.3",
     "astro": "^6.0.1",

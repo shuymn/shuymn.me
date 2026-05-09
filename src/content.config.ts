@@ -5,8 +5,14 @@ import { z } from "astro/zod";
 const postLocaleSchema = z.enum(["ja", "en"]);
 
 const optionalTextSchema = z.string().min(1).optional();
+const linkSchema = z
+  .object({
+    label: z.string().min(1),
+    url: z.string().min(1),
+  })
+  .strict();
 
-const localPostSchema = z
+export const localPostSchema = z
   .object({
     slug: z.string().min(1),
     locale: postLocaleSchema,
@@ -51,13 +57,31 @@ const localPostSchema = z
   })
   .strict();
 
-const localPosts = defineCollection({
+const posts = defineCollection({
   loader: glob({
-    base: "./src/content/local-posts",
+    base: "./src/content/posts",
     pattern: "**/*.md",
     generateId: ({ entry }) => entry.replace(/\.md$/, ""),
   }),
   schema: localPostSchema,
 });
 
-export const collections = { localPosts };
+const siteSections = defineCollection({
+  loader: glob({
+    base: "./src/content/site-sections",
+    pattern: "**/*.md",
+    generateId: ({ entry }) => entry.replace(/\.md$/, ""),
+  }),
+  schema: z
+    .object({
+      slug: z.string().min(1),
+      locale: postLocaleSchema,
+      title: z.string().min(1),
+      publishedAt: z.coerce.date().optional(),
+      updatedAt: z.coerce.date().optional(),
+      links: z.array(linkSchema).default([]),
+    })
+    .strict(),
+});
+
+export const collections = { posts, siteSections };

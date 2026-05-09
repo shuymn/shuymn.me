@@ -1,0 +1,50 @@
+---
+import { type CollectionEntry, render } from "astro:content";
+import Base from "../layouts/Base.astro";
+import { DEFAULT_LOCALE, formatDate, getPostPath, getPublicText } from "../lib/i18n";
+
+type Props = {
+    post: CollectionEntry<"posts">;
+};
+
+const { post } = Astro.props as Props;
+const { Content } = await render(post);
+const locale = post.data.locale;
+const publicText = getPublicText(locale);
+const postPath = getPostPath(post.data.slug, locale);
+const publishedIso = post.data.publishedAt?.toISOString() ?? null;
+const modifiedIso = post.data.updatedAt?.toISOString() ?? null;
+const showTranslationNote =
+    locale === "en" && !post.data.translation.disabled && Boolean(post.data.translation.sourceSlug);
+const translationSourceSlug = post.data.translation.sourceSlug ?? "";
+---
+
+<Base
+  title={post.data.title}
+  description={post.data.description}
+  type="article"
+  publishedTime={publishedIso}
+  modifiedTime={modifiedIso}
+  path={postPath}
+>
+  <main>
+    <article class="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32 dark:prose-invert prose-pre:bg-surface">
+      <header>
+        {post.data.publishedAt && <small>{formatDate(post.data.publishedAt)}</small>}
+        <h1>{post.data.title}</h1>
+        {post.data.description && <p>{post.data.description}</p>}
+      </header>
+      {
+        showTranslationNote && (
+          <aside class="translation-note" aria-label={publicText.translationNoteLabel}>
+            <p>{publicText.translationNoteText}</p>
+            <a href={getPostPath(translationSourceSlug, DEFAULT_LOCALE)}>{publicText.translationNoteSourceLink}</a>
+          </aside>
+        )
+      }
+      <div>
+        <Content />
+      </div>
+    </article>
+  </main>
+</Base>

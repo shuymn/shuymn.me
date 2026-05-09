@@ -94,6 +94,22 @@ layer may be evaluated later only if normal posting needs a browser UI:
 - Existing bd issues that are EmDash-specific should be replaced or superseded
   by local-source implementation issues as migration work begins.
 
+## Implementation Status
+
+As of 2026-05-09, the first public rendering cutover is complete:
+
+- Published EmDash posts are exported to `src/content/posts/<locale>/<slug>.md`.
+- Published `home-about` site sections are exported to
+  `src/content/site-sections/<locale>/home-about.md`.
+- Public home and post detail rendering read Astro content collections instead
+  of EmDash runtime APIs.
+- The Astro config no longer installs the EmDash integration, so prerendered
+  public content routes are not coupled to EmDash request/session hooks.
+
+The remaining transitional work is explicit: English generation still uses the
+EmDash API/client flow and must be migrated to local Markdown file writes before
+the EmDash content-management scripts can be removed completely.
+
 ## Checked References
 
 - Astro on-demand rendering:

@@ -871,7 +871,7 @@ function getMarkdownField(data: unknown, key: string, fallbackPortableText: Port
   return "";
 }
 
-function portableTextToTranslatableMarkdown(blocks: PortableTextBlock[]): string {
+export function portableTextToTranslatableMarkdown(blocks: PortableTextBlock[]): string {
   const chunks: string[] = [];
   let standardBlocks: PortableTextBlock[] = [];
 

@@ -1,16 +1,8 @@
 ---
-import { getEmDashCollection, getEmDashEntry } from "emdash";
-import { PortableText } from "emdash/ui";
+import { getCollection, render } from "astro:content";
 import Base from "../layouts/Base.astro";
-import {
-    formatDate,
-    getContentSlug,
-    getCurrentLocale,
-    getHomePath,
-    getPostPath,
-    getPublicText,
-    HOME_ABOUT_SLUG,
-} from "../lib/i18n";
+import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText, HOME_ABOUT_SLUG } from "../lib/i18n";
+import { SITE_TITLE } from "../lib/seo";
 
 type ProfileLink = {
     label: string;
@@ -18,21 +10,16 @@ type ProfileLink = {
 };
 
 const locale = getCurrentLocale(Astro.currentLocale);
-const [aboutResult, postsResult] = await Promise.all([
-    getEmDashEntry("site_sections", HOME_ABOUT_SLUG, { locale }),
-    getEmDashCollection("posts", { locale, status: "published" }),
+const [siteSections, posts] = await Promise.all([
+    getCollection("siteSections", ({ data }) => data.locale === locale && data.slug === HOME_ABOUT_SLUG),
+    getCollection("posts", ({ data }) => data.locale === locale && !data.draft),
 ]);
-const { entry: about } = aboutResult;
-const { entries: posts } = postsResult;
-
-for (const cacheHint of [aboutResult.cacheHint, postsResult.cacheHint]) {
-    if (cacheHint) {
-        Astro.cache.set(cacheHint);
-    }
-}
+const about = siteSections[0] ?? null;
+const renderedAbout = about ? await render(about) : null;
+const AboutContent = renderedAbout?.Content;
 
 const sortedPosts = posts
-    .filter((post) => getContentSlug(post).length > 0)
+    .filter((post) => post.data.slug.length > 0)
     .toSorted((a, b) => {
         const dateA = a.data.publishedAt?.getTime() ?? 0;
         const dateB = b.data.publishedAt?.getTime() ?? 0;
@@ -49,12 +36,12 @@ const profileLinks = Array.isArray(about?.data.links) ? about.data.links.filter(
 const publicText = getPublicText(locale);
 ---
 
-<Base title="shuymn.me" path={getHomePath(locale)}>
+<Base title={SITE_TITLE} path={getHomePath(locale)}>
   <main>
     {
       about && (
         <section class="about" aria-label={publicText.aboutLabel}>
-          {about.data.content ? <PortableText value={about.data.content} /> : null}
+          {AboutContent && <AboutContent />}
           {
             profileLinks.length > 0 && (
               <ul class="profile-links">
@@ -82,7 +69,7 @@ const publicText = getPublicText(locale);
           sortedPosts.map((post) => (
             <article class="post-link">
               <p class="post-date">{formatDate(post.data.publishedAt)}</p>
-              <a href={getPostPath(getContentSlug(post), locale)}>{post.data.title}</a>
+              <a href={getPostPath(post.data.slug, locale)}>{post.data.title}</a>
               {post.data.description && <p class="post-description">{post.data.description}</p>}
             </article>
           ))

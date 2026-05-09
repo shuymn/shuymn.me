@@ -25,9 +25,6 @@ importers:
       '@astrojs/react':
         specifier: ^5.0.0
         version: 5.0.4(@types/node@25.6.2)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(jiti@2.6.1)(lightningcss@1.32.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(yaml@2.8.4)
-      '@emdash-cms/cloudflare':
-        specifier: ^0.9.0
-        version: 0.9.0(58edeefc7be72d79ce6a46ef6663f837)
       ai:
         specifier: ^6.0.176
         version: 6.0.176(zod@4.4.3)
@@ -726,13 +723,6 @@ packages:
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
-
-  '@emdash-cms/cloudflare@0.9.0':
-    resolution: {integrity: sha512-D8d/wuyzuZddVnAUMNVwMbwLCBVF4MPW0DOsq0omW4bxMkZRsKtr8eN19dquMvvMp0D1fO5Oc7n9MY+8vUVNLg==, tarball: https://registry.npmjs.org/@emdash-cms/cloudflare/-/cloudflare-0.9.0.tgz}
-    peerDependencies:
-      '@cloudflare/workers-types': '>=4.0.0'
-      astro: '>=6.0.0-beta.0'
-      kysely: '>=0.27.0'
 
   '@emdash-cms/gutenberg-to-portable-text@0.9.0':
     resolution: {integrity: sha512-W5f83AVE4SDZNF3b1js74C0xFNerqv3WsI07ouet6KciWSQHv5Kp4zN/yVrrOv8PUERefyMoklrbCznMB+jIsQ==, tarball: https://registry.npmjs.org/@emdash-cms/gutenberg-to-portable-text/-/gutenberg-to-portable-text-0.9.0.tgz}
@@ -3635,11 +3625,6 @@ packages:
   kuromojin@3.0.1:
     resolution: {integrity: sha512-E4rLmbTid8ZGH8Fw421UXvfgCe0IXGFKhUw/IosBVW6ootxVGKGbtb0UPQAvPswgsXX/8UuPiE+amz1NN11Uzg==, tarball: https://registry.npmjs.org/kuromojin/-/kuromojin-3.0.1.tgz}
 
-  kysely-d1@0.4.0:
-    resolution: {integrity: sha512-wUcVvQNtm30OTfuo7Ad5vYJ1qHqPXOCZc+zWchVKNyuvqY3u8OuGw4gmUx1Ypdx2wRVFLHVQC9I7v0pTmF7Nkw==, tarball: https://registry.npmjs.org/kysely-d1/-/kysely-d1-0.4.0.tgz}
-    peerDependencies:
-      kysely: '*'
-
   kysely@0.27.6:
     resolution: {integrity: sha512-FIyV/64EkKhJmjgC0g2hygpBv5RNWVPyNCqSAD7eTCv6eFWNIi4PN1UvdSJGicN/o35bnevgis4Y0UDC0qi8jQ==, tarball: https://registry.npmjs.org/kysely/-/kysely-0.27.6.tgz}
     engines: {node: '>=14.0.0'}
@@ -6457,39 +6442,6 @@ snapshots:
       - '@types/react'
       - date-fns
       - zod
-
-  '@emdash-cms/cloudflare@0.9.0(58edeefc7be72d79ce6a46ef6663f837)':
-    dependencies:
-      '@cloudflare/workers-types': 4.20260506.1
-      astro: 6.2.2(@types/node@25.6.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.60.3)(yaml@2.8.4)
-      emdash: 0.9.0(patch_hash=9b3f87ec9ab67bf5902f0400f0c457cb4cba9b3cdffb75e1ada6edd3203cf61a)(642b0b0bc898ed927ed3e062efb2f44b)
-      jose: 6.2.3
-      kysely: 0.27.6
-      kysely-d1: 0.4.0(kysely@0.27.6)
-      ulidx: 2.4.1
-    transitivePeerDependencies:
-      - '@astrojs/react'
-      - '@cfworker/json-schema'
-      - '@date-fns/tz'
-      - '@emdash-cms/auth-atproto'
-      - '@emotion/is-prop-valid'
-      - '@floating-ui/dom'
-      - '@lingui/babel-plugin-lingui-macro'
-      - '@tiptap/extension-collaboration'
-      - '@tiptap/extensions'
-      - '@tiptap/pm'
-      - '@tiptap/y-tiptap'
-      - '@types/react'
-      - '@types/react-dom'
-      - babel-plugin-macros
-      - bufferutil
-      - date-fns
-      - echarts
-      - pg-native
-      - react
-      - react-dom
-      - supports-color
-      - utf-8-validate
 
   '@emdash-cms/gutenberg-to-portable-text@0.9.0':
     dependencies:
@@ -9614,10 +9566,6 @@ snapshots:
       '@kvs/env': 2.2.2
       kuromoji: 0.1.2
       lru_map: 0.4.1
-
-  kysely-d1@0.4.0(kysely@0.27.6):
-    dependencies:
-      kysely: 0.27.6
 
   kysely@0.27.6: {}
 

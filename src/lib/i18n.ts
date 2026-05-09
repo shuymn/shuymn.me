@@ -51,27 +51,7 @@ export function getPublicText(locale: string | undefined): PublicText {
   return PUBLIC_TEXT_BY_LOCALE[getCurrentLocale(locale)];
 }
 
-export function getContentSlug(entry: { id?: unknown; slug?: unknown; data?: { slug?: unknown } }): string {
-  const rawSlug = [entry.slug, entry.data?.slug, entry.id].find((value) => typeof value === "string");
-  return normalizeContentSlug(typeof rawSlug === "string" ? rawSlug : "");
-}
-
 export function formatDate(date: Date | null | undefined): string {
   if (!date) return "";
   return date.toISOString().slice(0, 10).replace(/-/g, ".");
-}
-
-function stripLocalePrefix(path: string): string {
-  for (const locale of SUPPORTED_LOCALES) {
-    if (locale === DEFAULT_LOCALE) continue;
-    const prefix = `/${locale}`;
-    if (path === prefix) return "/";
-    if (path.startsWith(`${prefix}/`)) return path.slice(prefix.length);
-  }
-  return path;
-}
-
-function normalizeContentSlug(slug: string): string {
-  const trimmed = slug.replace(/^\/+|\/+$/g, "");
-  return stripLocalePrefix(`/${trimmed}`).replace(/^\/+/, "");
 }

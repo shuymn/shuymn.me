@@ -10,7 +10,6 @@ test("EmDash connection helper resolves endpoint credentials and generic headers
   const values: EmDashConnectionCliValues = {
     baseUrl: "https://cms.example.test/",
     token: "flag-token",
-    devBypass: true,
     header: ["CF-Access-Client-Id: flag-id", "CF-Access-Client-Secret: flag-secret"],
   };
   const options = resolveEmDashConnectionOptions(values, {
@@ -21,7 +20,7 @@ test("EmDash connection helper resolves endpoint credentials and generic headers
 
   assert.equal(options.baseUrl, "https://cms.example.test");
   assert.equal(options.token, "flag-token");
-  assert.equal(options.devBypass, true);
+  assert.equal(options.devBypass, false);
   assert.deepEqual(options.headers, {
     "CF-Access-Client-Id": "flag-id",
     "CF-Access-Client-Secret": "flag-secret",
@@ -46,6 +45,44 @@ test("EmDash connection helper treats blank env values as unset and fails withou
   const options = resolveEmDashConnectionOptions({ devBypass: true }, { EMDASH_BASE_URL: "" });
   assert.equal(options.baseUrl, "http://localhost:4321");
   assert.equal(options.devBypass, true);
+});
+
+test("EmDash connection helper rejects combining --dev-bypass with an API token", () => {
+  assert.throws(
+    () => resolveEmDashConnectionOptions({ token: "flag-token", devBypass: true }, {}),
+    /--dev-bypass cannot be combined with EMDASH_API_TOKEN\/--token/,
+  );
+
+  assert.throws(
+    () => resolveEmDashConnectionOptions({ devBypass: true }, { EMDASH_API_TOKEN: "env-token" }),
+    /--dev-bypass cannot be combined with EMDASH_API_TOKEN\/--token/,
+  );
+});
+
+test("EmDash connection helper lets --no-dev-bypass override EMDASH_DEV_BYPASS=true", () => {
+  assert.throws(
+    () => resolveEmDashConnectionOptions({ devBypass: false }, { EMDASH_DEV_BYPASS: "true" }),
+    /Set EMDASH_API_TOKEN or pass --dev-bypass/,
+  );
+
+  const options = resolveEmDashConnectionOptions(
+    { token: "flag-token", devBypass: false },
+    { EMDASH_DEV_BYPASS: "true" },
+  );
+  assert.equal(options.devBypass, false);
+  assert.equal(options.token, "flag-token");
+});
+
+test("EmDash connection helper rejects base URLs without a usable http(s) protocol", () => {
+  assert.throws(
+    () => resolveEmDashConnectionOptions({ baseUrl: "localhost:4321", devBypass: true }, {}),
+    /Invalid EMDASH_BASE_URL\/--base-url: localhost:4321/,
+  );
+
+  assert.throws(
+    () => resolveEmDashConnectionOptions({ baseUrl: "ftp://cms.example.test", devBypass: true }, {}),
+    /protocol must be http or https/,
+  );
 });
 
 test("EmDash connection helper attaches custom headers to API requests", async () => {

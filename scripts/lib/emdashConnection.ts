@@ -15,6 +15,7 @@ export const emdashConnectionArgs = {
   },
   devBypass: {
     type: "boolean",
+    negatable: true,
     description: "Use local EmDash dev-bypass auth",
   },
   header: {
@@ -46,8 +47,9 @@ export function resolveEmDashConnectionOptions(
   const baseUrl = stripTrailingSlash(
     readOptionalString(values.baseUrl) ?? readOptionalString(env.EMDASH_BASE_URL) ?? DEFAULT_EMDASH_BASE_URL,
   );
+  assertValidBaseUrl(baseUrl);
   const token = readOptionalString(values.token) ?? readOptionalString(env.EMDASH_API_TOKEN);
-  const devBypass = values.devBypass === true || parseBooleanEnv(env.EMDASH_DEV_BYPASS);
+  const devBypass = values.devBypass ?? parseBooleanEnv(env.EMDASH_DEV_BYPASS);
   const headers = resolveCustomHeaders({
     envHeaders: env.EMDASH_HEADERS,
     cliHeaders: normalizeHeaderValues(values.header),
@@ -55,6 +57,9 @@ export function resolveEmDashConnectionOptions(
 
   if (!token && !devBypass) {
     throw new Error("Set EMDASH_API_TOKEN or pass --dev-bypass for local trusted execution");
+  }
+  if (token && devBypass) {
+    throw new Error("--dev-bypass cannot be combined with EMDASH_API_TOKEN/--token");
   }
 
   return {
@@ -137,4 +142,17 @@ function parseBooleanEnv(value: string | undefined): boolean {
 
 function stripTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
+}
+
+function assertValidBaseUrl(value: string): void {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid EMDASH_BASE_URL/--base-url: ${value} (${message})`);
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(`Invalid EMDASH_BASE_URL/--base-url: ${value} (protocol must be http or https)`);
+  }
 }

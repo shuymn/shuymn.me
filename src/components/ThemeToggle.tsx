@@ -10,17 +10,16 @@ type Props = {
   label: string;
 };
 
+let inMemoryTheme: Theme | null = null;
+
 function getStoredTheme(): Theme | null {
-  let storedTheme: string | null;
   try {
-    storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-  if (storedTheme === DARK_THEME || storedTheme === LIGHT_THEME) {
-    return storedTheme;
-  }
-  return null;
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme === DARK_THEME || storedTheme === LIGHT_THEME) {
+      return storedTheme;
+    }
+  } catch {}
+  return inMemoryTheme;
 }
 
 function getSystemTheme(mediaQuery = window.matchMedia(COLOR_SCHEME_QUERY)): Theme {
@@ -33,6 +32,7 @@ function applyTheme(theme: Theme) {
 
 function persistTheme(theme: Theme) {
   applyTheme(theme);
+  inMemoryTheme = theme;
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   } catch {}

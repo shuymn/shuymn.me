@@ -3,11 +3,9 @@ slug: "2021-11-27-steam-sale"
 locale: "ja"
 title: "Steamのオータムセールで買ったゲーム"
 publishedAt: "2021-11-27T00:00:00.000Z"
-tags: []
 seo:
   title: "Steamのオータムセールで買ったゲーム"
-translation:
-  disabled: false
+  description: "Terraria OneShot Celeste CODE VEIN Deluxe Edition VA11 HALLA Little Witch Nobeta Marfusha KovaaK 2.0"
 ---
 
 - Terraria

@@ -1,11 +1,5 @@
 ---
-slug: "2021-09-29-alt-docker-for-mac"
-locale: "ja"
 title: "Docker for Macの代替を試した結果"
-publishedAt: "2021-09-29T00:00:00.000Z"
-seo:
-  title: "Docker for Macの代替を試した結果"
-  description: "おとなしくDocker for Macを使いましょう。"
 ---
 
 ## TL;DR

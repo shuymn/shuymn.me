@@ -1,53 +1,16 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { z } from "zod";
 
-const DEFAULT_SOURCE_DIR = "content/source/posts";
-const DEFAULT_METADATA_DIR = "content/metadata/posts";
-const DEFAULT_PROJECTION_DIR = "src/content/posts";
-const SUPPORTED_LOCALES = new Set(["ja", "en"]);
-
-const optionalTextSchema = z.string().min(1).optional();
-const localeSchema = z.enum(["ja", "en"]);
+const DEFAULT_SOURCE_DIR = "posts";
+const DEFAULT_PROJECTION_DIR = "src/content/posts/ja";
+const DEFAULT_LOCALE = "ja";
 
 const sourceFrontmatterSchema = z
   .object({
-    slug: z.string().min(1),
     title: z.string().min(1),
-  })
-  .strict();
-
-const acceptedMetadataSchema = z
-  .object({
-    locale: localeSchema,
-    tags: z.array(z.string().min(1)).default([]),
-    series: z
-      .object({
-        slug: z.string().min(1),
-        order: z.number().int().positive().optional(),
-      })
-      .strict()
-      .optional(),
-    seo: z
-      .object({
-        title: optionalTextSchema,
-        description: optionalTextSchema,
-      })
-      .strict()
-      .default({}),
-    translation: z
-      .object({
-        disabled: z.boolean().default(false),
-        sourceLocale: localeSchema.optional(),
-        sourceSlug: optionalTextSchema,
-        sourceVersion: optionalTextSchema,
-      })
-      .strict()
-      .default({ disabled: false }),
-    statusNote: optionalTextSchema,
   })
   .strict();
 
@@ -56,12 +19,7 @@ export function parseArgs(argv) {
   const options = {
     apply: false,
     check: false,
-    force: false,
-    initFromProjection: false,
-    legacyDir: "_posts",
-    metadataDir: DEFAULT_METADATA_DIR,
     projectionDir: DEFAULT_PROJECTION_DIR,
-    recoverFromGit: "",
     sourceDir: DEFAULT_SOURCE_DIR,
   };
 
@@ -75,28 +33,8 @@ export function parseArgs(argv) {
       options.check = true;
       continue;
     }
-    if (arg === "--force") {
-      options.force = true;
-      continue;
-    }
-    if (arg === "--init-from-projection") {
-      options.initFromProjection = true;
-      continue;
-    }
-    if (arg === "--recover-from-git") {
-      options.recoverFromGit = readValue(args, ++index, "--recover-from-git");
-      continue;
-    }
-    if (arg === "--legacy-dir") {
-      options.legacyDir = readValue(args, ++index, "--legacy-dir");
-      continue;
-    }
     if (arg === "--source-dir") {
       options.sourceDir = readValue(args, ++index, "--source-dir");
-      continue;
-    }
-    if (arg === "--metadata-dir") {
-      options.metadataDir = readValue(args, ++index, "--metadata-dir");
       continue;
     }
     if (arg === "--projection-dir") {
@@ -115,27 +53,11 @@ export function parseArgs(argv) {
 
 export async function projectLocalContent(options) {
   const sourceDir = resolve(options.sourceDir);
-  const metadataDir = resolve(options.metadataDir);
   const projectionDir = resolve(options.projectionDir);
-
-  if (options.recoverFromGit) {
-    return recoverAuthorSourceFromGit({
-      check: options.check,
-      force: options.force,
-      legacyDir: options.legacyDir,
-      metadataDir,
-      sourceDir,
-      treeish: options.recoverFromGit,
-    });
-  }
-
-  if (options.initFromProjection) {
-    return initFromProjection({ metadataDir, projectionDir, sourceDir, force: options.force, check: options.check });
-  }
 
   const sourcePaths = await listFiles(sourceDir, ".md");
   const projections = await Promise.all(
-    sourcePaths.map((sourcePath) => buildProjectionFromSource({ metadataDir, projectionDir, sourceDir, sourcePath })),
+    sourcePaths.map((sourcePath) => buildProjectionFromSource({ projectionDir, sourceDir, sourcePath })),
   );
   projections.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
 
@@ -164,32 +86,20 @@ export async function projectLocalContent(options) {
   };
 }
 
-export async function buildProjectionFromSource({ metadataDir, projectionDir, sourceDir, sourcePath }) {
+export async function buildProjectionFromSource({ projectionDir, sourceDir, sourcePath }) {
   const relativePath = normalizeRelativePath(relative(sourceDir, sourcePath));
-  const { locale, slug: pathSlug } = parseLocalizedMarkdownPath(relativePath);
+  const { slug } = parsePostMarkdownPath(relativePath);
   const source = parseAuthorSource(await readFile(sourcePath, "utf8"), relativePath);
-  const slug = source.slug;
-  const metadataPath = join(metadataDir, `${locale}/${pathSlug}.json`);
-  const metadata = parseAcceptedMetadata(await readJsonFile(metadataPath), `${locale}/${pathSlug}.json`);
-
-  if (slug !== pathSlug) {
-    throw new Error(`source slug ${slug} does not match source path ${locale}/${pathSlug}.md`);
-  }
-
-  if (metadata.locale !== locale) {
-    throw new Error(`metadata locale ${metadata.locale} does not match source path ${locale}/${slug}.md`);
-  }
 
   const projectionFrontmatter = compactObject({
     slug,
-    locale,
+    locale: DEFAULT_LOCALE,
     title: source.title,
     publishedAt: publishedAtFromSlug(slug),
-    tags: metadata.tags,
-    series: metadata.series,
-    seo: metadata.seo,
-    translation: metadata.translation,
-    statusNote: metadata.statusNote,
+    seo: {
+      title: source.title,
+      description: generateSeoDescription(source.body),
+    },
   });
 
   return {
@@ -204,142 +114,11 @@ export function parseAuthorSource(content, label = "author source") {
   const frontmatter = sourceFrontmatterSchema.parse(parseYamlObject(file.frontmatter));
   const body = normalizeMarkdownBody(file.body);
   if (!body.trim()) throw new Error(`${label} body is empty`);
-  return { slug: frontmatter.slug, title: frontmatter.title, body };
-}
-
-export function parseAcceptedMetadata(value, label = "accepted metadata") {
-  return acceptedMetadataSchema.parse(value, { path: [label] });
+  return { title: frontmatter.title, body };
 }
 
 export function serializeMarkdownFile(frontmatter, markdown) {
   return ["---", serializeYaml(frontmatter), "---", "", markdown.trimEnd()].join("\n");
-}
-
-async function initFromProjection({ metadataDir, projectionDir, sourceDir, force, check }) {
-  const projectionPaths = await listFiles(projectionDir, ".md");
-  const outputs = [];
-
-  for (const projectionPath of projectionPaths) {
-    const relativePath = normalizeRelativePath(relative(projectionDir, projectionPath));
-    const { locale, slug } = parseLocalizedMarkdownPath(relativePath);
-    const parsed = splitMarkdownFile(await readFile(projectionPath, "utf8"), relativePath);
-    const frontmatter = parseYamlObject(parsed.frontmatter);
-    const metadata = buildAcceptedMetadataFromProjection(frontmatter, locale, slug);
-    const source = serializeMarkdownFile(
-      {
-        slug,
-        title: assertNonEmptyString(frontmatter.title, `${relativePath} title`),
-      },
-      normalizeMarkdownBody(parsed.body),
-    );
-
-    outputs.push({
-      content: `${source}\n`,
-      filePath: join(sourceDir, relativePath),
-      relativePath,
-      type: "source",
-    });
-    outputs.push({
-      content: `${JSON.stringify(metadata, null, 2)}\n`,
-      filePath: join(metadataDir, `${locale}/${slug}.json`),
-      relativePath: `${locale}/${slug}.json`,
-      type: "metadata",
-    });
-  }
-
-  if (!check) {
-    for (const output of outputs) {
-      await mkdir(dirname(output.filePath), { recursive: true });
-      await writeFile(output.filePath, output.content, { flag: force ? "w" : "wx" });
-    }
-  }
-
-  return {
-    ok: true,
-    applied: !check,
-    checked: check,
-    initialized: true,
-    files: outputs.length,
-    projections: projectionPaths.length,
-  };
-}
-
-async function recoverAuthorSourceFromGit({ check, force, legacyDir, metadataDir, sourceDir, treeish }) {
-  const legacyPaths = listGitTreeFiles(treeish, legacyDir)
-    .filter((path) => path.endsWith(".md"))
-    .sort();
-  const stale = [];
-  let recovered = 0;
-
-  for (const legacyPath of legacyPaths) {
-    const slug = legacyPath.split("/").pop()?.replace(/\.md$/, "");
-    if (!slug) throw new Error(`could not derive slug from ${legacyPath}`);
-    const sourcePath = join(sourceDir, `ja/${slug}.md`);
-    const metadataPath = join(metadataDir, `ja/${slug}.json`);
-    const legacyContent = readGitFile(treeish, legacyPath);
-    const parsed = splitMarkdownFile(legacyContent, `${treeish}:${legacyPath}`);
-    const legacyFrontmatter = parseYamlObject(parsed.frontmatter);
-    const legacyTitle = assertNonEmptyString(legacyFrontmatter.title, `${legacyPath} title`);
-    const legacyDescription = optionalString(legacyFrontmatter.description);
-    const currentMetadata = parseAcceptedMetadata(await readJsonFile(metadataPath), `ja/${slug}.json`);
-    const nextSource = `${serializeMarkdownFile({ slug, title: legacyTitle }, normalizeMarkdownBody(parsed.body))}\n`;
-    const nextMetadata = {
-      ...currentMetadata,
-      seo: compactObject({
-        ...currentMetadata.seo,
-        ...(legacyDescription ? { description: legacyDescription } : {}),
-      }),
-    };
-    const metadataContent = `${JSON.stringify(parseAcceptedMetadata(nextMetadata, `ja/${slug}.json`), null, 2)}\n`;
-
-    if (check) {
-      const currentSource = await readOptionalFile(sourcePath);
-      const currentMetadataContent = await readOptionalFile(metadataPath);
-      if (currentSource !== nextSource) stale.push(`source:ja/${slug}.md`);
-      if (currentMetadataContent !== metadataContent) stale.push(`metadata:ja/${slug}.json`);
-    } else {
-      await mkdir(dirname(sourcePath), { recursive: true });
-      await mkdir(dirname(metadataPath), { recursive: true });
-      await writeFile(sourcePath, nextSource, { flag: force ? "w" : "wx" });
-      await writeFile(metadataPath, metadataContent, { flag: force ? "w" : "wx" });
-    }
-    recovered++;
-  }
-
-  if (check && stale.length > 0) {
-    throw new Error(`historical source recovery is stale: ${stale.join(", ")}`);
-  }
-
-  return {
-    ok: true,
-    applied: !check,
-    checked: check,
-    recovered,
-    treeish,
-  };
-}
-
-function buildAcceptedMetadataFromProjection(frontmatter, locale, slug) {
-  const metadata = compactObject({
-    locale,
-    tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : [],
-    series: frontmatter.series,
-    seo: buildSeoFromProjection(frontmatter),
-    translation:
-      frontmatter.translation && typeof frontmatter.translation === "object"
-        ? frontmatter.translation
-        : { disabled: false },
-    statusNote: optionalString(frontmatter.statusNote),
-  });
-  return parseAcceptedMetadata(metadata, `${locale}/${slug}.json`);
-}
-
-function buildSeoFromProjection(frontmatter) {
-  const seo = frontmatter.seo && typeof frontmatter.seo === "object" ? frontmatter.seo : {};
-  return compactObject({
-    ...seo,
-    description: optionalString(seo.description) ?? optionalString(frontmatter.description),
-  });
 }
 
 function splitMarkdownFile(content, label) {
@@ -503,27 +282,6 @@ async function listFiles(root, extension) {
   return files.flat().sort();
 }
 
-async function readJsonFile(path) {
-  try {
-    return JSON.parse(await readFile(path, "utf8"));
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`${path} must be valid JSON: ${message}`);
-  }
-}
-
-function listGitTreeFiles(treeish, path) {
-  return execFileSync("git", ["ls-tree", "-r", "--name-only", treeish, "--", path], {
-    encoding: "utf8",
-  })
-    .split("\n")
-    .filter(Boolean);
-}
-
-function readGitFile(treeish, path) {
-  return execFileSync("git", ["show", `${treeish}:${path}`], { encoding: "utf8" });
-}
-
 async function readOptionalFile(path) {
   try {
     return await readFile(path, "utf8");
@@ -533,14 +291,13 @@ async function readOptionalFile(path) {
   }
 }
 
-function parseLocalizedMarkdownPath(path) {
+function parsePostMarkdownPath(path) {
   const normalized = normalizeRelativePath(path);
-  const match = normalized.match(/^([^/]+)\/([^/]+)\.md$/);
-  if (!match) throw new Error(`expected <locale>/<slug>.md path, got ${path}`);
-  const [, locale, slug] = match;
-  if (!SUPPORTED_LOCALES.has(locale)) throw new Error(`unsupported locale: ${locale}`);
+  const match = normalized.match(/^([^/]+)\.md$/);
+  if (!match) throw new Error(`expected <slug>.md path, got ${path}`);
+  const [, slug] = match;
   if (slug === "." || slug === "..") throw new Error(`unsupported slug: ${slug}`);
-  return { locale, slug };
+  return { slug };
 }
 
 function publishedAtFromSlug(slug) {
@@ -557,18 +314,39 @@ function publishedAtFromSlug(slug) {
   return `${yearText}-${monthText}-${dayText}T00:00:00.000Z`;
 }
 
+function generateSeoDescription(markdown) {
+  const paragraph = markdown
+    .split(/\n{2,}/u)
+    .map((entry) => stripMarkdownForDescription(entry))
+    .find((entry) => entry.length > 0);
+  if (!paragraph) return undefined;
+  const characters = Array.from(paragraph);
+  if (characters.length <= 120) return paragraph;
+  return `${characters.slice(0, 117).join("").trimEnd()}...`;
+}
+
+function stripMarkdownForDescription(markdown) {
+  return markdown
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trim();
+      return (
+        trimmed.length > 0 &&
+        !trimmed.startsWith("#") &&
+        !trimmed.startsWith("```") &&
+        !trimmed.startsWith("~~~") &&
+        !trimmed.startsWith("!")
+      );
+    })
+    .join(" ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/gu, "$1")
+    .replace(/[*_`>#~-]+/gu, "")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
 function normalizeRelativePath(path) {
   return path.split("\\").join("/");
-}
-
-function optionalString(value) {
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
-function assertNonEmptyString(value, label) {
-  const string = optionalString(value);
-  if (!string) throw new Error(`${label} is required`);
-  return string;
 }
 
 function readValue(argv, index, name) {

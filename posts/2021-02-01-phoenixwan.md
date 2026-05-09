@@ -1,11 +1,5 @@
 ---
-slug: "2021-02-01-phoenixwan"
-locale: "ja"
 title: "PHOENIXWANを買った"
-publishedAt: "2021-02-01T00:00:00.000Z"
-seo:
-  title: "PHOENIXWANを買った"
-  description: "去年末に購入した。"
 ---
 
 去年末に購入した。

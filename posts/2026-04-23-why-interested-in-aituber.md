@@ -1,11 +1,5 @@
 ---
-slug: "2026-04-23-why-interested-in-aituber"
-locale: "ja"
 title: "なぜAITuberに興味を持っているのか"
-publishedAt: "2026-04-23T00:00:00.000Z"
-seo:
-  title: "なぜAITuberに興味を持っているのか"
-  description: "最近AITuberに興味があるのだが、なぜ興味を持ったのか忘れないうちに記録しておく。"
 ---
 
 最近AITuberに興味があるのだが、なぜ興味を持ったのか忘れないうちに記録しておく。

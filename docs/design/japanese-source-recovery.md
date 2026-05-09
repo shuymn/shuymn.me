@@ -25,15 +25,12 @@ Japanese Markdown sources still existed in the repository.
 
 - Author source `title` and body come from the historical `_posts/<slug>.md`
   file.
-- Public `slug`, `locale`, `publishedAt`, `updatedAt`, `draft`, `tags`, `seo`,
-  `translation`, `visibility`, and `redirects` remain in the accepted metadata
-  sidecar.
-- Historical frontmatter `description` is copied into accepted metadata when it
-  exists.
-- Each recovered metadata sidecar records `revision.source = "git-history"`,
-  `revision.reconciled = true`, and the exact source path in `revision.notes`.
+- Public `slug` is derived from the recovered filename.
+- `publishedAt` is derived from the date-prefixed slug during projection.
 - Projection files under `src/content/posts/ja` are regenerated from recovered
-  source plus accepted metadata.
+  source.
+- Historical frontmatter `description` is no longer copied into a metadata
+  sidecar because metadata JSON sidecars have been removed.
 - Markdown hard breaks that had been encoded as trailing spaces are normalized to
   backslash hard breaks so `git diff --check` remains clean.
 - Legacy C0 control characters are removed from recovered bodies. The historical
@@ -70,14 +67,11 @@ Japanese Markdown sources still existed in the repository.
 
 ## Verification
 
-Commands:
+The one-off recovery helper reported `recovered: 22` before it was removed from
+the current projection command. The projection check reported `projections: 22`.
+
+Current verification uses only:
 
 ```bash
-pnpm run project:content -- --recover-from-git 'bbcd28c4ed5148db1422179a082fffc95ef4c29f^' --apply --force
-pnpm run project:content -- --apply
-pnpm run project:content -- --recover-from-git 'bbcd28c4ed5148db1422179a082fffc95ef4c29f^' --check
 pnpm run project:content -- --check
 ```
-
-The recovery command reported `recovered: 22`. The projection check reported
-`projections: 22`.

@@ -41,36 +41,29 @@ Image upload and external asset storage remain deferred.
 Adopt an Astro-only local-source architecture as the next public-content target.
 
 The public blog path should be implemented from repository-local
-Markdown-family author source plus local metadata files, projected into Astro's
-rendering/build contract. This is an atomic cutover target, not a staged
-deployment plan: a branch that still requires EmDash scripts, dependencies,
-environment variables, Portable Text storage, or CMS runtime surfaces is still
-migration work in progress and must not be treated as the deployable
-replacement.
+Markdown-family author source, projected into Astro's rendering/build contract.
+This is an atomic cutover target, not a staged deployment plan: a branch that
+still requires EmDash scripts, dependencies, environment variables, Portable
+Text storage, or CMS runtime surfaces is still migration work in progress and
+must not be treated as the deployable replacement.
 
 The existing EmDash implementation may remain only as the currently deployed
 site or as local migration evidence while the replacement is prepared. It should
 not coexist with local Markdown in a deployed target architecture.
 
-The local source contract has four layers:
+The local source contract has three layers:
 
-- Author source: slug, title, and body in Markdown-family files, plus only the
-  minimal publish envelope needed to keep the file addressable. The slug must
-  match the filename and starts with the publication date. Generated editorial
-  metadata should not be authored into this layer.
-- Accepted metadata: local sidecar data for durable publishing inputs that are
-  not already part of the author source or derivable from it, currently locale,
-  tags, series, SEO metadata, translation settings, and status notes. Publication
-  date is derived from the slug. Top-level descriptions, update dates, draft
-  flags, visibility, redirects, and recovery revision notes are outside the
-  current cutover contract.
+- Author source: title and body in Markdown-family files, plus only the minimal
+  publish envelope needed to keep the file addressable. The slug is derived from
+  the extensionless filename and starts with the publication date. Generated
+  editorial metadata should not be authored into this layer.
 - Generated state: separate suggestion or run records for prompt versions,
   provider output, confidence, validation failures, and rejected candidates. This
   state is not public metadata until accepted or deterministically promoted.
 - Build projection: a regenerable Astro input layer that combines author source
-  and accepted metadata into the shape Astro pages, content collections, or
-  loaders need. This projection is implementation output, not hand-authored
-  canonical content.
+  with deterministic derived metadata into the shape Astro pages, content
+  collections, or loaders need. This projection is implementation output, not
+  hand-authored canonical content.
 
 Frontmatter may still be used as a thin compatibility envelope when it is the
 lowest-risk bridge into Astro, but it must not become the primary storage
@@ -78,8 +71,9 @@ location for generated editorial state.
 
 The target route strategy is explicit and locale-aware:
 
-- Japanese source posts live under a locale-bearing path in the local source
-  tree.
+- Japanese source posts live as root `posts/<slug>.md`. The current cutover
+  has no locale directory in author source because only Japanese source is
+  canonical.
 - English generated posts are out of this cutover. `/en/posts/<slug>` remains
   the reserved public route contract for future translations, but this branch
   does not require `en/*.md` files or an English generation pipeline before
@@ -110,8 +104,8 @@ layer may be evaluated later only if normal posting needs a browser UI:
 
 - Keystatic is the best first editor candidate because it supports Astro and can
   save content to the local file system or GitHub, but it must be evaluated as an
-  editor over the local source and metadata sidecar contract, not as a reason to
-  switch the body format or own canonical content.
+  editor over the local source contract, not as a reason to switch the body
+  format or own canonical content.
 - TinaCMS is a possible editor candidate because it is Git-backed and supports
   Markdown/MDX/JSON, but its GraphQL/backend and visual editing model add more
   moving parts than are justified for the next slice.
@@ -129,7 +123,7 @@ layer may be evaluated later only if normal posting needs a browser UI:
   target unless a later ADR explicitly reintroduces a different CMS boundary.
 - English generation is deferred until after the EmDash-free Japanese-source
   deployment. When reintroduced, it should write through the same local
-  source/metadata/projection contract instead of EmDash APIs or Portable Text.
+  source/projection contract instead of EmDash APIs or Portable Text.
 - The Japanese canonical body should be reconciled against the historical
   Markdown sources in git history instead of treating an EmDash export as final
   truth by default.
@@ -145,13 +139,10 @@ layer may be evaluated later only if normal posting needs a browser UI:
 As of 2026-05-10, the deployable cutover target is implemented for the Japanese
 site:
 
-- Japanese author source lives under `content/source/posts/ja/<slug>.md`,
-  outside `src/`, with source frontmatter containing the matching `slug` and
-  `title`.
-- Accepted Japanese post metadata lives under
-  `content/metadata/posts/ja/<slug>.json`, outside `src/`, without duplicating
-  slug, publication date, draft state, redirects, visibility, or recovery
-  revision fields.
+- Japanese author source lives under root `posts/<slug>.md`, outside `src/`,
+  with source frontmatter containing only `title`.
+- Post metadata JSON sidecars have been removed. Projection frontmatter is
+  generated from source filename and body content.
 - `pnpm run project:content -- --check` verifies that
   `src/content/posts/ja/<slug>.md` is the current Astro build projection.
 - Historical Japanese Markdown was recovered from git history and recorded in

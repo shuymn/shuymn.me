@@ -1,11 +1,5 @@
 ---
-slug: "2020-04-02-hello-world"
-locale: "ja"
 title: "Hello World"
-publishedAt: "2020-04-02T00:00:00.000Z"
-seo:
-  title: "Hello World"
-  description: "なんとなく気が向いたので、shuymn.me を改装してみた。 ついでに Markdown でブログもかけるようにしてみた。"
 ---
 
 なんとなく気が向いたので、shuymn.me を改装してみた。

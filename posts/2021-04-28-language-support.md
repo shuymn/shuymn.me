@@ -1,11 +1,5 @@
 ---
-slug: "2021-04-28-language-support"
-locale: "ja"
 title: "英語の翻訳や文法校正ソフトウェアに課金した"
-publishedAt: "2021-04-28T00:00:00.000Z"
-seo:
-  title: "英語の翻訳や文法校正ソフトウェアに課金した"
-  description: "DeepL Grammarly Ludwig"
 ---
 
 - DeepL

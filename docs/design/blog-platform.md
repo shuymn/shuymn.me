@@ -47,18 +47,18 @@ Foundation reconsideration:
   reviewable local diffs, Markdown as the translation boundary, and avoiding a
   cloud-hosted Portable Text canonical body.
 - The local-source target is not a rich-frontmatter authoring model. The final
-  contract must separate author-written source, accepted metadata, generated
-  suggestion state, and the Astro build projection.
+  contract must separate author-written source, generated suggestion state, and
+  the Astro build projection.
 - Image upload and external asset storage are intentionally deferred from that
   spike.
 
 Atomic cutover status:
 
 - The replacement target is no longer a mixed EmDash/local-Markdown branch.
-- The deployable target uses Astro local source, accepted metadata, and a build
-  projection for Japanese posts.
-- Blog author source and accepted metadata live under root `content/`, outside
-  `src/`. `src/content/posts/` is the Astro projection, not the canonical source.
+- The deployable target uses Astro local source and a build projection for
+  Japanese posts.
+- Blog author source lives under root `posts/*.md`, outside `src/`.
+  `src/content/posts/` is the Astro projection, not the canonical source.
 - Japanese canonical post bodies have been reconciled with the historical
   Markdown sources available in git history under `_posts/`.
 - EmDash runtime, scripts, dependencies, seed/bootstrap/deploy paths,
@@ -74,36 +74,33 @@ frontmatter-first.
 
 Author source:
 
-- contains the post slug, title, and body in a Markdown-family format
+- contains the post title and body in a Markdown-family format
 - keeps only the minimal publish envelope needed to make the source addressable
-- derives the publication date from the date-prefixed slug instead of duplicating
-  `publishedAt` in metadata
+- derives the slug from the extensionless filename
+- derives the publication date from the date-prefixed slug
 - remains the part Coding Agents and local editors primarily draft, review, and
   translate
 
-Accepted metadata:
+Generated projection metadata:
 
-- is stored in local sidecar data, not mixed into the author-written body file by
-  default
-- contains durable publishing inputs that are not already in author source or
-  derivable from it, such as tags, series, summary, SEO metadata, OGP inputs,
-  translation settings, and status notes
-- does not store top-level post description, publication date, update date, draft
-  state, visibility, redirects, or recovery revision notes in the current cutover
-- is inspectable and overrideable before generated values affect published pages
+- is written into `src/content/posts/ja/*.md` frontmatter by the projection
+  command
+- contains Astro/public-rendering fields such as `slug`, `locale`,
+  `publishedAt`, and SEO metadata
+- is regenerable implementation output, not hand-authored canonical source
 
 Generated state:
 
 - stores suggestions, prompt versions, provider output, validation failures,
-  rejected candidates, and retry state separately from both author source and
-  accepted metadata
+  rejected candidates, and retry state separately from author source and build
+  projection
 - may be committed only when it is useful evidence; it is never the hidden source
   of published truth
 
 Build projection:
 
-- combines author source and accepted metadata into the Astro collection or
-  loader shape required by public pages
+- combines author source and derived metadata into the Astro collection or loader
+  shape required by public pages
 - is regenerable implementation output, so it can evolve when Astro or editor
   tooling changes
 - must be the only layer that adapts to Astro-specific schema/frontmatter
@@ -179,23 +176,23 @@ The requirements use EARS notation.
 - When a URL changes after publication, the system shall provide an explicit
   redirect path instead of silently losing old links.
 - When the author reviews readership signals, Cloudflare-provided telemetry
-  shall be the primary source of truth and local metadata shall only store
+  shall be the primary source of truth and generated state shall only store
   derived editorial interpretation when it is worth preserving.
-- When the local source/metadata/projection contract changes, the system shall
+- When the local source/projection contract changes, the system shall
   make that contract explicit in code and docs before generated values are
-  written into durable metadata.
+  written into projection frontmatter.
 
 ## WordPress Patterns To Translate
 
 | WordPress pattern | Representative plugin family | Useful idea | Local-source translation |
 | --- | --- | --- | --- |
-| SEO metadata and structured data | Yoast SEO, All in One SEO | Metadata, canonical URLs, XML sitemaps, schema, previews, and content health checks | Store accepted SEO metadata in local sidecar data; render and validate sitemap/RSS/schema/OGP from the build projection |
-| Custom fields and content modeling | Advanced Custom Fields | Add structured editorial fields without hardcoding theme behavior | Keep structured fields in the accepted metadata contract only when they drive rendering, editorial decisions, or accepted generated metadata |
-| Taxonomy and internal discovery | WordPress categories/tags, related/popular post plugins | Help readers and the author traverse old posts | Add flat tags and optional series as accepted metadata populated through deterministic and LLM-assisted suggestions before asking for manual upkeep |
-| Multilingual publishing | WPML, Polylang, TranslatePress | Keep translated versions discoverable without making every translation a separate manual project | After the EmDash-free cutover, generate annotated English source/metadata siblings from Japanese source posts and expose locale-specific URLs and OGP images |
+| SEO metadata and structured data | Yoast SEO, All in One SEO | Metadata, canonical URLs, XML sitemaps, schema, previews, and content health checks | Generate SEO metadata into the Astro projection; render and validate sitemap/RSS/schema/OGP from that projection |
+| Custom fields and content modeling | Advanced Custom Fields | Add structured editorial fields without hardcoding theme behavior | Add structured generated fields only when they drive rendering or editorial decisions, and keep them out of author source |
+| Taxonomy and internal discovery | WordPress categories/tags, related/popular post plugins | Help readers and the author traverse old posts | Generate flat tags and optional series after writing before asking for manual upkeep |
+| Multilingual publishing | WPML, Polylang, TranslatePress | Keep translated versions discoverable without making every translation a separate manual project | After the EmDash-free cutover, generate English source/projection outputs from Japanese source posts and expose locale-specific URLs and OGP images |
 | Table of contents | TOC block/plugin family | Derive navigation from headings for long-form posts | Generate TOC from rendered Markdown headings in `PostArticle.astro` or a focused component |
 | Redirect and 404 maintenance | Redirection | Preserve old links and surface broken URLs | Start with local redirect config or Cloudflare rules; add editor support only if manual maintenance becomes frequent |
-| Popular posts and stats | WP Popular Posts, Jetpack Stats | Show what is being referenced | Use Cloudflare telemetry as the source of truth; optionally map paths to posts, tags, and series into local derived metadata for editorial interpretation |
+| Popular posts and stats | WP Popular Posts, Jetpack Stats | Show what is being referenced | Use Cloudflare telemetry as the source of truth; optionally map paths to posts, tags, and series into generated state for editorial interpretation |
 
 ## Baseline And Adaptive Scope
 
@@ -205,7 +202,7 @@ writing, recall, sharing, and English distribution useful without turning the
 implementation into a complete publishing suite.
 
 The current EmDash-free cutover has a narrower release gate: recover the
-Japanese local source, implement the source/metadata/projection boundary, and
+Japanese local source, implement the source/projection boundary, and
 remove EmDash from the deployable target. English generation remains a product
 baseline after that cutover, but it is not a gate for this deployment.
 
@@ -223,7 +220,7 @@ Baseline capabilities:
 - English auto-publication after automated translation, automated review, and
   deterministic checks pass, with a visible translation note
 - Cloudflare-first telemetry with only durable derived editorial aggregates
-  stored in local metadata when needed
+  stored in generated state when needed
 
 Adaptive capabilities:
 
@@ -367,9 +364,9 @@ The removed implementation used host-side scripts for schema deployment and
 English generation against an EmDash HTTP endpoint. Those scripts, seed files,
 environment variables, and package dependencies are no longer part of the
 deployable target. The durable lesson that remains is narrower: future
-automation should read local author source and accepted metadata, produce a
-reviewable diff or generated-state record, and write accepted values through the
-local source contract rather than through a CMS-owned body store.
+automation should read local author source, produce a reviewable diff or
+generated-state record, and write generated projection metadata through the local
+source contract rather than through a CMS-owned body store.
 
 If a future Cloudflare-native workflow or GitHub Action is added, it should call
 the same local-source command used by humans and should keep credentials,
@@ -381,8 +378,8 @@ reintroduces a CMS boundary.
 
 This section describes the EmDash-era model that informed the local-source
 contract. New implementation work should translate the durable parts into author
-source, accepted metadata, generated state, and build projection instead of
-adding EmDash schema or plugins.
+source, generated state, and build projection instead of adding EmDash schema or
+plugins.
 
 ### Posts
 
@@ -566,17 +563,18 @@ The generated English workflow should:
 The current public route shape makes rendering the English page feasible:
 localized paths are already distinct. The harder contract is durable content
 creation: a translated sibling needs locale, slug, source/translation linkage,
-generated-state provenance, and accepted metadata promotion without making the
-LLM output a large JSON document tree.
+and generated-state provenance without making the LLM output a large JSON
+document tree.
 
 English generation should be two-stage, but not human-gated by default. Stage one
 creates a source-versioned generated candidate with translated fields and gate
 metadata under generated state. Stage two promotes a passing candidate into
-English author source and accepted metadata, preserving `slug`, `locale`,
-source/translation linkage, and the Japanese date-prefixed slug. If measured
-quality, failure rate, or operational noise is not good enough, add a human
-review gate at that point. Regeneration should be explicit when the Japanese
-source changes; it should not silently overwrite an edited English version.
+English author source and generated projection metadata, preserving `slug`,
+`locale`, source/translation linkage, and the Japanese date-prefixed slug. If
+measured quality, failure rate, or operational noise is not good enough, add a
+human review gate at that point. Regeneration should be explicit when the
+Japanese source changes; it should not silently overwrite an edited English
+version.
 
 The human gate decision should be evidence-driven rather than precautionary by
 default. Add mandatory human approval only after observed failures such as
@@ -587,17 +585,12 @@ failed or unsupported generations should stop as unpublished candidates while th
 Japanese publication flow remains unblocked.
 
 The future baseline implementation path should be a local-source command. It
-will scan published Japanese author source and accepted metadata, skip posts
-whose accepted metadata disables translation, call a translator and separate
+will scan published Japanese author source, call a translator and separate
 review pass, write generated candidates as generated state, then promote passing
-results into `content/source/posts/en/<slug>.md` and
-`content/metadata/posts/en/<slug>.json`. The English title never drives the
-localized slug; URLs remain stable across locales. The translator should perform
-field-to-field metadata translation instead of synthesizing descriptions from
-the body: source `title` becomes English `title`, and source SEO meta
-description becomes English SEO meta description only when it is set. English SEO
-title is derived from the English post title only when the Japanese source has
-SEO title set.
+results into future English source/projection outputs. The English title never
+drives the localized slug; URLs remain stable across locales. The translator
+should perform field-to-field metadata translation only for fields that exist in
+the generated projection contract.
 
 Translator and reviewer responses should use small structured outputs: translated
 title, optional metadata fields, Markdown body, review pass/fail, and concrete
@@ -661,14 +654,13 @@ Avoid sidebar clutter until the site has enough content to justify it.
 
 - Define the author-source file shape for Japanese posts, including whether title
   is stored as a heading, minimal frontmatter, or another explicit envelope.
-- Define accepted metadata sidecars for fields not already in author source or
-  derivable from it, currently SEO metadata, tags, series, OGP inputs,
-  translation settings, and status notes.
-- Define generated-state storage separately from accepted metadata, including
+- Define generated projection frontmatter for fields derivable from author
+  source, currently slug, locale, publication date, and SEO metadata.
+- Define generated-state storage separately from author source, including
   prompt/provider versions, suggestions, validation failures, and rejected
   candidates.
 - Define the build projection that feeds Astro pages or content loaders from
-  author source plus accepted metadata.
+  author source plus generated frontmatter.
 
 ### Cutover Slice 2: Historical Japanese Recovery
 
@@ -686,8 +678,8 @@ Avoid sidebar clutter until the site has enough content to justify it.
   seed/bootstrap/deploy paths, dependencies, environment requirements, and
   operational instructions were removed.
 - Archived ADR/design context remains as historical evidence only.
-- Public Japanese post routes prerender from local source and accepted metadata
-  without EmDash reads.
+- Public Japanese post routes prerender from local source and generated
+  projection frontmatter without EmDash reads.
 
 ### Product Baseline After Cutover
 
@@ -702,22 +694,20 @@ Avoid sidebar clutter until the site has enough content to justify it.
 
 ## Implementation Boundaries
 
-- Prefer local author-source and metadata contract changes before adding editor
-  or CMS dependencies.
-- Keep author source, accepted metadata, generated state, and build projection as
-  separate layers. Do not store generated suggestions in hand-authored post
-  frontmatter by default.
+- Prefer local author-source contract changes before adding editor or CMS
+  dependencies.
+- Keep author source, generated state, and build projection as separate layers.
+  Do not store generated suggestions in hand-authored post frontmatter by
+  default.
 - Keep the build projection regenerable. Astro schema or loader details belong in
   projection code, not in the authoring contract.
 - Keep public content static-first. Use SSR only for surfaces with real
   request-time state, such as authenticated preview, admin/editor helpers,
   generation endpoints, or telemetry interpretation.
-- Put accepted metadata writes behind explicit local commands, editor actions, or
-  private automation that can validate and diff the resulting sidecar data.
 - Keep raw access analytics in Cloudflare unless there is a concrete signal the
   platform cannot provide.
 - Keep generated OGP images cacheable, deterministic, runtime-compatible, and
-  versioned by accepted metadata.
+  versioned by source content or generated projection metadata.
 - Keep future English generation gated by automated review and deterministic
   checks, but do not make English generation a dependency of the current
   EmDash-free cutover.
@@ -744,8 +734,8 @@ less trustworthy.
 Using deterministic checks and LLM-backed suggestions still keeps original
 Japanese writing human-controlled while removing repetitive metadata work. The
 accepted version of this approach is no longer an EmDash plugin: suggestions
-should be stored as generated state and promoted into accepted local metadata
-through an explicit acceptance path.
+should be stored as generated state and promoted into generated projection
+metadata through an explicit command or editor action.
 
 ### EmDash-Collected Analytics
 
@@ -757,9 +747,9 @@ the CMS layer without improving the writing workflow.
 ### Cloudflare-Backed Telemetry
 
 Using Cloudflare as the primary telemetry source keeps raw access data at the
-edge. The local metadata layer can still preserve derived editorial
-interpretation of Cloudflare path-level data when it helps with posts, tags,
-series, and maintenance needs.
+edge. Generated state can still preserve derived editorial interpretation of
+Cloudflare path-level data when it helps with posts, tags, series, and
+maintenance needs.
 
 ### Manual OGP Image Production
 
@@ -816,29 +806,25 @@ work.
 Chosen approach: build public rendering surfaces site-natively, but design
 taxonomies, series, summaries, related posts, and editorial checks around
 local-source generated-state and acceptance workflows from the start. Keep access
-analytics Cloudflare-first and store only derived interpretation in local
-metadata when it is worth preserving. Generate OGP images through deterministic
-base-image and text composition. Resume English article generation after the
-EmDash-free cutover as a gated auto-publishing baseline, and solve localized
-source/metadata creation explicitly rather than assuming a CMS plugin owns the
-write path.
+analytics Cloudflare-first and store only derived interpretation when it is worth
+preserving. Generate OGP images through deterministic base-image and text
+composition. Resume English article generation after the EmDash-free cutover as a
+gated auto-publishing baseline, and solve localized source/projection creation
+explicitly rather than assuming a CMS plugin owns the write path.
 
 ## Verification Plan
 
 For each implementation slice:
 
 - Run the narrowest relevant check first.
-- For local-source contract changes, validate author-source parsing, accepted
-  metadata parsing, generated-state isolation, and build projection output with
-  focused tests before changing routes.
+- For local-source contract changes, validate author-source parsing,
+  generated-state isolation, and build projection output with focused tests
+  before changing routes.
 - For historical Japanese recovery, compare recovered Markdown sources with the
   migration snapshot and record any intentional differences before treating a
   post as canonical.
-- For accepted metadata automation, prove that repeated runs produce idempotent
-  suggestions and do not overwrite accepted values without an explicit
-  acceptance or force path.
 - For future English generation, test the full auto-publish path against local
-  source/metadata data and verify note rendering, source linkage, slug
+  source/projection data and verify note rendering, source linkage, slug
   stability, preserved code blocks, preserved links, preserved Markdown tables,
   and recorded gate results before considering the workflow valid.
 - For generated OGP images, verify the selected renderer locally and in the
@@ -848,7 +834,7 @@ For each implementation slice:
   Japanese/English titles, code identifiers, and URLs to prove that line breaks do
   not split words or tokens mid-segment.
 - For Cloudflare telemetry, verify credentials remain outside public/plugin-owned
-  state and that only durable derived aggregates are written to local metadata.
+  state and that only durable derived aggregates are written to generated state.
 - For page/component changes, run `pnpm run typecheck`.
 - Before marking a non-trivial slice done, run `pnpm run build`.
 - Capture the exact commands and notable output in the completion report.

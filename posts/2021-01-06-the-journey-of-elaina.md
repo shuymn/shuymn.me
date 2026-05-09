@@ -1,11 +1,5 @@
 ---
-slug: "2021-01-06-the-journey-of-elaina"
-locale: "ja"
 title: "アニメ『魔女の旅々』を観た"
-publishedAt: "2021-01-06T00:00:00.000Z"
-seo:
-  title: "アニメ『魔女の旅々』を観た"
-  description: "dアニメで『魔女の旅々』を観た。"
 ---
 
 dアニメで『[魔女の旅々](https://majotabi.jp/)』を観た。

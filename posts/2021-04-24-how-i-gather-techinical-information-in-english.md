@@ -1,11 +1,5 @@
 ---
-slug: "2021-04-24-how-i-gather-techinical-information-in-english"
-locale: "ja"
 title: "英語で書かれた技術的な情報を得ることについての私見"
-publishedAt: "2021-04-24T00:00:00.000Z"
-seo:
-  title: "英語で書かれた技術的な情報を得ることについての私見"
-  description: "この話をするにあたって自分の英語の読解能力について認識を合わせる必要があるため、まずその説明をする。"
 ---
 
 ## 背景

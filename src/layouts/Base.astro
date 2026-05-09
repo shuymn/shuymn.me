@@ -61,7 +61,12 @@ const publicText = getPublicText(currentLocale);
         {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
         <script is:inline define:vars={{ THEME_STORAGE_KEY, DARK_THEME, LIGHT_THEME }}>
         (() => {
-            var storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+            var storedTheme = null;
+            try {
+                storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+            } catch {
+                storedTheme = null;
+            }
             var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
             document.documentElement.dataset.theme =
                 storedTheme === DARK_THEME || (storedTheme !== LIGHT_THEME && prefersDark) ? DARK_THEME : LIGHT_THEME;

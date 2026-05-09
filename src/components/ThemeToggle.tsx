@@ -7,7 +7,12 @@ type Theme = typeof DARK_THEME | typeof LIGHT_THEME;
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
 function getStoredTheme(): Theme | null {
-  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  let storedTheme: string | null;
+  try {
+    storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  } catch {
+    return null;
+  }
   if (storedTheme === DARK_THEME || storedTheme === LIGHT_THEME) {
     return storedTheme;
   }
@@ -24,7 +29,11 @@ function applyTheme(theme: Theme) {
 
 function persistTheme(theme: Theme) {
   applyTheme(theme);
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // Keep the visible theme change even when persistent storage is unavailable.
+  }
 }
 
 export default function ThemeToggle() {

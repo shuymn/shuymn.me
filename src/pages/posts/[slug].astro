@@ -1,7 +1,8 @@
 ---
-import { type CollectionEntry, getCollection } from "astro:content";
+import type { CollectionEntry } from "astro:content";
 import PostPage from "../../components/PostPage.astro";
 import { DEFAULT_LOCALE } from "../../lib/i18n";
+import { getPostStaticPaths } from "../../lib/posts";
 
 export const prerender = true;
 
@@ -10,12 +11,7 @@ type Props = {
 };
 
 export async function getStaticPaths() {
-    const posts = await getCollection("posts", ({ data }) => data.locale === DEFAULT_LOCALE);
-
-    return posts.map((post) => ({
-        params: { slug: post.data.slug },
-        props: { post },
-    }));
+    return getPostStaticPaths(DEFAULT_LOCALE);
 }
 
 const { post } = Astro.props as Props;

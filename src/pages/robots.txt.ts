@@ -1,15 +1,12 @@
 import type { APIRoute } from "astro";
+import { SITE_URL } from "../lib/seo";
 
 export const prerender = true;
 
-export const GET: APIRoute = ({ site }) => {
-  if (!site) {
-    throw new Error("Astro site config is required to generate robots.txt.");
-  }
+export const GET: APIRoute = () => {
+  const sitemapUrl = new URL("/sitemap-index.xml", SITE_URL).href;
 
-  const sitemapUrl = new URL("/sitemap-index.xml", site);
-
-  return new Response(`User-agent: *\nAllow: /\nSitemap: ${sitemapUrl.href}\n`, {
+  return new Response(`User-agent: *\nAllow: /\nSitemap: ${sitemapUrl}\n`, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
     },

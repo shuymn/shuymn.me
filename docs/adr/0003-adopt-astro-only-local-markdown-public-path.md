@@ -54,12 +54,16 @@ not coexist with local Markdown in a deployed target architecture.
 
 The local source contract has four layers:
 
-- Author source: title and body in Markdown-family files, plus only the minimal
-  publish envelope needed to keep the file addressable. Generated editorial
+- Author source: slug, title, and body in Markdown-family files, plus only the
+  minimal publish envelope needed to keep the file addressable. The slug must
+  match the filename and starts with the publication date. Generated editorial
   metadata should not be authored into this layer.
-- Accepted metadata: local sidecar data for durable publishing inputs such as
-  slug, publication date, update date, tags, series, summaries, SEO metadata,
-  OGP inputs, redirects, visibility status, and revision/status notes.
+- Accepted metadata: local sidecar data for durable publishing inputs that are
+  not already part of the author source or derivable from it, currently locale,
+  tags, series, SEO metadata, translation settings, and status notes. Publication
+  date is derived from the slug. Top-level descriptions, update dates, draft
+  flags, visibility, redirects, and recovery revision notes are outside the
+  current cutover contract.
 - Generated state: separate suggestion or run records for prompt versions,
   provider output, confidence, validation failures, and rejected candidates. This
   state is not public metadata until accepted or deterministically promoted.
@@ -142,9 +146,12 @@ As of 2026-05-10, the deployable cutover target is implemented for the Japanese
 site:
 
 - Japanese author source lives under `content/source/posts/ja/<slug>.md`,
-  outside `src/`.
+  outside `src/`, with source frontmatter containing the matching `slug` and
+  `title`.
 - Accepted Japanese post metadata lives under
-  `content/metadata/posts/ja/<slug>.json`, outside `src/`.
+  `content/metadata/posts/ja/<slug>.json`, outside `src/`, without duplicating
+  slug, publication date, draft state, redirects, visibility, or recovery
+  revision fields.
 - `pnpm run project:content -- --check` verifies that
   `src/content/posts/ja/<slug>.md` is the current Astro build projection.
 - Historical Japanese Markdown was recovered from git history and recorded in

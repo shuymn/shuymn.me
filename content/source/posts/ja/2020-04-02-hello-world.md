@@ -1,4 +1,5 @@
 ---
+slug: "2020-04-02-hello-world"
 title: "Hello World"
 ---
 

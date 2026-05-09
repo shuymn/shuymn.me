@@ -1,4 +1,5 @@
 ---
+slug: "2022-02-03-organize-mobile-lines"
 title: "携帯回線の整理をした"
 ---
 

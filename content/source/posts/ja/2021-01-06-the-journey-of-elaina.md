@@ -1,4 +1,5 @@
 ---
+slug: "2021-01-06-the-journey-of-elaina"
 title: "アニメ『魔女の旅々』を観た"
 ---
 

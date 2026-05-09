@@ -12,8 +12,8 @@ const { Content } = await render(post);
 const locale = post.data.locale;
 const publicText = getPublicText(locale);
 const postPath = getPostPath(post.data.slug, locale);
-const publishedIso = post.data.publishedAt?.toISOString() ?? null;
-const modifiedIso = post.data.updatedAt?.toISOString() ?? null;
+const publishedIso = post.data.publishedAt.toISOString();
+const seoDescription = post.data.seo.description ?? null;
 const showTranslationNote =
     locale === "en" && !post.data.translation.disabled && Boolean(post.data.translation.sourceSlug);
 const translationSourceSlug = post.data.translation.sourceSlug ?? "";
@@ -21,18 +21,16 @@ const translationSourceSlug = post.data.translation.sourceSlug ?? "";
 
 <Base
   title={post.data.title}
-  description={post.data.description}
+  description={seoDescription}
   type="article"
   publishedTime={publishedIso}
-  modifiedTime={modifiedIso}
   path={postPath}
 >
   <main>
     <article class="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32 dark:prose-invert prose-pre:bg-surface">
       <header>
-        {post.data.publishedAt && <small>{formatDate(post.data.publishedAt)}</small>}
+        <small>{formatDate(post.data.publishedAt)}</small>
         <h1>{post.data.title}</h1>
-        {post.data.description && <p>{post.data.description}</p>}
       </header>
       {
         showTranslationNote && (

@@ -2,10 +2,7 @@
 slug: "2026-04-23-why-interested-in-aituber"
 locale: "ja"
 title: "なぜAITuberに興味を持っているのか"
-description: "AIペルソナとAITuber。OpenClaw試行錯誤から界隈観察、未来予測"
 publishedAt: "2026-04-23T00:00:00.000Z"
-updatedAt: "2026-04-24T18:31:46.468Z"
-draft: false
 tags: []
 seo:
   title: "なぜAITuberに興味を持っているのか"

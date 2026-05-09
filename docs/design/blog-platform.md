@@ -74,8 +74,10 @@ frontmatter-first.
 
 Author source:
 
-- contains the post title and body in a Markdown-family format
+- contains the post slug, title, and body in a Markdown-family format
 - keeps only the minimal publish envelope needed to make the source addressable
+- derives the publication date from the date-prefixed slug instead of duplicating
+  `publishedAt` in metadata
 - remains the part Coding Agents and local editors primarily draft, review, and
   translate
 
@@ -83,9 +85,11 @@ Accepted metadata:
 
 - is stored in local sidecar data, not mixed into the author-written body file by
   default
-- contains durable publishing inputs such as slug, publication date, update date,
-  tags, series, summary, SEO metadata, OGP inputs, redirects, visibility status,
-  and material revision notes
+- contains durable publishing inputs that are not already in author source or
+  derivable from it, such as tags, series, summary, SEO metadata, OGP inputs,
+  translation settings, and status notes
+- does not store top-level post description, publication date, update date, draft
+  state, visibility, redirects, or recovery revision notes in the current cutover
 - is inspectable and overrideable before generated values affect published pages
 
 Generated state:
@@ -112,8 +116,8 @@ Build projection:
   essays.
 - Automate editorial metadata and maintenance work that is not the act of
   writing itself.
-- Preserve provenance: publication date, update date, revisions, and visible
-  status for materially revised posts.
+- Preserve provenance through stable local source, date-prefixed slugs, git
+  history, and explicit status notes when a visible notice is needed.
 - Provide enough SEO and sharing metadata for posts to travel well, without
   optimizing the whole site around traffic acquisition.
 - Generate post-specific OGP images automatically so sharing quality does not
@@ -144,9 +148,8 @@ Build projection:
 
 The requirements use EARS notation.
 
-- When the author publishes a post, the system shall preserve title,
-  description, content, slug, publication date, update date, SEO metadata, and
-  revision history.
+- When the author publishes a post, the system shall preserve title, content,
+  slug, derived publication date, and SEO metadata.
 - When a post covers a durable topic, the system shall infer or suggest flat
   tags without requiring the author to maintain them manually.
 - When a post belongs to an ongoing line of thought, the author shall be able to
@@ -158,8 +161,8 @@ The requirements use EARS notation.
   tags, archives, and related posts before relying on external search engines.
 - When a post is long-form, the system shall expose a table of contents derived
   from headings without requiring duplicated manual markup.
-- When a post has been materially updated after publication, the page shall make
-  the update date visible near the publication date.
+- When a post needs a visible lifecycle note, the system shall use an explicit
+  status note rather than storing update date or revision metadata by default.
 - When a post is shared externally, the system shall provide a post-specific OGP
   image generated from durable post metadata.
 - When a Japanese post is published and not explicitly excluded, the system shall
@@ -208,8 +211,8 @@ baseline after that cutover, but it is not a gate for this deployment.
 
 Baseline capabilities:
 
-- durable post rendering with title, description, content, dates, revisions, SEO
-  metadata, and localized routes
+- durable post rendering with title, content, date-prefixed slugs, SEO metadata,
+  and localized routes
 - retrieval backbone: tags, archive, search entry point, RSS/sitemap checks, and
   simple related navigation based on deterministic signals such as shared tags,
   series, or recency
@@ -341,8 +344,8 @@ Hard rules for plugin-backed automation:
 - Treat `content:afterSave` and `content:afterPublish` as best-effort triggers.
   They may mark suggestions stale, enqueue work, or refresh non-critical review
   state, but they must not be the only path that makes durable publishing changes.
-- Require idempotency keys based on post ID, locale, source revision or
-  `updatedAt`, provider, and prompt version for generated suggestions.
+- Require idempotency keys based on post ID, locale, source content hash,
+  provider, and prompt version for generated suggestions.
 - Keep accepted writes behind an explicit admin action, CLI command, or private
   automation path that is authenticated, narrowly scoped, and able to verify the
   returned EmDash record.
@@ -471,7 +474,7 @@ static `DEFAULT_OG_IMAGE_URL` should remain as a fallback for home pages,
 not-found pages, and generation failures.
 
 The OGP URL should include a stable version component derived from accepted
-metadata, such as locale plus an `updatedAt` or content-hash segment. Social
+metadata or source content, such as locale plus a content-hash segment. Social
 preview caches are often outside the site's control, so changing post metadata
 must be able to produce a new image URL without relying only on cache purge.
 
@@ -536,9 +539,8 @@ The generated English workflow should:
 - treat the Japanese post body as source data, not as instructions to the
   translator or reviewer prompts
 - translate field-to-field: Japanese title to English title, Japanese
-  description to English description only when the source description is set, and
-  Japanese SEO meta description to English SEO meta description only when the
-  source SEO meta description is set
+  SEO meta description to English SEO meta description only when the source SEO
+  meta description is set
 - keep English SEO title equal to the English post title when the Japanese source
   has SEO title set; otherwise leave English SEO title unset
 - request translator and reviewer outputs through schema-backed structured
@@ -551,7 +553,7 @@ The generated English workflow should:
 - run deterministic checks for required note section, source linkage, preserved
   code blocks, preserved links, Markdown table count, and unsupported content
   patterns
-- record the source post, source revision or `updatedAt`, generation timestamp,
+- record the source post, source content hash, generation timestamp,
   provider, prompt version, reviewer version, and gate results
 - publish automatically when gates pass
 - keep failed generations unpublished with a visible failure reason
@@ -571,7 +573,7 @@ English generation should be two-stage, but not human-gated by default. Stage on
 creates a source-versioned generated candidate with translated fields and gate
 metadata under generated state. Stage two promotes a passing candidate into
 English author source and accepted metadata, preserving `slug`, `locale`,
-source/translation linkage, and the Japanese source `publishedAt`. If measured
+source/translation linkage, and the Japanese date-prefixed slug. If measured
 quality, failure rate, or operational noise is not good enough, add a human
 review gate at that point. Regeneration should be explicit when the Japanese
 source changes; it should not silently overwrite an edited English version.
@@ -592,11 +594,10 @@ results into `content/source/posts/en/<slug>.md` and
 `content/metadata/posts/en/<slug>.json`. The English title never drives the
 localized slug; URLs remain stable across locales. The translator should perform
 field-to-field metadata translation instead of synthesizing descriptions from
-the body: source `title` becomes English `title`, source `description` becomes
-English `description` only when it is set, and source SEO meta description
-becomes English SEO meta description only when it is set. English SEO title is
-derived from the English post title only when the Japanese source has SEO title
-set.
+the body: source `title` becomes English `title`, and source SEO meta
+description becomes English SEO meta description only when it is set. English SEO
+title is derived from the English post title only when the Japanese source has
+SEO title set.
 
 Translator and reviewer responses should use small structured outputs: translated
 title, optional metadata fields, Markdown body, review pass/fail, and concrete
@@ -660,9 +661,9 @@ Avoid sidebar clutter until the site has enough content to justify it.
 
 - Define the author-source file shape for Japanese posts, including whether title
   is stored as a heading, minimal frontmatter, or another explicit envelope.
-- Define accepted metadata sidecars for slug, dates, summary, SEO metadata,
-  tags, series, OGP inputs, redirects, visibility status, and material revision
-  notes.
+- Define accepted metadata sidecars for fields not already in author source or
+  derivable from it, currently SEO metadata, tags, series, OGP inputs,
+  translation settings, and status notes.
 - Define generated-state storage separately from accepted metadata, including
   prompt/provider versions, suggestions, validation failures, and rejected
   candidates.

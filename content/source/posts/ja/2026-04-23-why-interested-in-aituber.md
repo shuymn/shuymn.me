@@ -1,4 +1,5 @@
 ---
+slug: "2026-04-23-why-interested-in-aituber"
 title: "なぜAITuberに興味を持っているのか"
 ---
 

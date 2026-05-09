@@ -1,23 +1,10 @@
 {
-  "slug": "2021-02-18-two",
   "locale": "ja",
-  "description": "TwitterのURLを共有するときにOGPが展開されない問題を解決するツールを作った",
-  "publishedAt": "2021-02-18T00:00:00.000Z",
-  "updatedAt": "2026-04-24T16:49:45.539Z",
-  "draft": false,
-  "tags": [],
   "seo": {
     "title": "twoというWebアプリをリリースした",
     "description": "TwitterのURLを共有するときにOGPが展開されない問題を解決するツールを作った"
   },
   "translation": {
     "disabled": false
-  },
-  "visibility": "public",
-  "redirects": [],
-  "revision": {
-    "source": "git-history",
-    "reconciled": true,
-    "notes": "Recovered from bbcd28c4ed5148db1422179a082fffc95ef4c29f^:_posts/2021-02-18-two.md"
   }
 }

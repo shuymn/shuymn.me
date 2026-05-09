@@ -2,10 +2,7 @@
 slug: "2021-02-01-phoenixwan"
 locale: "ja"
 title: "PHOENIXWANを買った"
-description: "beatmania IIDXのコントローラー\"PHOENIXWAN\"を購入した"
 publishedAt: "2021-02-01T00:00:00.000Z"
-updatedAt: "2026-04-24T16:49:45.461Z"
-draft: false
 tags: []
 seo:
   title: "PHOENIXWANを買った"

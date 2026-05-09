@@ -2,10 +2,7 @@
 slug: "2021-01-21-okamura-sylphy"
 locale: "ja"
 title: "オカムラのシルフィーを購入した"
-description: "ゲーミングチェアからオフィスチェアに椅子を買い替えた話"
 publishedAt: "2021-01-21T00:00:00.000Z"
-updatedAt: "2026-04-24T16:49:45.382Z"
-draft: false
 tags: []
 seo:
   title: "オカムラのシルフィーを購入した"

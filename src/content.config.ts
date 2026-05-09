@@ -17,10 +17,7 @@ export const localPostSchema = z
     slug: z.string().min(1),
     locale: postLocaleSchema,
     title: z.string().min(1),
-    description: optionalTextSchema,
-    publishedAt: z.coerce.date().optional(),
-    updatedAt: z.coerce.date().optional(),
-    draft: z.boolean().default(true),
+    publishedAt: z.coerce.date(),
     tags: z.array(z.string().min(1)).default([]),
     series: z
       .object({
@@ -45,9 +42,7 @@ export const localPostSchema = z
       })
       .strict()
       .default({ disabled: false }),
-    visibility: z.enum(["public", "unlisted"]).default("public"),
     statusNote: optionalTextSchema,
-    redirects: z.array(z.string().min(1)).default([]),
   })
   .strict();
 

@@ -1,4 +1,5 @@
 ---
+slug: "2021-02-01-phoenixwan"
 title: "PHOENIXWANを買った"
 ---
 

@@ -1,4 +1,5 @@
 ---
+slug: "2021-04-24-how-i-gather-techinical-information-in-english"
 title: "英語で書かれた技術的な情報を得ることについての私見"
 ---
 

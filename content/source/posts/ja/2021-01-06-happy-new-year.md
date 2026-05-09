@@ -1,4 +1,5 @@
 ---
+slug: "2021-01-06-happy-new-year"
 title: "あけおめ 2021"
 ---
 

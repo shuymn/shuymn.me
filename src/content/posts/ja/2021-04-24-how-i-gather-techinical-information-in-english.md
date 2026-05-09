@@ -2,10 +2,7 @@
 slug: "2021-04-24-how-i-gather-techinical-information-in-english"
 locale: "ja"
 title: "英語で書かれた技術的な情報を得ることについての私見"
-description: "英語で書かれた技術的な情報をどうやって得ているかについて書きました"
 publishedAt: "2021-04-24T00:00:00.000Z"
-updatedAt: "2026-04-24T16:49:45.695Z"
-draft: false
 tags: []
 seo:
   title: "英語で書かれた技術的な情報を得ることについての私見"

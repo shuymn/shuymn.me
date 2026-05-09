@@ -2,10 +2,7 @@
 slug: "2020-04-02-hello-world"
 locale: "ja"
 title: "Hello World"
-description: "hello world"
 publishedAt: "2020-04-02T00:00:00.000Z"
-updatedAt: "2026-04-24T16:43:43.928Z"
-draft: false
 tags: []
 seo:
   title: "Hello World"

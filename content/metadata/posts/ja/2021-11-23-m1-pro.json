@@ -1,21 +1,9 @@
 {
-  "slug": "2021-11-23-m1-pro",
   "locale": "ja",
-  "publishedAt": "2021-11-23T00:00:00.000Z",
-  "updatedAt": "2026-04-24T16:49:45.917Z",
-  "draft": false,
-  "tags": [],
   "seo": {
     "title": "MacBook Proを買った"
   },
   "translation": {
     "disabled": false
-  },
-  "visibility": "public",
-  "redirects": [],
-  "revision": {
-    "source": "git-history",
-    "reconciled": true,
-    "notes": "Recovered from bbcd28c4ed5148db1422179a082fffc95ef4c29f^:_posts/2021-11-23-m1-pro.md"
   }
 }

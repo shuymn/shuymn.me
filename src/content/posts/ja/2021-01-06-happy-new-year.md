@@ -2,10 +2,7 @@
 slug: "2021-01-06-happy-new-year"
 locale: "ja"
 title: "あけおめ 2021"
-description: "実家に帰省した話や2021年の抱負など"
 publishedAt: "2021-01-06T00:00:00.000Z"
-updatedAt: "2026-04-24T16:49:45.089Z"
-draft: false
 tags: []
 seo:
   title: "あけおめ 2021"

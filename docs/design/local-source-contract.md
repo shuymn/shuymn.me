@@ -48,45 +48,46 @@ value is first accepted into metadata.
 
 ## Author Source
 
-The author source file contains the post title and body. The only frontmatter
-field currently allowed is `title`.
+The author source file contains the post slug, title, and body. The only
+frontmatter fields currently allowed are `slug` and `title`.
 
 Example:
 
 ```markdown
 ---
+slug: "2026-05-10-post-title"
 title: "Post Title"
 ---
 
 Body text.
 ```
 
-The path provides `locale` and `slug`. The source body remains the primary file
-that Coding Agents and local editors should draft, review, and translate.
+The path provides `locale`; the source `slug` must match the filename. The slug
+must start with `YYYY-MM-DD-`, and the projection derives `publishedAt` from that
+leading date. The source body remains the primary file that Coding Agents and
+local editors should draft, review, and translate.
 
 ## Accepted Metadata
 
-The metadata sidecar stores durable publishing inputs. The current cutover
-schema allows:
+The metadata sidecar stores durable publishing inputs that are not already part
+of the author source or derivable from it. The current cutover schema allows:
 
-- `slug`
 - `locale`
-- `description`
-- `publishedAt`
-- `updatedAt`
-- `draft`
 - `tags`
 - `series`
 - `seo`
 - `translation`
-- `visibility`
 - `statusNote`
-- `redirects`
-- `revision`
 
-This sidecar is the place for accepted values. LLM suggestions, failed
-generation attempts, prompt versions, and rejected candidates do not belong here
-until a value is accepted or deterministically promoted.
+This sidecar is the place for accepted values. Top-level post `description`,
+`updatedAt`, `visibility`, `redirects`, and recovery `revision` are not part of
+the current cutover contract. SEO description remains available under `seo`.
+Drafts are represented by local workflow state instead of accepted metadata:
+files projected from `content/source/posts/` are publishable inputs, while local
+drafts should stay outside the projection path until they are ready. LLM
+suggestions, failed generation attempts, prompt versions, and rejected
+candidates do not belong here until a value is accepted or deterministically
+promoted.
 
 ## Generated State
 
@@ -132,11 +133,11 @@ pnpm run project:content -- --recover-from-git '<tree-ish>' --apply --force
 pnpm run project:content -- --apply
 ```
 
-The recovery mode writes author source from historical Markdown and marks the
-metadata sidecar as reconciled from git history. During recovery, Markdown hard
-breaks are normalized and legacy C0 control characters are removed from article
-bodies. See `docs/design/japanese-source-recovery.md` for the current recovery
-evidence.
+The recovery mode writes author source from historical Markdown. During
+recovery, Markdown hard breaks are normalized and legacy C0 control characters
+are removed from article bodies. Recovery provenance belongs in migration
+evidence, not accepted metadata. See
+`docs/design/japanese-source-recovery.md` for the current recovery evidence.
 
 ## Cutover Constraints
 

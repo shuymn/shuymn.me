@@ -1,23 +1,10 @@
 {
-  "slug": "2020-12-30-good-bye-2020",
   "locale": "ja",
-  "description": "2020年の振り返り",
-  "publishedAt": "2020-12-30T00:00:00.000Z",
-  "updatedAt": "2026-04-24T16:49:45.018Z",
-  "draft": false,
-  "tags": [],
   "seo": {
     "title": "ふりかえり 2020",
     "description": "2020年の振り返り"
   },
   "translation": {
     "disabled": false
-  },
-  "visibility": "public",
-  "redirects": [],
-  "revision": {
-    "source": "git-history",
-    "reconciled": true,
-    "notes": "Recovered from bbcd28c4ed5148db1422179a082fffc95ef4c29f^:_posts/2020-12-30-good-bye-2020.md"
   }
 }

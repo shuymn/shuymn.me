@@ -12,7 +12,7 @@ type ProfileLink = {
 const locale = getCurrentLocale(Astro.currentLocale);
 const [siteSections, posts] = await Promise.all([
     getCollection("siteSections", ({ data }) => data.locale === locale && data.slug === HOME_ABOUT_SLUG),
-    getCollection("posts", ({ data }) => data.locale === locale && !data.draft),
+    getCollection("posts", ({ data }) => data.locale === locale),
 ]);
 const about = siteSections[0] ?? null;
 const renderedAbout = about ? await render(about) : null;
@@ -21,8 +21,8 @@ const AboutContent = renderedAbout?.Content;
 const sortedPosts = posts
     .filter((post) => post.data.slug.length > 0)
     .toSorted((a, b) => {
-        const dateA = a.data.publishedAt?.getTime() ?? 0;
-        const dateB = b.data.publishedAt?.getTime() ?? 0;
+        const dateA = a.data.publishedAt.getTime();
+        const dateB = b.data.publishedAt.getTime();
         return dateB - dateA;
     });
 
@@ -70,7 +70,6 @@ const publicText = getPublicText(locale);
             <article class="post-link">
               <p class="post-date">{formatDate(post.data.publishedAt)}</p>
               <a href={getPostPath(post.data.slug, locale)}>{post.data.title}</a>
-              {post.data.description && <p class="post-description">{post.data.description}</p>}
             </article>
           ))
         )

@@ -1,4 +1,5 @@
 ---
+slug: "2020-12-26-best-buy-this-year"
 title: "買ってよかったもの 2020"
 ---
 

@@ -9,7 +9,7 @@ type Props = {
 };
 
 export async function getStaticPaths() {
-    const posts = await getCollection("posts", ({ data }) => data.locale === "en" && !data.draft);
+    const posts = await getCollection("posts", ({ data }) => data.locale === "en");
 
     return posts.map((post) => ({
         params: { slug: post.data.slug },

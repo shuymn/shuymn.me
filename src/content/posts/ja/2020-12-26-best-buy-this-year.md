@@ -2,10 +2,7 @@
 slug: "2020-12-26-best-buy-this-year"
 locale: "ja"
 title: "買ってよかったもの 2020"
-description: "2020年に買ってよかったものを紹介します。"
 publishedAt: "2020-12-26T00:00:00.000Z"
-updatedAt: "2026-04-24T16:49:44.948Z"
-draft: false
 tags: []
 seo:
   title: "買ってよかったもの 2020"

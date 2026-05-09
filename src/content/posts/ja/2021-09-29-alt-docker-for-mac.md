@@ -2,10 +2,7 @@
 slug: "2021-09-29-alt-docker-for-mac"
 locale: "ja"
 title: "Docker for Macの代替を試した結果"
-description: "Docker for Macの代替手段としてminikubeを使ってみた感想"
 publishedAt: "2021-09-29T00:00:00.000Z"
-updatedAt: "2026-04-24T16:49:45.845Z"
-draft: false
 tags: []
 seo:
   title: "Docker for Macの代替を試した結果"

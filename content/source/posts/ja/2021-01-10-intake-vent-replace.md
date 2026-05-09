@@ -1,4 +1,5 @@
 ---
+slug: "2021-01-10-intake-vent-replace"
 title: "給気口を交換した"
 ---
 

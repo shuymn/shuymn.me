@@ -1,23 +1,10 @@
 {
-  "slug": "2026-04-23-why-interested-in-aituber",
   "locale": "ja",
-  "description": "AIペルソナとAITuber。OpenClaw試行錯誤から界隈観察、未来予測",
-  "publishedAt": "2026-04-23T00:00:00.000Z",
-  "updatedAt": "2026-04-24T18:31:46.468Z",
-  "draft": false,
-  "tags": [],
   "seo": {
     "title": "なぜAITuberに興味を持っているのか",
     "description": "AIペルソナとAITuber。OpenClaw試行錯誤から界隈観察、未来予測"
   },
   "translation": {
     "disabled": false
-  },
-  "visibility": "public",
-  "redirects": [],
-  "revision": {
-    "source": "git-history",
-    "reconciled": true,
-    "notes": "Recovered from bbcd28c4ed5148db1422179a082fffc95ef4c29f^:_posts/2026-04-23-why-interested-in-aituber.md"
   }
 }

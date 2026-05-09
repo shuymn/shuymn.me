@@ -1,4 +1,5 @@
 ---
+slug: "2021-11-27-steam-sale"
 title: "Steamのオータムセールで買ったゲーム"
 ---
 

@@ -1,4 +1,5 @@
 ---
+slug: "2021-09-29-alt-docker-for-mac"
 title: "Docker for Macの代替を試した結果"
 ---
 

@@ -15,18 +15,14 @@ const localeSchema = z.enum(["ja", "en"]);
 
 const sourceFrontmatterSchema = z
   .object({
+    slug: z.string().min(1),
     title: z.string().min(1),
   })
   .strict();
 
 const acceptedMetadataSchema = z
   .object({
-    slug: z.string().min(1),
     locale: localeSchema,
-    description: optionalTextSchema,
-    publishedAt: optionalTextSchema,
-    updatedAt: optionalTextSchema,
-    draft: z.boolean().default(true),
     tags: z.array(z.string().min(1)).default([]),
     series: z
       .object({
@@ -51,17 +47,7 @@ const acceptedMetadataSchema = z
       })
       .strict()
       .default({ disabled: false }),
-    visibility: z.enum(["public", "unlisted"]).default("public"),
     statusNote: optionalTextSchema,
-    redirects: z.array(z.string().min(1)).default([]),
-    revision: z
-      .object({
-        source: optionalTextSchema,
-        reconciled: z.boolean().default(false),
-        notes: optionalTextSchema,
-      })
-      .strict()
-      .default({ reconciled: false }),
   })
   .strict();
 
@@ -180,33 +166,30 @@ export async function projectLocalContent(options) {
 
 export async function buildProjectionFromSource({ metadataDir, projectionDir, sourceDir, sourcePath }) {
   const relativePath = normalizeRelativePath(relative(sourceDir, sourcePath));
-  const { locale, slug } = parseLocalizedMarkdownPath(relativePath);
+  const { locale, slug: pathSlug } = parseLocalizedMarkdownPath(relativePath);
   const source = parseAuthorSource(await readFile(sourcePath, "utf8"), relativePath);
-  const metadataPath = join(metadataDir, `${locale}/${slug}.json`);
-  const metadata = parseAcceptedMetadata(await readJsonFile(metadataPath), `${locale}/${slug}.json`);
+  const slug = source.slug;
+  const metadataPath = join(metadataDir, `${locale}/${pathSlug}.json`);
+  const metadata = parseAcceptedMetadata(await readJsonFile(metadataPath), `${locale}/${pathSlug}.json`);
+
+  if (slug !== pathSlug) {
+    throw new Error(`source slug ${slug} does not match source path ${locale}/${pathSlug}.md`);
+  }
 
   if (metadata.locale !== locale) {
     throw new Error(`metadata locale ${metadata.locale} does not match source path ${locale}/${slug}.md`);
-  }
-  if (metadata.slug !== slug) {
-    throw new Error(`metadata slug ${metadata.slug} does not match source path ${locale}/${slug}.md`);
   }
 
   const projectionFrontmatter = compactObject({
     slug,
     locale,
     title: source.title,
-    description: metadata.description,
-    publishedAt: metadata.publishedAt,
-    updatedAt: metadata.updatedAt,
-    draft: metadata.draft,
+    publishedAt: publishedAtFromSlug(slug),
     tags: metadata.tags,
     series: metadata.series,
     seo: metadata.seo,
     translation: metadata.translation,
-    visibility: metadata.visibility === "public" ? undefined : metadata.visibility,
     statusNote: metadata.statusNote,
-    redirects: metadata.redirects.length > 0 ? metadata.redirects : undefined,
   });
 
   return {
@@ -221,7 +204,7 @@ export function parseAuthorSource(content, label = "author source") {
   const frontmatter = sourceFrontmatterSchema.parse(parseYamlObject(file.frontmatter));
   const body = normalizeMarkdownBody(file.body);
   if (!body.trim()) throw new Error(`${label} body is empty`);
-  return { title: frontmatter.title, body };
+  return { slug: frontmatter.slug, title: frontmatter.title, body };
 }
 
 export function parseAcceptedMetadata(value, label = "accepted metadata") {
@@ -243,7 +226,10 @@ async function initFromProjection({ metadataDir, projectionDir, sourceDir, force
     const frontmatter = parseYamlObject(parsed.frontmatter);
     const metadata = buildAcceptedMetadataFromProjection(frontmatter, locale, slug);
     const source = serializeMarkdownFile(
-      { title: assertNonEmptyString(frontmatter.title, `${relativePath} title`) },
+      {
+        slug,
+        title: assertNonEmptyString(frontmatter.title, `${relativePath} title`),
+      },
       normalizeMarkdownBody(parsed.body),
     );
 
@@ -296,15 +282,13 @@ async function recoverAuthorSourceFromGit({ check, force, legacyDir, metadataDir
     const legacyTitle = assertNonEmptyString(legacyFrontmatter.title, `${legacyPath} title`);
     const legacyDescription = optionalString(legacyFrontmatter.description);
     const currentMetadata = parseAcceptedMetadata(await readJsonFile(metadataPath), `ja/${slug}.json`);
-    const nextSource = `${serializeMarkdownFile({ title: legacyTitle }, normalizeMarkdownBody(parsed.body))}\n`;
+    const nextSource = `${serializeMarkdownFile({ slug, title: legacyTitle }, normalizeMarkdownBody(parsed.body))}\n`;
     const nextMetadata = {
       ...currentMetadata,
-      ...(legacyDescription ? { description: legacyDescription } : {}),
-      revision: {
-        source: "git-history",
-        reconciled: true,
-        notes: `Recovered from ${treeish}:${legacyPath}`,
-      },
+      seo: compactObject({
+        ...currentMetadata.seo,
+        ...(legacyDescription ? { description: legacyDescription } : {}),
+      }),
     };
     const metadataContent = `${JSON.stringify(parseAcceptedMetadata(nextMetadata, `ja/${slug}.json`), null, 2)}\n`;
 
@@ -337,28 +321,25 @@ async function recoverAuthorSourceFromGit({ check, force, legacyDir, metadataDir
 
 function buildAcceptedMetadataFromProjection(frontmatter, locale, slug) {
   const metadata = compactObject({
-    slug,
     locale,
-    description: optionalString(frontmatter.description),
-    publishedAt: optionalString(frontmatter.publishedAt),
-    updatedAt: optionalString(frontmatter.updatedAt),
-    draft: frontmatter.draft ?? true,
     tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : [],
     series: frontmatter.series,
-    seo: frontmatter.seo && typeof frontmatter.seo === "object" ? frontmatter.seo : {},
+    seo: buildSeoFromProjection(frontmatter),
     translation:
       frontmatter.translation && typeof frontmatter.translation === "object"
         ? frontmatter.translation
         : { disabled: false },
-    visibility: frontmatter.visibility ?? "public",
     statusNote: optionalString(frontmatter.statusNote),
-    redirects: Array.isArray(frontmatter.redirects) ? frontmatter.redirects : [],
-    revision: {
-      source: "projection-init",
-      reconciled: false,
-    },
   });
   return parseAcceptedMetadata(metadata, `${locale}/${slug}.json`);
+}
+
+function buildSeoFromProjection(frontmatter) {
+  const seo = frontmatter.seo && typeof frontmatter.seo === "object" ? frontmatter.seo : {};
+  return compactObject({
+    ...seo,
+    description: optionalString(seo.description) ?? optionalString(frontmatter.description),
+  });
 }
 
 function splitMarkdownFile(content, label) {
@@ -560,6 +541,20 @@ function parseLocalizedMarkdownPath(path) {
   if (!SUPPORTED_LOCALES.has(locale)) throw new Error(`unsupported locale: ${locale}`);
   if (slug === "." || slug === "..") throw new Error(`unsupported slug: ${slug}`);
   return { locale, slug };
+}
+
+function publishedAtFromSlug(slug) {
+  const match = slug.match(/^(\d{4})-(\d{2})-(\d{2})-/);
+  if (!match) throw new Error(`slug must start with YYYY-MM-DD: ${slug}`);
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    throw new Error(`slug has invalid published date: ${slug}`);
+  }
+  return `${yearText}-${monthText}-${dayText}T00:00:00.000Z`;
 }
 
 function normalizeRelativePath(path) {

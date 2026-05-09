@@ -3,8 +3,6 @@ slug: "2022-02-03-organize-mobile-lines"
 locale: "ja"
 title: "携帯回線の整理をした"
 publishedAt: "2022-02-03T00:00:00.000Z"
-updatedAt: "2026-04-24T18:32:49.431Z"
-draft: false
 tags: []
 seo:
   title: "携帯回線の整理をした"

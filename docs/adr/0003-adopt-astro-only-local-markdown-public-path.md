@@ -1,4 +1,4 @@
-# ADR 0003: Adopt Astro-Only Local Markdown Public Path
+# ADR 0003: Adopt Astro-Only Local Source Public Path
 
 Status: Accepted
 Date: 2026-05-09
@@ -15,6 +15,15 @@ canonical post source, EmDash should not remain a long-term public content
 runtime. Keeping EmDash only to work around a CMS surface would preserve the same
 maintenance pressure that motivated the spike.
 
+The follow-up review corrected one important assumption from the first proof:
+the target is not "one Markdown file with every durable and generated field in
+frontmatter." The intended writing flow starts with title and body. Metadata such
+as tags, series, summaries, SEO text, OGP inputs, and translation state should be
+generated or suggested after writing, then accepted explicitly before it becomes
+durable publishing input. Putting all of that into post frontmatter would make
+generated state look like author-written source and would make the LLM output
+contract larger than necessary.
+
 The target still needs to support:
 
 - Coding Agent assisted drafting, review, and translation
@@ -29,30 +38,53 @@ Image upload and external asset storage remain deferred.
 
 ## Decision
 
-Adopt Astro-only local Markdown as the next public-content target architecture.
+Adopt an Astro-only local-source architecture as the next public-content target.
 
-The public blog path should be implemented with Astro content collections backed
-by repository-local Markdown files. This is an atomic cutover target, not a
-staged deployment plan: a branch that still requires EmDash scripts,
-dependencies, environment variables, Portable Text storage, or CMS runtime
-surfaces is still migration work in progress and must not be treated as the
-deployable replacement.
+The public blog path should be implemented from repository-local
+Markdown-family author source plus local metadata files, projected into Astro's
+rendering/build contract. This is an atomic cutover target, not a staged
+deployment plan: a branch that still requires EmDash scripts, dependencies,
+environment variables, Portable Text storage, or CMS runtime surfaces is still
+migration work in progress and must not be treated as the deployable
+replacement.
 
 The existing EmDash implementation may remain only as the currently deployed
 site or as local migration evidence while the replacement is prepared. It should
 not coexist with local Markdown in a deployed target architecture.
 
+The local source contract has four layers:
+
+- Author source: title and body in Markdown-family files, plus only the minimal
+  publish envelope needed to keep the file addressable. Generated editorial
+  metadata should not be authored into this layer.
+- Accepted metadata: local sidecar data for durable publishing inputs such as
+  slug, publication date, update date, tags, series, summaries, SEO metadata,
+  OGP inputs, redirects, visibility status, and revision/status notes.
+- Generated state: separate suggestion or run records for prompt versions,
+  provider output, confidence, validation failures, and rejected candidates. This
+  state is not public metadata until accepted or deterministically promoted.
+- Build projection: a regenerable Astro input layer that combines author source
+  and accepted metadata into the shape Astro pages, content collections, or
+  loaders need. This projection is implementation output, not hand-authored
+  canonical content.
+
+Frontmatter may still be used as a thin compatibility envelope when it is the
+lowest-risk bridge into Astro, but it must not become the primary storage
+location for generated editorial state.
+
 The target route strategy is explicit and locale-aware:
 
-- Japanese source posts live under a locale-bearing path such as
-  `src/content/posts/ja/<slug>.md`.
-- English generated posts live under the matching English locale path such as
-  `src/content/posts/en/<slug>.md`.
+- Japanese source posts live under a locale-bearing path in the local source
+  tree.
+- English generated posts are out of this cutover. `/en/posts/<slug>` remains
+  the reserved public route contract for future translations, but this branch
+  does not require `en/*.md` files or an English generation pipeline before
+  deployment.
 - Content collection IDs must preserve locale path segments so localized posts
   cannot collide.
 - Public URLs should remain `/posts/<slug>` for the default locale and
   `/en/posts/<slug>` for English.
-- Static paths should be generated from local content entries, not from empty
+- Static paths should be generated from local projected entries, not from empty
   global i18n route duplication.
 
 The target rendering model is static-first:
@@ -74,7 +106,7 @@ layer may be evaluated later only if normal posting needs a browser UI:
 
 - Keystatic is the best first editor candidate because it supports Astro and can
   save content to the local file system or GitHub, but it must be evaluated as an
-  editor over the existing Markdown/frontmatter contract, not as a reason to
+  editor over the local source and metadata sidecar contract, not as a reason to
   switch the body format or own canonical content.
 - TinaCMS is a possible editor candidate because it is Git-backed and supports
   Markdown/MDX/JSON, but its GraphQL/backend and visual editing model add more
@@ -91,8 +123,9 @@ layer may be evaluated later only if normal posting needs a browser UI:
 - Existing EmDash code, seed files, and host-side scripts remain useful only as
   unpublished migration references and must be removed from the deployable
   target unless a later ADR explicitly reintroduces a different CMS boundary.
-- The English generation path should shift from EmDash API writes to file writes
-  against local Markdown plus deterministic validation.
+- English generation is deferred until after the EmDash-free Japanese-source
+  deployment. When reintroduced, it should write through the same local
+  source/metadata/projection contract instead of EmDash APIs or Portable Text.
 - The Japanese canonical body should be reconciled against the historical
   Markdown sources in git history instead of treating an EmDash export as final
   truth by default.
@@ -120,13 +153,15 @@ deployable as the final replacement:
 The release gate for this ADR is stricter than that proof. Before this branch can
 be considered a deployable cutover:
 
-- English generation must read and write local Markdown without EmDash API/client
-  imports, EmDash environment requirements, or Portable Text storage.
+- The local source/metadata/projection contract must be implemented so generated
+  metadata does not need to live in hand-authored post frontmatter.
 - Japanese posts must be reconciled with historical Markdown sources from git
   history where those sources exist.
 - EmDash export/deploy/bootstrap/seed/plugin code, package dependencies,
   environment variables, and operational documentation must be removed from the
   deployable target, except for archived historical ADR context.
+- English generated post files and English generation automation are not part of
+  this release gate.
 
 ## Checked References
 

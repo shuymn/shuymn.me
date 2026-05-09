@@ -18,14 +18,15 @@ conversion-driven publishing.
 Current implementation baseline:
 
 - Published posts are repository-local Markdown files under
-  `src/content/posts/<locale>/<slug>.md`.
+  `src/content/posts/<locale>/<slug>.md` as the current migration projection,
+  not as the final author-source contract.
 - Stable home/profile sections are repository-local Markdown files under
   `src/content/site-sections/<locale>/`.
 - The site renders the home page, localized home pages, and localized post
   detail pages from Astro content collections instead of EmDash runtime reads.
-- The site already has Japanese and English public routes. English generation is
-  still work in progress and must migrate from EmDash API writes to local
-  Markdown file writes before this branch is deployable.
+- The site has Japanese public post routes. English post routes remain reserved
+  for future generated translations, but generated English post files and the
+  English generation pipeline are intentionally outside the current cutover.
 - OGP images currently fall back to one static default image through
   `DEFAULT_OG_IMAGE_URL`.
 - There are no current taxonomies, series, archive pages, search page, related
@@ -35,14 +36,17 @@ Foundation reconsideration:
 
 - ADR 0002 pauses further CMS commitment while a local Markdown-family canonical
   source spike is evaluated.
-- ADR 0003 resolves the spike direction: the next public-content target is
-  Astro-only local Markdown.
+- ADR 0003 resolves the spike direction: the next public-content target is an
+  Astro-only local-source architecture.
 - The memorandum-first goals in this document remain in force. EmDash-specific
   implementation assumptions below are historical context or unpublished
   migration references, not part of the deployable replacement target.
 - The local-source spike is motivated by Coding Agent assisted drafting,
   reviewable local diffs, Markdown as the translation boundary, and avoiding a
   cloud-hosted Portable Text canonical body.
+- The local-source target is not a rich-frontmatter authoring model. The final
+  contract must separate author-written source, accepted metadata, generated
+  suggestion state, and the Astro build projection.
 - Image upload and external asset storage are intentionally deferred from that
   spike.
 
@@ -57,8 +61,49 @@ Atomic cutover gate:
   canonical post bodies must be reconciled with the historical Markdown sources
   available in git history under `_posts/` and `posts/` before finalizing the
   cutover.
-- English generation must write local Markdown files directly before the cutover
-  is considered complete.
+- The cutover must implement a local source/metadata/projection boundary so
+  generated editorial metadata does not need to live in hand-authored post
+  frontmatter.
+- English generation is a post-cutover follow-up. No generated `en/*.md` files
+  are required for the EmDash-free deployment.
+
+## Local Source Model
+
+The deployable target is local-source first, not CMS first and not
+frontmatter-first.
+
+Author source:
+
+- contains the post title and body in a Markdown-family format
+- keeps only the minimal publish envelope needed to make the source addressable
+- remains the part Coding Agents and local editors primarily draft, review, and
+  translate
+
+Accepted metadata:
+
+- is stored in local sidecar data, not mixed into the author-written body file by
+  default
+- contains durable publishing inputs such as slug, publication date, update date,
+  tags, series, summary, SEO metadata, OGP inputs, redirects, visibility status,
+  and material revision notes
+- is inspectable and overrideable before generated values affect published pages
+
+Generated state:
+
+- stores suggestions, prompt versions, provider output, validation failures,
+  rejected candidates, and retry state separately from both author source and
+  accepted metadata
+- may be committed only when it is useful evidence; it is never the hidden source
+  of published truth
+
+Build projection:
+
+- combines author source and accepted metadata into the Astro collection or
+  loader shape required by public pages
+- is regenerable implementation output, so it can evolve when Astro or editor
+  tooling changes
+- must be the only layer that adapts to Astro-specific schema/frontmatter
+  constraints
 
 ## Goals
 
@@ -90,8 +135,7 @@ Atomic cutover gate:
   or conversion-rate tooling.
 - Keyword-stuffed publishing workflows where SEO score is more important than
   accurate personal records.
-- Broad CMS generalization beyond this personal blog unless a feature has clear
-  reuse value inside EmDash.
+- Broad CMS generalization beyond this personal blog.
 - Perfect first-pass automation for every editorial feature. The first version
   should satisfy baseline requirements and leave lower-confidence ideas easy to
   add, remove, or revise after real use.
@@ -132,30 +176,35 @@ The requirements use EARS notation.
 - When a URL changes after publication, the system shall provide an explicit
   redirect path instead of silently losing old links.
 - When the author reviews readership signals, Cloudflare-provided telemetry
-  shall be the primary source of truth and EmDash shall only map those signals to
-  content metadata for editorial interpretation.
-- When EmDash schema or deployable content configuration changes, the system
-  shall provide a host-side automation path that can apply the same change to any
-  EmDash instance selected by URL and credentials.
+  shall be the primary source of truth and local metadata shall only store
+  derived editorial interpretation when it is worth preserving.
+- When the local source/metadata/projection contract changes, the system shall
+  make that contract explicit in code and docs before generated values are
+  written into durable metadata.
 
 ## WordPress Patterns To Translate
 
-| WordPress pattern | Representative plugin family | Useful idea | EmDash translation |
+| WordPress pattern | Representative plugin family | Useful idea | Local-source translation |
 | --- | --- | --- | --- |
-| SEO metadata and structured data | Yoast SEO, All in One SEO | Metadata, canonical URLs, XML sitemaps, schema, previews, and content health checks | Keep EmDash `seo` support, add post-level meta rendering checks, sitemap/RSS verification, generated OGP images, and automated checklist feedback where possible |
-| Custom fields and content modeling | Advanced Custom Fields | Add structured editorial fields without hardcoding theme behavior | Extend `seed/seed.json` only for fields that drive rendering, editorial decisions, or accepted generated metadata |
-| Taxonomy and internal discovery | WordPress categories/tags, related/popular post plugins | Help readers and the author traverse old posts | Add flat `tag`, optional hierarchical `category`, and a `series` model, but populate them through deterministic and LLM-assisted suggestions before asking for manual upkeep |
-| Multilingual publishing | WPML, Polylang, TranslatePress | Keep translated versions discoverable without making every translation a separate manual project | Generate annotated English versions from Japanese source posts, auto-publish when automated gates pass, preserve source/translation linkage, and expose locale-specific URLs and OGP images |
-| Table of contents | TOC block/plugin family | Derive navigation from headings for long-form posts | Generate TOC from rendered Portable Text headings in `PostArticle.astro` or a focused component |
-| Redirect and 404 maintenance | Redirection | Preserve old links and surface broken URLs | Start with static redirect config or Cloudflare rules; add an EmDash admin/plugin surface only if manual maintenance becomes frequent |
-| Popular posts and stats | WP Popular Posts, Jetpack Stats | Show what is being referenced | Use Cloudflare telemetry as the source of truth; optionally map paths to posts, tags, and series inside EmDash for editorial interpretation |
+| SEO metadata and structured data | Yoast SEO, All in One SEO | Metadata, canonical URLs, XML sitemaps, schema, previews, and content health checks | Store accepted SEO metadata in local sidecar data; render and validate sitemap/RSS/schema/OGP from the build projection |
+| Custom fields and content modeling | Advanced Custom Fields | Add structured editorial fields without hardcoding theme behavior | Keep structured fields in the accepted metadata contract only when they drive rendering, editorial decisions, or accepted generated metadata |
+| Taxonomy and internal discovery | WordPress categories/tags, related/popular post plugins | Help readers and the author traverse old posts | Add flat tags and optional series as accepted metadata populated through deterministic and LLM-assisted suggestions before asking for manual upkeep |
+| Multilingual publishing | WPML, Polylang, TranslatePress | Keep translated versions discoverable without making every translation a separate manual project | After the EmDash-free cutover, generate annotated English source/metadata siblings from Japanese source posts and expose locale-specific URLs and OGP images |
+| Table of contents | TOC block/plugin family | Derive navigation from headings for long-form posts | Generate TOC from rendered Markdown headings in `PostArticle.astro` or a focused component |
+| Redirect and 404 maintenance | Redirection | Preserve old links and surface broken URLs | Start with local redirect config or Cloudflare rules; add editor support only if manual maintenance becomes frequent |
+| Popular posts and stats | WP Popular Posts, Jetpack Stats | Show what is being referenced | Use Cloudflare telemetry as the source of truth; optionally map paths to posts, tags, and series into local derived metadata for editorial interpretation |
 
 ## Baseline And Adaptive Scope
 
-Do not optimize for the smallest possible first slice if it fails the actual blog
-use case. The baseline should be large enough to make frequent writing, recall,
-sharing, and English distribution useful without turning the first implementation
-into a complete publishing suite.
+Do not optimize for the smallest possible final platform if it fails the actual
+blog use case. The product baseline should be large enough to make frequent
+writing, recall, sharing, and English distribution useful without turning the
+implementation into a complete publishing suite.
+
+The current EmDash-free cutover has a narrower release gate: recover the
+Japanese local source, implement the source/metadata/projection boundary, and
+remove EmDash from the deployable target. English generation remains a product
+baseline after that cutover, but it is not a gate for this deployment.
 
 Baseline capabilities:
 
@@ -170,8 +219,8 @@ Baseline capabilities:
   locale-aware wrapping and cache-safe URLs
 - English auto-publication after automated translation, automated review, and
   deterministic checks pass, with a visible translation note
-- Cloudflare-first telemetry with only derived editorial aggregates flowing back
-  into EmDash when needed
+- Cloudflare-first telemetry with only durable derived editorial aggregates
+  stored in local metadata when needed
 
 Adaptive capabilities:
 
@@ -180,7 +229,7 @@ Adaptive capabilities:
 - advanced publish health scoring
 - a mandatory human review gate for English translations, but only if measured
   translation quality or pipeline reliability is not good enough for auto-publish
-- EmDash-side reporting over Cloudflare-derived aggregates
+- local reporting over Cloudflare-derived aggregates
 - newsletter, ActivityPub, or other distribution channels
 - additional admin UI around low-frequency maintenance tasks
 - alternative LLM providers or Cloudflare Worker implementations when operational
@@ -192,9 +241,14 @@ fold it back into a simpler workflow.
 
 Baseline means the minimum acceptable blog platform, not a single tiny first
 commit. The slices below can ship incrementally, but deterministic OGP generation
-and gated English auto-publication are baseline requirements, not optional polish.
+and gated English auto-publication remain product baseline requirements after the
+EmDash-free cutover, not optional polish.
 
-## EmDash Plugin Boundary
+## Historical EmDash Plugin Boundary
+
+This section is retained as historical design evidence for why the EmDash plugin
+path is no longer the deployable target. Do not use it as the current
+implementation direction.
 
 EmDash plugins should be treated as an editorial-extension mechanism, not as the
 default home for every blog-platform feature. The current plugin surface is
@@ -299,7 +353,12 @@ Hard rules for plugin-backed automation:
   preferences and generated state, not long-lived Cloudflare or LLM secrets unless
   the storage and admin surface have been explicitly reviewed for that purpose.
 
-## Host-Side Automation Boundary
+## Historical Host-Side Automation Boundary
+
+This section describes the pre-ADR-0003 EmDash deployment and automation
+boundary. It is retained as evidence for why durable publishing writes should be
+owned by a narrower first-party contract, not as the current implementation
+target.
 
 Host-side automation is the preferred baseline for durable operations that need
 more authority than the current standard plugin surface provides but do not yet
@@ -364,7 +423,12 @@ database, not production state. Therefore, build the host-side script first,
 prove it against local EmDash and an explicitly selected remote EmDash instance,
 then decide whether to wrap it in CD.
 
-## EmDash Content Model Direction
+## Historical EmDash Content Model Direction
+
+This section describes the EmDash-era model that informed the local-source
+contract. New implementation work should translate the durable parts into author
+source, accepted metadata, generated state, and build projection instead of
+adding EmDash schema or plugins.
 
 ### Posts
 
@@ -674,77 +738,70 @@ Avoid sidebar clutter until the site has enough content to justify it.
 
 ## Implementation Sequence
 
-### Baseline Slice 1: Recall Backbone
+### Cutover Slice 1: Local Source Contract
 
-- Add `tag` taxonomy, tag archive pages, and an automated tag suggestion path.
-- Add a search page or compact search entry point.
-- Add RSS and sitemap verification.
-- Show published and updated dates consistently.
-- Add a simple archive grouped by year/month.
+- Define the author-source file shape for Japanese posts, including whether title
+  is stored as a heading, minimal frontmatter, or another explicit envelope.
+- Define accepted metadata sidecars for slug, dates, summary, SEO metadata,
+  tags, series, OGP inputs, redirects, visibility status, and material revision
+  notes.
+- Define generated-state storage separately from accepted metadata, including
+  prompt/provider versions, suggestions, validation failures, and rejected
+  candidates.
+- Define the build projection that feeds Astro pages or content loaders from
+  author source plus accepted metadata.
 
-### Baseline Slice 2: Thought Continuity
+### Cutover Slice 2: Historical Japanese Recovery
 
-- Add `series` support with automated series suggestions.
-- Render series navigation on post pages.
-- Add related posts from deterministic signals such as shared tags, series, or
-  recency.
-- Add an optional status note for exploratory/outdated/superseded posts.
-- Add a generated table of contents for long posts.
+- Recover the previous Japanese Markdown sources from git history where they
+  exist.
+- Reconcile recovered source with the current EmDash-exported migration
+  snapshot.
+- Preserve public `/posts/<slug>` URLs while moving canonical Japanese source
+  into the new local-source contract.
+- Do not generate or require English `en/*.md` files in this slice.
 
-### Baseline Slice 3: Distribution Automation
+### Cutover Slice 3: EmDash Removal
 
-- Add generated OGP images for posts from deterministic templates.
-- Add locale-aware OGP images for English post routes.
-- Improve remaining social preview metadata.
-- Add English generation for eligible published Japanese posts, with opt-out and
-  deterministic precheck exclusions, automated translation review, auto-publish
-  gates, visible translation notes, and source/translation linkage.
+- Remove EmDash runtime integration, scripts, seed/bootstrap/deploy paths,
+  dependencies, environment requirements, and operational instructions from the
+  deployable target.
+- Keep only archived ADR/design context and explicit migration evidence.
+- Prove the public Japanese home and post routes prerender from local source and
+  accepted metadata without EmDash reads.
 
-### Baseline Slice 4: Maintenance Feedback
+### Product Baseline After Cutover
 
-- Add an automated publish checklist derived from site requirements.
-- Add automated link integrity checks for internal post links.
-- Add redirect rules for changed slugs or imported legacy URLs.
-- Use Cloudflare telemetry as the primary analytics source for readership and
-  operational signals.
-
-### Adaptive Follow-Ups
-
-- Add embedding-based related posts or semantic clustering only if deterministic
-  related navigation is not enough.
-- Add mandatory human review for English translations only if measured quality or
-  reliability proves the auto-publish baseline too noisy.
-- Add EmDash-side reporting that maps Cloudflare paths to posts, tags, and
-  series only if Cloudflare-native views are not enough.
-- Consider newsletter or ActivityPub only if publishing cadence makes it useful.
+- Add recall backbone features: tags, archives, search entry point, RSS/sitemap
+  verification, and deterministic related navigation.
+- Add thought-continuity features: series support, table of contents, visible
+  update/status notes, and related posts from deterministic signals.
+- Add distribution automation: deterministic OGP images and, after the cutover,
+  gated English generation through the local-source contract.
+- Add maintenance feedback: publish checklist, internal link checks, redirect
+  rules, and Cloudflare-first telemetry interpretation.
 
 ## Implementation Boundaries
 
-- Prefer schema, page, and component changes for public rendering surfaces.
-- Prefer first-party EmDash plugins for editorial automation that is adjacent to
-  writing but should not be manual writing work.
-- Use plugin lifecycle hooks, plugin-scoped storage, admin UI, or host-side
-  support when generated metadata needs review, persistence, or provider
-  configuration.
-- Treat plugin hooks as triggers for review state, not as the sole mechanism for
-  durable publishing changes.
-- Put accepted writes behind explicit admin-only actions, CLI-controlled actions,
-  or private automation paths that are authenticated, narrowly scoped, and able to
-  verify returned records after writes that affect slug, locale, translation
-  linkage, taxonomy relations, or public metadata.
-- Keep `output: "server"` and avoid static-generation assumptions for EmDash
-  content.
-- Keep all content queries wired to `Astro.cache.set(cacheHint)` when APIs
-  provide cache hints.
-- Use `entry.id` for post slugs and `entry.data.id` for EmDash APIs that need
-  database IDs.
+- Prefer local author-source and metadata contract changes before adding editor
+  or CMS dependencies.
+- Keep author source, accepted metadata, generated state, and build projection as
+  separate layers. Do not store generated suggestions in hand-authored post
+  frontmatter by default.
+- Keep the build projection regenerable. Astro schema or loader details belong in
+  projection code, not in the authoring contract.
+- Keep public content static-first. Use SSR only for surfaces with real
+  request-time state, such as authenticated preview, admin/editor helpers,
+  generation endpoints, or telemetry interpretation.
+- Put accepted metadata writes behind explicit local commands, editor actions, or
+  private automation that can validate and diff the resulting sidecar data.
 - Keep raw access analytics in Cloudflare unless there is a concrete signal the
   platform cannot provide.
 - Keep generated OGP images cacheable, deterministic, runtime-compatible, and
   versioned by accepted metadata.
-- Keep English generation gated by automated review and deterministic checks.
-  Human review should be added only if measured quality or pipeline reliability is
-  not good enough for automatic publication.
+- Keep future English generation gated by automated review and deterministic
+  checks, but do not make English generation a dependency of the current
+  EmDash-free cutover.
 - Do not add a feature unless it improves at least one of recall, readability,
   maintenance, distribution, or reduction of non-writing editorial toil.
 
@@ -765,11 +822,11 @@ less trustworthy.
 
 ### Plugin-Assisted Editorial Automation
 
-Using deterministic checks and LLM-backed suggestions inside a first-party EmDash
-plugin keeps original Japanese writing human-controlled while removing repetitive
-metadata work. English translation follows the separate gated auto-publication
-path. This needs a careful acceptance path and clear fallback behavior when the
-plugin API cannot write a specific relation directly.
+Using deterministic checks and LLM-backed suggestions still keeps original
+Japanese writing human-controlled while removing repetitive metadata work. The
+accepted version of this approach is no longer an EmDash plugin: suggestions
+should be stored as generated state and promoted into accepted local metadata
+through an explicit acceptance path.
 
 ### EmDash-Collected Analytics
 
@@ -781,9 +838,9 @@ the CMS layer without improving the writing workflow.
 ### Cloudflare-Backed Telemetry
 
 Using Cloudflare as the primary telemetry source keeps raw access data at the
-edge and lets EmDash stay focused on content semantics. EmDash can still provide
-value by interpreting Cloudflare path-level data in terms of posts, tags, series,
-and maintenance needs.
+edge. The local metadata layer can still preserve derived editorial
+interpretation of Cloudflare path-level data when it helps with posts, tags,
+series, and maintenance needs.
 
 ### Manual OGP Image Production
 
@@ -839,37 +896,32 @@ work.
 
 Chosen approach: build public rendering surfaces site-natively, but design
 taxonomies, series, summaries, related posts, and editorial checks around
-plugin-assisted automation from the start. Keep access analytics Cloudflare-first
-and add EmDash interpretation only if raw telemetry needs content-aware context.
-Generate OGP images through deterministic base-image and text composition.
-Continue English article generation as a gated auto-publishing baseline, and solve
-localized content creation explicitly rather than assuming the current plugin API
-already covers every write path.
+local-source generated-state and acceptance workflows from the start. Keep access
+analytics Cloudflare-first and store only derived interpretation in local
+metadata when it is worth preserving. Generate OGP images through deterministic
+base-image and text composition. Resume English article generation after the
+EmDash-free cutover as a gated auto-publishing baseline, and solve localized
+source/metadata creation explicitly rather than assuming a CMS plugin owns the
+write path.
 
 ## Verification Plan
 
 For each implementation slice:
 
 - Run the narrowest relevant check first.
-- For schema or seed changes, run the seed/bootstrap flow needed to prove the
-  schema loads.
-- For host-side EmDash deployment scripts, run a dry-run against local EmDash via
-  the shared `baseUrl`/credential connection model, then apply with
-  `pnpm run deploy:emdash -- --apply ...` only after the diff and idempotency
-  behavior are understood.
-- Before using an EmDash plugin API for a durable write, verify the current
-  installed EmDash API can express the required fields or relation. If it cannot,
-  move that write to a host-side API, CLI command, or trusted first-party
-  extension.
-- For plugin-triggered automation, prove that repeated saves produce one
-  idempotent suggestion per source version rather than duplicate or stale
-  generated state.
-- For English generation, test the full auto-publish path against local EmDash data
-  and verify the resulting English record has the expected note section, the same
-  `slug` as its Japanese source, the same published date as its Japanese source,
-  `locale`, source linkage, preserved code blocks, preserved links, preserved
-  Markdown tables, and recorded gate results before considering the workflow
-  valid.
+- For local-source contract changes, validate author-source parsing, accepted
+  metadata parsing, generated-state isolation, and build projection output with
+  focused tests before changing routes.
+- For historical Japanese recovery, compare recovered Markdown sources with the
+  migration snapshot and record any intentional differences before treating a
+  post as canonical.
+- For accepted metadata automation, prove that repeated runs produce idempotent
+  suggestions and do not overwrite accepted values without an explicit
+  acceptance or force path.
+- For future English generation, test the full auto-publish path against local
+  source/metadata data and verify note rendering, source linkage, slug
+  stability, preserved code blocks, preserved links, preserved Markdown tables,
+  and recorded gate results before considering the workflow valid.
 - For generated OGP images, verify the selected renderer locally and in the
   Cloudflare runtime, including long Japanese and English titles, before making it
   the primary `og:image` path.
@@ -877,8 +929,7 @@ For each implementation slice:
   Japanese/English titles, code identifiers, and URLs to prove that line breaks do
   not split words or tokens mid-segment.
 - For Cloudflare telemetry, verify credentials remain outside public/plugin-owned
-  state and that EmDash only receives the derived aggregates needed for editorial
-  interpretation.
+  state and that only durable derived aggregates are written to local metadata.
 - For page/component changes, run `pnpm run typecheck`.
 - Before marking a non-trivial slice done, run `pnpm run build`.
 - Capture the exact commands and notable output in the completion report.

@@ -3,8 +3,8 @@
 Status: Completed
 Date: 2026-05-09
 Issue: `shuymn_me-1er.12`
-Outcome: ADR 0003 adopts Astro-only local Markdown as the next public-content
-target.
+Outcome: ADR 0003 adopts an Astro-only local-source architecture as the next
+public-content target.
 
 ## Purpose
 
@@ -36,6 +36,28 @@ Out of scope:
 - building a complete editing UI
 - adding newsletter, ActivityPub, or other distribution surfaces
 
+## Post-Spike Contract Correction
+
+The first spike intentionally used strict YAML frontmatter as the smallest way to
+prove Astro rendering and type validation. That should not be read as the final
+authoring model.
+
+After reviewing the intended workflow, the target contract is:
+
+- author source contains the title and body plus only the minimal publish
+  envelope needed to keep the source addressable
+- accepted metadata lives in local sidecar data for durable publishing inputs
+  such as slug, dates, tags, series, summaries, SEO metadata, OGP inputs,
+  redirects, visibility, and revision/status notes
+- generated state lives separately from both author source and accepted metadata
+  until a value is accepted or deterministically promoted
+- Astro receives a regenerable build projection that combines source and
+  accepted metadata
+
+This keeps the author's file small, keeps LLM structured output smaller and more
+stable, and prevents generated suggestions from becoming hidden public truth just
+because they were written into frontmatter.
+
 ## Current Pressure
 
 The current EmDash implementation is functional, but the platform direction has
@@ -56,7 +78,9 @@ Markdown files.
 
 ## First Candidate Format
 
-The first spike format is plain Markdown with strict YAML frontmatter.
+The first spike format was plain Markdown with strict YAML frontmatter. This was
+an evaluation shortcut for Astro's content pipeline, not the accepted final
+contract.
 
 Plain Markdown is chosen first because it is the smallest format that satisfies
 the important boundaries:
@@ -78,8 +102,8 @@ baseline requirements do not yet prove that a richer block grammar is necessary.
 
 ## Candidate File Shape
 
-The spike should evaluate a shape close to this, while keeping field names
-strictly typed in code:
+The spike evaluated a shape close to this, while keeping field names strictly
+typed in code:
 
 ```yaml
 ---
@@ -118,8 +142,9 @@ src/content/posts/ja/local-markdown-canonical-source.md
 src/content/posts/en/local-markdown-canonical-source.md
 ```
 
-The exact path is part of the spike. `src/content/posts/...` is preferred for
-Astro content integration unless it creates an avoidable coupling.
+The final implementation may still project into `src/content/posts/...` for
+Astro integration, but author source and accepted metadata do not have to be
+stored as one rich-frontmatter file.
 
 ## Rendering Hypothesis
 
@@ -247,14 +272,16 @@ a transitional state, not the target architecture.
 
 ADR 0003 records the follow-up decision from this spike:
 
-- use Astro content collections backed by local Markdown as the public content
-  path
+- use repository-local Markdown-family author source plus local metadata as the
+  public content source
 - remove EmDash from public blog rendering as migration proceeds
-- keep the first implementation Astro-only
+- keep the first implementation Astro-only, with a source/metadata/projection
+  contract instead of rich frontmatter as the primary storage model
 - evaluate Keystatic, TinaCMS, Decap CMS, Pages CMS, or another editor layer only
   after browser-based posting friction is observed
 - require any future editor/CMS to preserve local Markdown as the source of truth
 
-The immediate next implementation issue is to migrate public routes and English
-generation away from EmDash-backed content reads/writes while preserving the
-current public URL contract.
+The immediate next implementation issue is to finish the EmDash-free Japanese
+cutover by defining that contract, recovering historical Japanese Markdown
+sources, and preserving the current `/posts/<slug>` URL contract. English
+generation is intentionally deferred until after the EmDash-free deployment.

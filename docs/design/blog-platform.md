@@ -32,9 +32,13 @@ Foundation reconsideration:
 
 - ADR 0002 pauses further CMS commitment while a local Markdown-family canonical
   source spike is evaluated.
-- The memorandum-first goals in this document remain in force, but the
-  EmDash-specific implementation assumptions are provisional until the spike is
-  resolved.
+- ADR 0003 resolves the spike direction: the next public-content target is
+  Astro-only local Markdown, with EmDash treated as a transitional dependency
+  rather than a long-term runtime for public blog content.
+- The memorandum-first goals in this document remain in force. EmDash-specific
+  implementation assumptions below are historical or transitional unless they
+  are still needed to keep the current deployed site operational during
+  migration.
 - The local-source spike is motivated by Coding Agent assisted drafting,
   reviewable local diffs, Markdown as the translation boundary, and avoiding a
   cloud-hosted Portable Text canonical body.

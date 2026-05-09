@@ -2,6 +2,8 @@
 
 Status: Accepted
 Date: 2026-05-09
+Outcome: Resolved by ADR 0003, which adopts Astro-only local Markdown as the
+next public-content target.
 
 ## Context
 
@@ -81,3 +83,4 @@ dependency.
 
 - [Blog Platform Design](../design/blog-platform.md)
 - [Local Markdown Canonical Source Spike](../design/local-markdown-canonical-source-spike.md)
+- [ADR 0003: Adopt Astro-Only Local Markdown Public Path](0003-adopt-astro-only-local-markdown-public-path.md)

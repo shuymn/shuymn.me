@@ -1,8 +1,10 @@
 # Local Markdown Canonical Source Spike
 
-Status: Draft
+Status: Completed
 Date: 2026-05-09
 Issue: `shuymn_me-1er.12`
+Outcome: ADR 0003 adopts Astro-only local Markdown as the next public-content
+target.
 
 ## Purpose
 
@@ -240,3 +242,19 @@ Findings:
 These findings support continuing the local Markdown spike, but they also show
 that keeping EmDash installed while introducing local-source SSG routes is only
 a transitional state, not the target architecture.
+
+## Decision Follow-Up
+
+ADR 0003 records the follow-up decision from this spike:
+
+- use Astro content collections backed by local Markdown as the public content
+  path
+- remove EmDash from public blog rendering as migration proceeds
+- keep the first implementation Astro-only
+- evaluate Keystatic, TinaCMS, Decap CMS, Pages CMS, or another editor layer only
+  after browser-based posting friction is observed
+- require any future editor/CMS to preserve local Markdown as the source of truth
+
+The immediate next implementation issue is to migrate public routes and English
+generation away from EmDash-backed content reads/writes while preserving the
+current public URL contract.

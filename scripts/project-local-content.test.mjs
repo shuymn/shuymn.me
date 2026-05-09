@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import test from "node:test";
 
 import {
@@ -37,6 +37,54 @@ test("projects canonical post source into Astro content frontmatter", async () =
   assert.match(projection.content, /本文です。/);
 });
 
+test("rejects author source filenames without a valid publication date prefix", async () => {
+  const root = await mkdtemp(join(tmpdir(), "local-content-"));
+  const sourceDir = join(root, "source");
+  const projectionDir = join(root, "posts");
+
+  await mkdir(sourceDir, { recursive: true });
+  await writeFile(join(sourceDir, "runtime-notes.md"), '---\ntitle: "Runtime Notes"\n---\n\n本文です。\n');
+  await writeFile(join(sourceDir, "2026-02-30-runtime-notes.md"), '---\ntitle: "Runtime Notes"\n---\n\n本文です。\n');
+
+  await assert.rejects(
+    () =>
+      buildProjectionFromSource({
+        projectionDir,
+        sourceDir,
+        sourcePath: join(sourceDir, "runtime-notes.md"),
+      }),
+    /slug must start with YYYY-MM-DD: runtime-notes/,
+  );
+
+  await assert.rejects(
+    () =>
+      buildProjectionFromSource({
+        projectionDir,
+        sourceDir,
+        sourcePath: join(sourceDir, "2026-02-30-runtime-notes.md"),
+      }),
+    /slug has invalid published date: 2026-02-30-runtime-notes/,
+  );
+});
+
+test("post date UI uses projection publishedAt without inferred dates", async () => {
+  const root = resolve(import.meta.dirname, "..");
+  const [homePage, postPage] = await Promise.all([
+    readFile(join(root, "src/components/HomePage.astro"), "utf8"),
+    readFile(join(root, "src/components/PostPage.astro"), "utf8"),
+  ]);
+
+  assert.match(homePage, /post\.data\.publishedAt\.getTime\(\)/);
+  assert.match(homePage, /formatDate\(post\.data\.publishedAt\)/);
+  assert.match(homePage, /post\.data\.slug\.localeCompare\(a\.post\.data\.slug\)/);
+
+  assert.match(postPage, /post\.data\.publishedAt\.toISOString\(\)/);
+  assert.match(postPage, /formatDate\(post\.data\.publishedAt\)/);
+
+  assert.doesNotMatch(homePage, /updatedAt|getUpdated|\bmtime\b|\bstat\b|\bgit\b/u);
+  assert.doesNotMatch(postPage, /updatedAt|getUpdated|\bmtime\b|\bstat\b|\bgit\b/u);
+});
+
 test("projects workflow-generated post metadata into Astro content frontmatter", async () => {
   const root = await mkdtemp(join(tmpdir(), "local-content-"));
   const sourceDir = join(root, "source");
@@ -55,7 +103,6 @@ test("projects workflow-generated post metadata into Astro content frontmatter",
       return {
         tags: ["runtime", "notes"],
         series: { slug: "local-content", order: 1 },
-        updatedAt: "2026-05-11T00:00:00.000Z",
         statusNote: "Updated after publication.",
         relatedPostSlugs: ["2026-05-09-previous-notes"],
       };
@@ -67,7 +114,6 @@ test("projects workflow-generated post metadata into Astro content frontmatter",
 
   assert.match(projection.content, /tags:\n {2}- "runtime"\n {2}- "notes"/);
   assert.match(projection.content, /series:\n {2}slug: "local-content"\n {2}order: 1/);
-  assert.match(projection.content, /updatedAt: "2026-05-11T00:00:00.000Z"/);
   assert.match(projection.content, /statusNote: "Updated after publication."/);
   assert.match(projection.content, /relatedPostSlugs:\n {2}- "2026-05-09-previous-notes"/);
 });
@@ -129,6 +175,23 @@ test("rejects invalid workflow-generated post metadata", async () => {
       }),
     /relatedPostSlugs must not contain duplicate values: post-a/,
   );
+
+  for (const unsupportedMetadata of [
+    { updatedAt: "2026-05-11T00:00:00.000Z" },
+    { revision: "abc123" },
+    { publishedAt: "2026-05-11T00:00:00.000Z" },
+  ]) {
+    await assert.rejects(
+      () =>
+        buildProjectionFromSource({
+          generateMetadata: () => unsupportedMetadata,
+          projectionDir,
+          sourceDir,
+          sourcePath: join(sourceDir, "2026-05-10-runtime-notes.md"),
+        }),
+      /Unrecognized key/s,
+    );
+  }
 });
 
 test("omits missing workflow-generated post metadata", async () => {

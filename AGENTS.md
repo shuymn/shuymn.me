@@ -32,12 +32,12 @@
 - Separate state from logic.
 - Prioritize readability and maintainability.
 - Define the contract layer strictly, and keep the implementation layer regenerable.
-- This is an Astro local-source site, not a Next.js app.
+- This is an Astro site built from Markdown author source, not a Next.js app.
 - The target content contract keeps blog author source as title/body Markdown under root `posts/*.md`; derive slug from the extensionless filename and do not store slug in source frontmatter.
 - Keep `src/content/posts/` as the Astro build projection only. Generated projection frontmatter may contain derived metadata needed by Astro/public rendering, but it is not the authoring contract.
 - Public posts project into Astro content collections under `src/content/posts/`; preserve `/posts/<slug>`. `/en/posts/<slug>` is reserved for future generated translations but is not required for the current cutover.
 - Static home/profile copy is component-owned locale content, not an Astro content collection.
-- Public content routes should prerender from local files and must not query a CMS at render time.
+- Public content routes should prerender from repository files and must not query a CMS at render time.
 - Do not treat a branch that needs CMS runtime/admin surfaces as deployable for the current cutover.
 - Historical CMS export/deploy/bootstrap/seed code has been removed from the deployable target; use git history, not live CMS state, for migration evidence.
 - Agents must not run production deployment commands such as `wrangler deploy` or `pnpm run deploy`. Stop at build or dry-run validation unless the owner explicitly authorizes deployment in the current turn.
@@ -62,12 +62,12 @@ pnpm run test:local-content
 
 ## Environment Variables
 
-- No environment variables are required for the current Astro local-source deploy target.
+- No environment variables are required for the current author source deploy target.
 - `.envrc` may still load a local `.env`; keep real values out of git.
 
 ## Skills
 
-- No project-specific skill is required for normal Astro local-source work.
+- No project-specific skill is required for normal Markdown author source work.
 - Use Cloudflare-related skills when changing Worker deployment behavior.
 
 ## Critical Recap

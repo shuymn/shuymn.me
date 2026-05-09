@@ -1,4 +1,4 @@
-# Local Source Contract
+# Authoring Content Contract
 
 Status: Accepted
 Date: 2026-05-10
@@ -6,8 +6,8 @@ Issue: `shuymn_me-1er.16`
 
 ## Purpose
 
-Define the local content contract for the Astro site without making rich post
-frontmatter the canonical source of generated or derived metadata.
+Define the authoring content contract for the Astro site without making rich
+post frontmatter the canonical source of generated or derived metadata.
 
 This contract is intentionally narrower than the full blog-platform baseline.
 Tags, series, English generation, OGP automation, editor UI, and image handling
@@ -28,7 +28,7 @@ src/content/posts/<locale>/<slug>.md
 ```
 
 Only the projection is consumed by Astro content collections and lives under
-`src/`. Author source lives outside `src/` because it is the local source of
+`src/`. Author source lives outside `src/` because it is the authored source of
 truth rather than Astro implementation input. Projection frontmatter is generated
 metadata and can be regenerated from author source.
 
@@ -51,7 +51,7 @@ The filename provides `slug`. The slug must start with `YYYY-MM-DD-`, and the
 projection derives `publishedAt` from that leading date. The current cutover has
 only Japanese canonical source posts, so the source tree does not include a
 locale directory. The source body remains the primary file that Coding Agents and
-local editors should draft, review, and translate.
+editors should draft, review, and translate.
 
 ## Projection
 

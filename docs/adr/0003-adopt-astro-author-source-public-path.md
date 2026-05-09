@@ -1,4 +1,4 @@
-# ADR 0003: Adopt Astro-Only Local Source Public Path
+# ADR 0003: Adopt Astro Author Source Public Path
 
 Status: Accepted
 Date: 2026-05-09
@@ -6,10 +6,10 @@ Updated: 2026-05-10
 
 ## Context
 
-ADR 0002 evaluated local Markdown-family author source before adding more
-CMS-specific blog-platform work. The spike showed that Astro can render local
-post content and that Markdown is the right body boundary for Coding Agent
-drafting, review, translation, and deterministic validation.
+ADR 0002 evaluated Markdown author source before adding more
+CMS-specific blog-platform work. The spike showed that Astro can render
+repository post content and that Markdown is the right body boundary for Coding
+Agent drafting, review, translation, and deterministic validation.
 
 The important correction from the spike is that the accepted target is not "one
 Markdown file with every durable and generated field in frontmatter." The normal
@@ -19,25 +19,25 @@ separate until it is accepted or deterministically promoted.
 The target needs to support:
 
 - Coding Agent assisted drafting, review, and translation
-- a canonical body that remains local, diffable, and Markdown-family
+- a canonical body that remains repository-backed, diffable, and Markdown
 - Cloudflare deployment
 - mostly static public content
 - request-time surfaces only when they have a concrete reason
 - future browser editing only if it does not move the canonical post body out of
-  local files
+  repository files
 
 Image upload and external asset storage remain deferred.
 
 ## Decision
 
-Adopt an Astro-only local-source architecture as the public-content target.
+Adopt an Astro authoring architecture as the public-content target.
 
-The public blog path is implemented from repository-local author source,
+The public blog path is implemented from repository Markdown author source,
 projected into Astro's rendering/build contract. A deployable branch must not
 require CMS runtime reads, CMS scripts, CMS dependencies, CMS environment
 variables, or a remote structured body store for normal public rendering.
 
-The local source contract has three layers:
+The authoring content contract has three layers:
 
 - Author source: title and body in Markdown files, plus only the minimal publish
   envelope needed to keep the file addressable. The slug is derived from the
@@ -62,7 +62,7 @@ The route strategy is explicit and locale-aware:
   translations.
 - Public URLs remain `/posts/<slug>` for the default locale and
   `/en/posts/<slug>` for English.
-- Static paths come from local projected entries, not from empty global i18n
+- Static paths come from projected entries, not from empty global i18n
   route duplication.
 
 The rendering model is static-first:
@@ -78,22 +78,22 @@ The rendering model is static-first:
 
 Do not introduce a CMS as the primary source of truth. A supporting editor layer
 may be evaluated later only if normal posting needs a browser UI, and it must
-write the local source contract rather than own the canonical body.
+write the author source contract rather than own the canonical body.
 
 ## Consequences
 
-- Public blog implementation work targets Astro local source and generated
+- Public blog implementation work targets Markdown author source and generated
   projection.
 - Historical CMS implementation details are migration evidence, not current
   instructions.
-- English generation is deferred until after the Japanese local-source deployment
-  and should write through the same local source/projection contract.
-- Browser-based editing is deferred. Local editor, Coding Agent, and command-line
+- English generation is deferred until after the Japanese author source deployment
+  and should write through the same author source/projection contract.
+- Browser-based editing is deferred. Editor, Coding Agent, and command-line
   workflows are sufficient until actual posting friction proves otherwise.
-- Any future editor/CMS must preserve local Markdown as the canonical source and
+- Any future editor/CMS must preserve Markdown author source as canonical and
   must be replaceable without changing public rendering contracts.
 - Existing bd issues that still assume the old implementation boundary should be
-  replaced, superseded, or rewritten against the local-source architecture.
+  replaced, superseded, or rewritten against the authoring architecture.
 
 ## Implementation Status And Release Gate
 
@@ -107,7 +107,7 @@ As of 2026-05-10, the deployable target is implemented for the Japanese site:
   `docs/design/japanese-source-recovery.md`.
 - Static `home-about` copy is owned by the home page component with locale
   branches because it shares links and is not independently authored content.
-- Public home and post detail rendering reads local Astro files and post content
+- Public home and post detail rendering reads Astro files and post content
   collections.
 - The Astro config uses the Cloudflare adapter directly.
 - English generated post files and English generation automation remain outside
@@ -134,7 +134,7 @@ As of 2026-05-10, the deployable target is implemented for the Japanese site:
 ## Related Design
 
 - [Blog Platform Design](../design/blog-platform.md)
-- [Local Source Contract](../design/local-source-contract.md)
+- [Authoring Content Contract](../design/authoring-content-contract.md)
 - [Japanese Source Recovery](../design/japanese-source-recovery.md)
-- [ADR 0002: Spike Local Markdown Canonical Source Before Further CMS Commitment](0002-spike-local-markdown-canonical-source.md)
-- [Local Markdown Canonical Source Spike](../design/local-markdown-canonical-source-spike.md)
+- [ADR 0002: Spike Markdown Author Source Before Further CMS Commitment](0002-spike-markdown-author-source.md)
+- [Markdown Author Source Spike](../design/markdown-author-source-spike.md)

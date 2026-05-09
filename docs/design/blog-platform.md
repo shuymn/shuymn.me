@@ -6,7 +6,7 @@ Updated: 2026-05-10
 
 ## Context
 
-`shuymn.me` is a personal site and mostly-blog built with Astro local author
+`shuymn.me` is a personal site and mostly-blog built with Markdown author
 source. The site should preserve what the author was thinking, building, and
 deciding at a point in time, especially around AI-related work.
 
@@ -22,7 +22,7 @@ Current implementation baseline:
 - Author source frontmatter contains only `title`.
 - Slug and publication date are derived from the filename.
 - Astro build projection lives under `src/content/posts/ja/*.md`.
-- Public home and Japanese post detail routes render from local Astro files and
+- Public home and Japanese post detail routes render from Astro files and
   content collections.
 - English post routes are reserved for future generated translations, but
   generated English post files and English generation automation are outside the
@@ -34,15 +34,15 @@ Current implementation baseline:
 - There are no current taxonomies, series, archive pages, search page, related
   post surfaces, redirect management, or post-level publishing checklist.
 
-ADR 0003 chooses the current public-content foundation: Astro local source,
+ADR 0003 chooses the current public-content foundation: Markdown author source,
 generated projection, Cloudflare deployment, and no EmDash runtime dependency in
 the deployable target. Historical EmDash implementation details are not current
 instructions; use git history and ADR 0002/0003 when migration evidence is
 needed.
 
-## Local Source Model
+## Authoring Model
 
-The deployable target is local-source first, not CMS first and not
+The deployable target is authoring-first, not CMS first and not
 frontmatter-first.
 
 Author source:
@@ -51,7 +51,7 @@ Author source:
 - keeps only the minimal envelope needed to make the source addressable
 - derives the slug from the extensionless filename
 - derives the publication date from the date-prefixed slug
-- remains the part Coding Agents and local editors primarily draft, review, and
+- remains the part Coding Agents and editors primarily draft, review, and
   translate
 
 Build projection:
@@ -78,14 +78,14 @@ Generated state:
   essays.
 - Automate editorial metadata and maintenance work that is not the act of
   writing itself.
-- Preserve provenance through stable local source, date-prefixed slugs, git
+- Preserve provenance through stable author source, date-prefixed slugs, git
   history, and explicit status notes when a visible notice is needed.
 - Provide enough SEO and sharing metadata for posts to travel well, without
   optimizing the whole site around traffic acquisition.
 - Generate post-specific OGP images automatically so sharing quality does not
   depend on manual image production.
 - Generate English versions of eligible published posts automatically after the
-  local-source generation path is rebuilt.
+  author source generation path is rebuilt.
 - Treat traffic and infrastructure telemetry as a Cloudflare concern first.
 
 ## Non-Goals
@@ -138,20 +138,20 @@ The requirements use EARS notation.
   redirect path instead of silently losing old links.
 - When the author reviews readership signals, Cloudflare-provided telemetry
   shall be the primary source of truth.
-- When the local source/projection contract changes, the system shall make that
+- When the author source/projection contract changes, the system shall make that
   contract explicit in code and docs before generated values are written into
   projection frontmatter.
 
 ## WordPress Patterns To Translate
 
-| WordPress pattern | Useful idea | Local-source translation |
+| WordPress pattern | Useful idea | Author-source translation |
 | --- | --- | --- |
 | SEO metadata and structured data | Metadata, canonical URLs, XML sitemaps, schema, previews, and content health checks | Generate SEO metadata into the Astro projection; render and validate sitemap/RSS/schema/OGP from that projection |
 | Custom fields and content modeling | Add structured editorial fields without hardcoding theme behavior | Add structured generated fields only when they drive rendering or editorial decisions, and keep them out of author source |
 | Taxonomy and internal discovery | Help readers and the author traverse old posts | Generate flat tags and optional series after writing before asking for manual upkeep |
 | Multilingual publishing | Keep translated versions discoverable without making every translation a separate manual project | Generate English source/projection outputs from Japanese source posts and expose locale-specific URLs and OGP images |
 | Table of contents | Derive navigation from headings for long-form posts | Generate TOC from rendered Markdown headings in `PostPage.astro` or a focused component |
-| Redirect and 404 maintenance | Preserve old links and surface broken URLs | Start with local redirect config or Cloudflare rules; add editor support only if manual maintenance becomes frequent |
+| Redirect and 404 maintenance | Preserve old links and surface broken URLs | Start with repository redirect config or Cloudflare rules; add editor support only if manual maintenance becomes frequent |
 | Popular posts and stats | Show what is being referenced | Use Cloudflare telemetry as the source of truth; optionally map paths to posts, tags, and series into generated state for editorial interpretation |
 
 ## Baseline And Adaptive Scope
@@ -179,7 +179,7 @@ Adaptive capabilities:
 - a mandatory human review gate for English translations, but only if measured
   translation quality or pipeline reliability is not good enough for
   auto-publish
-- local reporting over Cloudflare-derived aggregates
+- repository reporting over Cloudflare-derived aggregates
 - newsletter, ActivityPub, or other distribution channels
 - additional admin UI around low-frequency maintenance tasks
 - alternative LLM providers or Cloudflare Worker implementations when operational
@@ -254,16 +254,16 @@ and serve those assets instead.
 ## English Article Generation
 
 English article generation remains an explicit target after the Japanese
-local-source cutover. The goal is not to turn every post into a polished
+author source cutover. The goal is not to turn every post into a polished
 bilingual publication by hand; it is to make English distribution available when
 useful while keeping the Japanese post as the source record.
 
-The future implementation should be a local-source command that:
+The future implementation should be an author source command that:
 
 - reads eligible Japanese author source and generated projection metadata
 - treats the Japanese post body as source data, not as prompt instructions
 - asks translator and reviewer calls for small structured outputs
-- uses Markdown as the LLM body boundary and local author source as the storage
+- uses Markdown as the LLM body boundary and author source as the storage
   boundary
 - preserves code blocks, links, headings, Markdown tables, and technical
   identifiers
@@ -291,7 +291,7 @@ should own raw traffic and infrastructure signals:
 - 404s and other status codes
 - cache behavior and performance signals
 
-Local-source tooling may consume or display derived insights only when they help
+Repository tooling may consume or display derived insights only when they help
 operate the content:
 
 - mapping paths back to posts, tags, and series
@@ -307,14 +307,14 @@ required signal.
 
 Completed cutover foundation:
 
-- Local source contract is defined in `docs/design/local-source-contract.md`.
+- The authoring content contract is defined in `docs/design/authoring-content-contract.md`.
 - Japanese author source lives under root `posts/*.md`.
 - Historical Japanese post bodies were recovered from git history; see
   `docs/design/japanese-source-recovery.md`.
 - EmDash runtime integration, scripts, seed/bootstrap/deploy paths,
   dependencies, environment requirements, and operational instructions have been
   removed from the deployable target.
-- Public Japanese post routes prerender from local source and generated
+- Public Japanese post routes prerender from author source and generated
   projection frontmatter.
 
 Next product work:
@@ -325,14 +325,14 @@ Next product work:
   verification, and deterministic related navigation.
 - Add thought-continuity features: series support, table of contents, visible
   update/status notes, and related posts from deterministic signals.
-- Add distribution automation: deterministic OGP images and local-source English
+- Add distribution automation: deterministic OGP images and author source English
   generation.
 - Add maintenance feedback: publish checklist, internal link checks, redirect
   rules, and Cloudflare-first telemetry interpretation.
 
 ## Implementation Boundaries
 
-- Prefer local author-source contract changes before adding editor or CMS
+- Prefer author source contract changes before adding editor or CMS
   dependencies.
 - Keep author source, generated state, and build projection as separate layers.
 - Keep public content static-first. Use SSR only for surfaces with real
@@ -353,8 +353,8 @@ Next product work:
 For each implementation slice:
 
 - Run the narrowest relevant check first.
-- For local-source contract changes, validate author-source parsing,
-  generated-state isolation, and build projection output with focused tests
+- For author source contract changes, validate author source parsing,
+  generated state isolation, and build projection output with focused tests
   before changing routes.
 - For future English generation, test the full auto-publish path against local
   source/projection data and verify note rendering, source linkage, slug
@@ -372,6 +372,6 @@ For each implementation slice:
 ## Related Documents
 
 - [ADR 0001: Position The Site As A Memorandum-First Blog Platform](../adr/0001-blog-platform-direction.md)
-- [ADR 0003: Adopt Astro-Only Local Markdown Public Path](../adr/0003-adopt-astro-only-local-markdown-public-path.md)
-- [Local Source Contract](local-source-contract.md)
+- [ADR 0003: Adopt Astro Author Source Public Path](../adr/0003-adopt-astro-author-source-public-path.md)
+- [Authoring Content Contract](authoring-content-contract.md)
 - [Japanese Source Recovery](japanese-source-recovery.md)

@@ -16,7 +16,7 @@ Those are not goals for this site.
 
 The original implementation direction explored Astro plus EmDash. ADR 0002 and
 ADR 0003 superseded that implementation boundary. The current deployable target
-is Astro local source: repository-local author files under `posts/*.md`,
+is Markdown author source: repository files under `posts/*.md`,
 generated Astro projection under `src/content/posts/`, and Cloudflare deployment
 without EmDash runtime, scripts, dependencies, or environment requirements.
 
@@ -36,7 +36,7 @@ outcomes:
 Do not adopt features whose main purpose is advertising, affiliate revenue,
 growth funnels, or traffic-driven content production.
 
-The content architecture is local-source first:
+The content architecture is authoring-first:
 
 - Author source lives in root `posts/<slug>.md`.
 - Source frontmatter contains only `title`.
@@ -45,11 +45,11 @@ The content architecture is local-source first:
 - Astro projection is generated under `src/content/posts/<locale>/<slug>.md`.
 - Generated projection frontmatter is implementation output, not the authoring
   contract.
-- Public content routes must render from local files and must not query a CMS at
-  render time.
+- Public content routes must render from repository files and must not query a
+  CMS at render time.
 
 Japanese posts are the current source of truth. English generation remains in
-scope as a future local-source workflow, but it is not part of the current
+scope as a future author source workflow, but it is not part of the current
 deployment gate.
 
 Cloudflare remains the primary owner of deployment and raw telemetry. Local
@@ -67,7 +67,7 @@ The baseline blog platform should eventually include:
 - thought-continuity surfaces such as series, table of contents, and explicit
   status notes
 - deterministic post-specific OGP images
-- local-source English generation with automated translation review and
+- English generation from author source with automated translation review and
   deterministic gates
 - maintenance feedback such as internal link checks and redirect handling
 - Cloudflare-first telemetry interpretation
@@ -79,13 +79,13 @@ translations, newsletters, ActivityPub, and additional editor/admin UI.
 
 ## Consequences
 
-- New public blog implementation work should target Astro local source, not
+- New public blog implementation work should target Markdown author source, not
   EmDash APIs, Portable Text storage, plugin hooks, or CMS runtime reads.
 - Existing EmDash-specific implementation notes are historical migration
   evidence. Use git history for the removed details rather than keeping them as
   current instructions.
-- Future editor or CMS work must preserve local files as the canonical post body
-  and must be replaceable without changing public rendering contracts.
+- Future editor or CMS work must preserve repository files as the canonical post
+  body and must be replaceable without changing public rendering contracts.
 - Generated editorial metadata must be inspectable before it affects public
   pages. Do not hide generated suggestions inside author-written source.
 - English generation should use Markdown author source and small structured
@@ -99,6 +99,6 @@ translations, newsletters, ActivityPub, and additional editor/admin UI.
 ## Related Design
 
 - [Blog Platform Design](../design/blog-platform.md)
-- [ADR 0002: Spike Local Markdown Canonical Source Before Further CMS Commitment](0002-spike-local-markdown-canonical-source.md)
-- [ADR 0003: Adopt Astro-Only Local Markdown Public Path](0003-adopt-astro-only-local-markdown-public-path.md)
-- [Local Source Contract](../design/local-source-contract.md)
+- [ADR 0002: Spike Markdown Author Source Before Further CMS Commitment](0002-spike-markdown-author-source.md)
+- [ADR 0003: Adopt Astro Author Source Public Path](0003-adopt-astro-author-source-public-path.md)
+- [Authoring Content Contract](../design/authoring-content-contract.md)

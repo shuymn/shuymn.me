@@ -35,7 +35,7 @@ Japanese Markdown sources still existed in the repository.
   backslash hard breaks so `git diff --check` remains clean.
 - Legacy C0 control characters are removed from recovered bodies. The historical
   snapshot contains at least one invisible control character in prose; preserving
-  it would make the local source harder to review without changing the intended
+  it would make the author source harder to review without changing the intended
   article text.
 
 ## Mapping

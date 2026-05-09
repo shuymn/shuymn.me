@@ -1,6 +1,6 @@
 # shuymn.me
 
-Personal website and blog built with Astro local author sources and a generated
+Personal website and blog built with Astro Markdown author source and a generated
 Astro content projection.
 
 ## Setup
@@ -47,5 +47,5 @@ pnpm run deploy:dry-run
 
 ## Environment
 
-No environment variables are required for the current Astro local-source deploy
+No environment variables are required for the current author source deploy
 target. `.envrc` may still load a local `.env`; keep real values out of git.

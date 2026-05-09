@@ -18,6 +18,10 @@ conversion optimization. Those are not the goal for this site.
 
 Treat `shuymn.me` as a memorandum-first blog platform.
 
+This product direction remains accepted. The EmDash-centered implementation
+foundation described below is under active reconsideration by ADR 0002, which
+spikes a local Markdown-family canonical source before further CMS commitment.
+
 Adopt WordPress-derived ideas only when they improve one of these outcomes:
 
 - recall of past thinking
@@ -231,3 +235,4 @@ page views itself by default.
 ## Related Design
 
 - [Blog Platform Design](../design/blog-platform.md)
+- [ADR 0002: Spike Local Markdown Canonical Source Before Further CMS Commitment](0002-spike-local-markdown-canonical-source.md)

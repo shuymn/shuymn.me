@@ -28,6 +28,19 @@ Current implementation baseline:
 - There are no current taxonomies, series, archive pages, search page, related
   post surfaces, redirect management, or post-level publishing checklist.
 
+Foundation reconsideration:
+
+- ADR 0002 pauses further CMS commitment while a local Markdown-family canonical
+  source spike is evaluated.
+- The memorandum-first goals in this document remain in force, but the
+  EmDash-specific implementation assumptions are provisional until the spike is
+  resolved.
+- The local-source spike is motivated by Coding Agent assisted drafting,
+  reviewable local diffs, Markdown as the translation boundary, and avoiding a
+  cloud-hosted Portable Text canonical body.
+- Image upload and external asset storage are intentionally deferred from that
+  spike.
+
 ## Goals
 
 - Make old thinking easy to rediscover by topic, series, time, and search.

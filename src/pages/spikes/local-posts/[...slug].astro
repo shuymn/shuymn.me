@@ -1,0 +1,82 @@
+---
+import { type CollectionEntry, getCollection, render } from "astro:content";
+import "../../../styles/site.css";
+
+export const prerender = true;
+
+type Props = {
+    post: CollectionEntry<"localPosts">;
+};
+
+export async function getStaticPaths() {
+    const posts = await getCollection("localPosts");
+
+    return posts.map((post) => ({
+        params: { slug: post.id },
+        props: { post },
+    }));
+}
+
+const { post } = Astro.props as Props;
+const { Content, headings } = await render(post);
+const publishedAt = post.data.publishedAt?.toISOString();
+const updatedAt = post.data.updatedAt?.toISOString();
+const pageTitle = `${post.data.title} | Local Markdown Spike`;
+---
+
+<!doctype html>
+<html lang={post.data.locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{pageTitle}</title>
+    {post.data.description && <meta name="description" content={post.data.description} />}
+  </head>
+  <body>
+    <main class="prose prose-li:my-0.5 prose-ul:my-0.5 max-w-full mx-auto mt-8 mb-32 dark:prose-invert prose-pre:bg-surface">
+      <p><a href="/">shuymn.me</a> / local Markdown spike</p>
+      <article>
+        <header>
+          <p><strong>{post.data.draft ? "Draft" : "Published"}</strong></p>
+          <h1>{post.data.title}</h1>
+          {post.data.description && <p>{post.data.description}</p>}
+          <dl>
+            <dt>Content ID</dt>
+            <dd>{post.id}</dd>
+            <dt>Slug</dt>
+            <dd>{post.data.slug}</dd>
+            <dt>Locale</dt>
+            <dd>{post.data.locale}</dd>
+            {publishedAt && <dt>Published</dt>}
+            {publishedAt && <dd>{publishedAt}</dd>}
+            {updatedAt && <dt>Updated</dt>}
+            {updatedAt && <dd>{updatedAt}</dd>}
+          </dl>
+          {
+            post.data.tags.length > 0 && (
+              <p>
+                Tags: {post.data.tags.join(", ")}
+              </p>
+            )
+          }
+          {
+            headings.length > 0 && (
+              <nav aria-label="Table of contents">
+                <h2>Headings</h2>
+                <ol>
+                  {headings.map((heading) => (
+                    <li>
+                      <a href={`#${heading.slug}`}>{heading.text}</a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            )
+          }
+        </header>
+        <Content />
+      </article>
+    </main>
+  </body>
+</html>

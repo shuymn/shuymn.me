@@ -69,6 +69,30 @@ translation writes must go through an explicit admin action, CLI path, or privat
 host-side automation path that is authenticated, narrowly scoped, and verifies the
 resulting EmDash record.
 
+Host-side automation should use one shared connection model across scripts. The
+script chooses an EmDash instance by `EMDASH_BASE_URL` or `--base-url`,
+authenticates with `EMDASH_API_TOKEN` or `--token`, permits local trusted runs
+through `EMDASH_DEV_BYPASS` or `--dev-bypass`, and accepts generic request
+headers through newline-separated `EMDASH_HEADERS` and repeated `--header` /
+`-H` flags for reverse proxies such as Cloudflare Access. Scripts should not
+encode separate `local` and `prod` modes. Safety comes from dry-runs, explicit
+apply commands, diff output, idempotency, fail-fast behavior, and post-write
+verification.
+
+Use this same host-side pattern for EmDash schema/content deployment before
+building CD automation. `seed/seed.json` remains the local bootstrap and
+reproducibility source, but an already deployed site needs an explicit
+migration/deploy path that compares desired state with the selected EmDash
+instance and applies missing or changed pieces through authenticated APIs.
+Cloudflare Workers preview builds can produce non-production Worker versions, but
+D1, R2, KV, and secrets still depend on configured bindings and are not
+automatically cloned per pull request. EmDash `previewDatabase()` is a read-only
+Durable Object snapshot for content preview, and `playgroundDatabase()` is
+seed-backed demo state. Therefore, prove the host-side script locally and against
+an explicitly selected remote instance first, then wrap the same operation in
+GitHub Actions or Cloudflare CD only when automation is worth the operational
+cost.
+
 Generated editorial metadata must be inspectable and overrideable. LLM metadata
 output is accepted as a suggestion layer, not as hidden authority. English
 translation records follow the separate gated auto-publication path.

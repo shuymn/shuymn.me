@@ -824,6 +824,7 @@ test("generated English SEO clears stale SEO fields when the Japanese source doe
 test("CLI options read Cloudflare AI Gateway config from env and flags", () => {
   const envOptions = testInternals.parseArgs([], {
     EMDASH_API_TOKEN: "emdash-token",
+    EMDASH_HEADERS: "CF-Access-Client-Id: id-env\nX-Trace: env",
     ENGLISH_GENERATION_API_KEY: "openrouter-env",
     ENGLISH_GENERATION_MODEL: "translation-env",
     ENGLISH_EDIT_MODEL: "edit-env",
@@ -841,9 +842,17 @@ test("CLI options read Cloudflare AI Gateway config from env and flags", () => {
   assert.equal(envOptions.cfAiGatewayAccountId, "account-env");
   assert.equal(envOptions.cfAiGatewayGateway, "gateway-env");
   assert.equal(envOptions.cfAiGatewayToken, "cf-token-env");
+  assert.deepEqual(envOptions.headers, {
+    "CF-Access-Client-Id": "id-env",
+    "X-Trace": "env",
+  });
 
   const flagOptions = testInternals.parseArgs(
     [
+      "--header",
+      "CF-Access-Client-Id: id-flag",
+      "-H",
+      "CF-Access-Client-Secret: secret-flag",
       "--provider-api-key",
       "openrouter-flag",
       "--model",
@@ -863,6 +872,7 @@ test("CLI options read Cloudflare AI Gateway config from env and flags", () => {
     ],
     {
       EMDASH_API_TOKEN: "emdash-token",
+      EMDASH_HEADERS: "CF-Access-Client-Id: id-env\nX-Trace: env",
       ENGLISH_GENERATION_API_KEY: "openrouter-env",
       ENGLISH_GENERATION_MODEL: "translation-env",
       CF_AIG_ACCOUNT_ID: "account-env",
@@ -879,6 +889,26 @@ test("CLI options read Cloudflare AI Gateway config from env and flags", () => {
   assert.equal(flagOptions.cfAiGatewayAccountId, "account-flag");
   assert.equal(flagOptions.cfAiGatewayGateway, "gateway-flag");
   assert.equal(flagOptions.cfAiGatewayToken, "cf-token-flag");
+  assert.deepEqual(flagOptions.headers, {
+    "CF-Access-Client-Id": "id-flag",
+    "CF-Access-Client-Secret": "secret-flag",
+    "X-Trace": "env",
+  });
+});
+
+test("CLI --no-dev-bypass overrides EMDASH_DEV_BYPASS=true through resolveHostCliValues", () => {
+  const options = testInternals.parseArgs(["--no-dev-bypass"], {
+    EMDASH_DEV_BYPASS: "true",
+    EMDASH_API_TOKEN: "emdash-token",
+    ENGLISH_GENERATION_API_KEY: "openrouter-token",
+    ENGLISH_GENERATION_MODEL: "translation-model",
+    CF_AIG_ACCOUNT_ID: "account-id",
+    CF_AIG_GATEWAY: "gateway-name",
+    CF_AIG_TOKEN: "cf-token",
+  });
+
+  assert.equal(options.devBypass, false);
+  assert.equal(options.token, "emdash-token");
 });
 
 test("CLI --model becomes the default edit and review model when dedicated models are unset", () => {

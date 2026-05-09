@@ -6,6 +6,9 @@
   "observability": {
     "enabled": true
   },
+  "assets": {
+    "html_handling": "drop-trailing-slash"
+  },
   "r2_buckets": [
     {
       "binding": "MEDIA",

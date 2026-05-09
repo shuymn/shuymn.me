@@ -62,6 +62,9 @@ The route strategy is explicit and locale-aware:
   translations.
 - Public URLs remain `/posts/<slug>` for the default locale and
   `/en/posts/<slug>` for English.
+- Cloudflare Static Assets must drop trailing slashes so deployed
+  `folder/index.html` assets preserve the Astro `trailingSlash: "never"` public
+  URL contract.
 - Static paths come from projected entries, not from empty global i18n
   route duplication.
 
@@ -109,7 +112,9 @@ As of 2026-05-10, the deployable target is implemented for the Japanese site:
   branches because it shares links and is not independently authored content.
 - Public home and post detail rendering reads Astro files and post content
   collections.
-- The Astro config uses the Cloudflare adapter directly.
+- The Astro config uses the Cloudflare adapter directly, and `wrangler.jsonc`
+  configures Static Assets HTML handling to keep `/posts/<slug>` canonical
+  rather than redirecting to `/posts/<slug>/`.
 - English generated post files and English generation automation remain outside
   this release gate.
 

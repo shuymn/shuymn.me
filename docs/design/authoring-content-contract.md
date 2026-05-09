@@ -95,4 +95,7 @@ modes. Recovery provenance belongs in migration evidence. See
 - Current deployment only needs Japanese source posts.
 - English generated posts are not part of the cutover.
 - `src/content/posts/en/*.md` may be absent.
+- Public post URLs are canonical without trailing slashes. Cloudflare Static
+  Assets HTML handling must use `drop-trailing-slash` so generated
+  `index.html` files do not change `/posts/<slug>` into `/posts/<slug>/`.
 - Future editor/CMS work must edit author source, not own the canonical body.

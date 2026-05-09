@@ -305,6 +305,22 @@ separate host-side migration/deploy script that can compare desired state agains
 the selected EmDash instance, apply only the missing or changed pieces, and
 verify the result.
 
+The initial supported command is:
+
+```bash
+pnpm run deploy:emdash -- --dry-run --dev-bypass
+pnpm run deploy:emdash -- --apply --dev-bypass
+```
+
+The command reads `seed/seed.json` by default and currently treats only
+`settings` plus `collections` / `fields` as deployable state. It uses EmDash REST
+APIs for settings, collection metadata, field create/update, and field ordering.
+It deliberately does not publish seed `content`, delete remote-only fields or
+collections, or write directly to SQLite/D1. If the seed requests a section
+outside the supported surface, or if an existing field would need an immutable
+type change, the command returns an unsupported-operation result instead of
+trying a destructive workaround.
+
 Cloudflare preview and EmDash preview are useful but not the first implementation
 boundary for this migration path. Cloudflare Workers Git integration and Preview
 URLs can create non-production Worker versions or branch previews, but stateful
@@ -806,8 +822,9 @@ For each implementation slice:
 - For schema or seed changes, run the seed/bootstrap flow needed to prove the
   schema loads.
 - For host-side EmDash deployment scripts, run a dry-run against local EmDash via
-  the shared `baseUrl`/credential connection model, then apply only after the
-  diff and idempotency behavior are understood.
+  the shared `baseUrl`/credential connection model, then apply with
+  `pnpm run deploy:emdash -- --apply ...` only after the diff and idempotency
+  behavior are understood.
 - Before using an EmDash plugin API for a durable write, verify the current
   installed EmDash API can express the required fields or relation. If it cannot,
   move that write to a host-side API, CLI command, or trusted first-party

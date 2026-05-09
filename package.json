@@ -20,7 +20,9 @@
     "fmt:fix": "biome check --linter-enabled=false --write .",
     "typecheck": "ASTRO_TELEMETRY_DISABLED=1 astro check",
     "generate:english": "node scripts/generate-english-posts.ts",
-    "test:english-generation": "node --test scripts/generate-english-posts.test.ts scripts/lib/emdashConnection.test.ts"
+    "deploy:emdash": "node scripts/deploy-emdash-state.ts",
+    "test:english-generation": "node --test scripts/generate-english-posts.test.ts scripts/lib/emdashConnection.test.ts",
+    "test:emdash-deploy": "node --test scripts/deploy-emdash-state.test.ts scripts/lib/emdashDeploy.test.ts scripts/lib/emdashConnection.test.ts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.1.7",

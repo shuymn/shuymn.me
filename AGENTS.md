@@ -54,6 +54,8 @@ pnpm run fmt:fix
 pnpm run typecheck
 pnpm run bootstrap
 pnpm run seed
+pnpm run deploy:emdash -- --dry-run --dev-bypass
+pnpm run test:emdash-deploy
 ```
 
 ## Environment Variables

@@ -1,5 +1,7 @@
 ---
 
+
+
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText } from "../lib/i18n";
@@ -24,7 +26,10 @@ const sortedPosts = posts
     .toSorted((a, b) => {
         const dateA = a.data.publishedAt.getTime();
         const dateB = b.data.publishedAt.getTime();
-        return dateB - dateA;
+        if (dateA !== dateB) {
+            return dateB - dateA;
+        }
+        return b.data.slug.localeCompare(a.data.slug);
     });
 
 const publicText = getPublicText(locale);

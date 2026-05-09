@@ -16,7 +16,7 @@ const postPath = getPostPath(post.data.slug, locale);
 const publishedIso = post.data.publishedAt.toISOString();
 const seoDescription = post.data.seo.description ?? null;
 const showTranslationNote =
-    locale === "en" && !post.data.translation.disabled && Boolean(post.data.translation.sourceSlug);
+    locale !== DEFAULT_LOCALE && !post.data.translation.disabled && Boolean(post.data.translation.sourceSlug);
 const translationSourceSlug = post.data.translation.sourceSlug ?? "";
 ---
 

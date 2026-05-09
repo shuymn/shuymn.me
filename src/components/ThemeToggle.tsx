@@ -35,9 +35,7 @@ function persistTheme(theme: Theme) {
   applyTheme(theme);
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch {
-    // Keep the visible theme change even when persistent storage is unavailable.
-  }
+  } catch {}
 }
 
 export default function ThemeToggle({ label }: Props) {

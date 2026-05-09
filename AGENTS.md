@@ -32,11 +32,12 @@
 - Separate state from logic.
 - Prioritize readability and maintainability.
 - Define the contract layer strictly, and keep the implementation layer regenerable.
-- This is an Astro local Markdown site with transitional EmDash migration scripts, not a Next.js app.
+- This is an Astro local Markdown site completing an atomic EmDash removal, not a Next.js app.
 - Public posts and site sections are Astro content collections under `src/content/posts/` and `src/content/site-sections/`; preserve `/posts/<slug>` and `/en/posts/<slug>`.
 - Public content routes should prerender from local files and must not query EmDash at render time.
-- Use `pnpm run export:emdash-content -- --dry-run` before re-exporting from `data.db`; use `--apply --force` only when intentionally replacing generated local Markdown.
-- EmDash API/client code remains transitional for export, deploy, and English generation follow-up work; keep it out of public rendering paths.
+- Do not treat a branch that still needs EmDash scripts, dependencies, environment variables, Portable Text storage, or CMS runtime/admin surfaces as deployable.
+- Existing EmDash export/deploy/bootstrap/seed code is migration-only evidence; remove it from the deployable target once local Markdown recovery and English generation are complete.
+- Use `pnpm run export:emdash-content -- --dry-run` only for migration evidence before re-exporting from `data.db`; use `--apply --force` only when intentionally replacing generated local Markdown during migration.
 
 ## Project Commands
 
@@ -61,16 +62,16 @@ pnpm run test:emdash-deploy
 ## Environment Variables
 
 - `.envrc` uses direnv `dotenv`; create `.env` from `.env.example`, fill local values, and run `direnv allow`.
-- EmDash connection: `EMDASH_BASE_URL`, `EMDASH_API_TOKEN`, `EMDASH_DEV_BYPASS`, `EMDASH_HEADERS`.
-- Astro adapter selection: `ASTRO_RUNTIME=cloudflare`; `EMDASH_RUNTIME=cloudflare` is accepted only as a transitional compatibility fallback.
+- EmDash connection: `EMDASH_BASE_URL`, `EMDASH_API_TOKEN`, `EMDASH_DEV_BYPASS`, `EMDASH_HEADERS` are migration-only and must not remain required by the deployable target.
+- Astro adapter selection: `ASTRO_RUNTIME=cloudflare`; `EMDASH_RUNTIME=cloudflare` is migration-only compatibility and must be removed from the deployable target.
 - English generation: `ENGLISH_GENERATION_API_KEY`, `ENGLISH_GENERATION_MODEL`, `ENGLISH_EDIT_MODEL`, `ENGLISH_REVIEW_MODEL`, `ENGLISH_GENERATION_LIMIT`, `ENGLISH_GENERATION_MAX_FIX_ATTEMPTS`, `ENGLISH_GENERATION_TEMPERATURE`.
 - Cloudflare AI Gateway: `CF_AIG_ACCOUNT_ID`, `CF_AIG_GATEWAY`, `CF_AIG_TOKEN`.
 
 ## Skills
 
-- Use `building-emdash-site` for Astro + EmDash site work.
-- Use `creating-plugins` before building or changing EmDash plugins.
-- Use `emdash-cli` before using the EmDash CLI for content, schema, media, or remote-instance operations.
+- Use `building-emdash-site` only when touching remaining EmDash migration/removal code.
+- Use `creating-plugins` only if explicitly changing historical EmDash plugin code before removal.
+- Use `emdash-cli` only for migration evidence or removal work involving remaining EmDash content, schema, media, or remote-instance operations.
 
 ## Critical Recap
 

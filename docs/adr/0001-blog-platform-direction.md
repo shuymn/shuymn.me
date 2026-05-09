@@ -22,7 +22,8 @@ This product direction remains accepted. The EmDash-centered implementation
 foundation described below is under active reconsideration by ADR 0002, which
 spikes a local Markdown-family canonical source before further CMS commitment.
 ADR 0003 resolves that reconsideration by choosing Astro-only local Markdown as
-the next public-content target and treating EmDash as a transitional dependency.
+the next public-content target. EmDash is no longer the target implementation
+boundary for the replacement site.
 
 Adopt WordPress-derived ideas only when they improve one of these outcomes:
 
@@ -44,11 +45,11 @@ or EmDash-side analytics reports, stay adaptive and reversible.
 
 Before ADR 0003, the implementation plan kept public rendering surfaces in
 site-native EmDash schema, Astro pages, and components. That implementation
-boundary is now historical and transitional. New public blog rendering work
-should move to Astro content collections backed by local Markdown. Existing
-EmDash schema, pages, plugins, and automation remain relevant only while keeping
-the current deployed site operational or migrating content and workflows away
-from EmDash.
+boundary is now historical. New public blog rendering work should move to Astro
+content collections backed by local Markdown. Existing EmDash schema, pages,
+plugins, and automation remain relevant only to the currently deployed site or
+as unpublished migration references. A mixed EmDash/local-Markdown branch is not
+a deployable replacement target.
 
 Do not treat EmDash plugins as the default implementation boundary for every
 feature. Plugins are appropriate for editing lifecycle hooks, suggestion

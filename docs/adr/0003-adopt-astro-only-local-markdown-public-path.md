@@ -32,10 +32,15 @@ Image upload and external asset storage remain deferred.
 Adopt Astro-only local Markdown as the next public-content target architecture.
 
 The public blog path should be implemented with Astro content collections backed
-by repository-local Markdown files. EmDash becomes a transitional dependency and
-existing content source only until posts and public surfaces are migrated. New
-blog-platform baseline work should not deepen the EmDash dependency unless it is
-needed to keep the currently deployed site operational during the transition.
+by repository-local Markdown files. This is an atomic cutover target, not a
+staged deployment plan: a branch that still requires EmDash scripts,
+dependencies, environment variables, Portable Text storage, or CMS runtime
+surfaces is still migration work in progress and must not be treated as the
+deployable replacement.
+
+The existing EmDash implementation may remain only as the currently deployed
+site or as local migration evidence while the replacement is prepared. It should
+not coexist with local Markdown in a deployed target architecture.
 
 The target route strategy is explicit and locale-aware:
 
@@ -81,12 +86,16 @@ layer may be evaluated later only if normal posting needs a browser UI:
 
 ## Consequences
 
-- The next implementation work should migrate the public content path away from
-  EmDash, not make EmDash and local Markdown coexist as peers.
+- The next implementation work should finish the full cutover away from EmDash,
+  not make EmDash and local Markdown coexist as peers.
 - Existing EmDash code, seed files, and host-side scripts remain useful only as
-  transitional implementation and migration references.
+  unpublished migration references and must be removed from the deployable
+  target unless a later ADR explicitly reintroduces a different CMS boundary.
 - The English generation path should shift from EmDash API writes to file writes
   against local Markdown plus deterministic validation.
+- The Japanese canonical body should be reconciled against the historical
+  Markdown sources in git history instead of treating an EmDash export as final
+  truth by default.
 - Browser-based editing is deferred. Local editor, Coding Agent, and command-line
   workflows are sufficient until actual posting friction proves otherwise.
 - Any future editor/CMS must preserve local Markdown as the canonical source and
@@ -94,11 +103,13 @@ layer may be evaluated later only if normal posting needs a browser UI:
 - Existing bd issues that are EmDash-specific should be replaced or superseded
   by local-source implementation issues as migration work begins.
 
-## Implementation Status
+## Implementation Status And Release Gate
 
-As of 2026-05-09, the first public rendering cutover is complete:
+As of 2026-05-09, the first public rendering proof is complete but not
+deployable as the final replacement:
 
-- Published EmDash posts are exported to `src/content/posts/<locale>/<slug>.md`.
+- Published EmDash posts are exported to `src/content/posts/<locale>/<slug>.md`
+  as an intermediate migration snapshot.
 - Published `home-about` site sections are exported to
   `src/content/site-sections/<locale>/home-about.md`.
 - Public home and post detail rendering read Astro content collections instead
@@ -106,9 +117,16 @@ As of 2026-05-09, the first public rendering cutover is complete:
 - The Astro config no longer installs the EmDash integration, so prerendered
   public content routes are not coupled to EmDash request/session hooks.
 
-The remaining transitional work is explicit: English generation still uses the
-EmDash API/client flow and must be migrated to local Markdown file writes before
-the EmDash content-management scripts can be removed completely.
+The release gate for this ADR is stricter than that proof. Before this branch can
+be considered a deployable cutover:
+
+- English generation must read and write local Markdown without EmDash API/client
+  imports, EmDash environment requirements, or Portable Text storage.
+- Japanese posts must be reconciled with historical Markdown sources from git
+  history where those sources exist.
+- EmDash export/deploy/bootstrap/seed/plugin code, package dependencies,
+  environment variables, and operational documentation must be removed from the
+  deployable target, except for archived historical ADR context.
 
 ## Checked References
 

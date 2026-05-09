@@ -24,8 +24,8 @@ Current implementation baseline:
 - The site renders the home page, localized home pages, and localized post
   detail pages from Astro content collections instead of EmDash runtime reads.
 - The site already has Japanese and English public routes. English generation is
-  still transitional and currently needs migration from EmDash API writes to
-  local Markdown file writes.
+  still work in progress and must migrate from EmDash API writes to local
+  Markdown file writes before this branch is deployable.
 - OGP images currently fall back to one static default image through
   `DEFAULT_OG_IMAGE_URL`.
 - There are no current taxonomies, series, archive pages, search page, related
@@ -36,17 +36,29 @@ Foundation reconsideration:
 - ADR 0002 pauses further CMS commitment while a local Markdown-family canonical
   source spike is evaluated.
 - ADR 0003 resolves the spike direction: the next public-content target is
-  Astro-only local Markdown, with EmDash treated as a transitional dependency
-  rather than a long-term runtime for public blog content.
+  Astro-only local Markdown.
 - The memorandum-first goals in this document remain in force. EmDash-specific
-  implementation assumptions below are historical or transitional unless they
-  are still needed to keep the current deployed site operational during
-  migration.
+  implementation assumptions below are historical context or unpublished
+  migration references, not part of the deployable replacement target.
 - The local-source spike is motivated by Coding Agent assisted drafting,
   reviewable local diffs, Markdown as the translation boundary, and avoiding a
   cloud-hosted Portable Text canonical body.
 - Image upload and external asset storage are intentionally deferred from that
   spike.
+
+Atomic cutover gate:
+
+- Do not deploy a mixed EmDash/local-Markdown branch as the replacement site.
+- The currently deployed EmDash site may remain live until the replacement is
+  complete, but the replacement branch must remove EmDash runtime, scripts,
+  dependencies, environment requirements, and operational docs before release,
+  except for archived ADR history.
+- The local Markdown files exported from EmDash are migration evidence. Japanese
+  canonical post bodies must be reconciled with the historical Markdown sources
+  available in git history under `_posts/` and `posts/` before finalizing the
+  cutover.
+- English generation must write local Markdown files directly before the cutover
+  is considered complete.
 
 ## Goals
 

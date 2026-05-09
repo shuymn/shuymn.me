@@ -23,5 +23,7 @@
   // @astrojs/cloudflare uses this binding for runtime image transforms.
   "images": {
     "binding": "IMAGES"
-  }
+  },
+  "workers_dev": false,
+  "preview_urls": false
 }

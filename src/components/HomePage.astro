@@ -1,7 +1,7 @@
 ---
-import { getCollection, render } from "astro:content";
+import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
-import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText, HOME_ABOUT_SLUG } from "../lib/i18n";
+import { formatDate, getCurrentLocale, getHomePath, getPostPath, getPublicText, type Locale } from "../lib/i18n";
 import { SITE_TITLE } from "../lib/seo";
 
 type ProfileLink = {
@@ -9,14 +9,31 @@ type ProfileLink = {
     url: string;
 };
 
+const PROFILE_LINKS: readonly ProfileLink[] = [
+    { label: "Twitter", url: "https://x.com/shuymn" },
+    { label: "GitHub", url: "https://github.com/shuymn" },
+    { label: "mail", url: "mailto:mail@shuymn.me" },
+];
+
+const ABOUT_PARAGRAPHS_BY_LOCALE: Record<Locale, readonly string[]> = {
+    ja: [
+        "ソフトウェアエンジニア。主にバックエンド領域を主戦場としています。SNSキュレーション事業会社、VTuber運営会社を経て現在はBtoBのSaaS企業に在籍。",
+        "このサイトは自分のための備忘録であり、内容の正確性は保証しません。",
+        "投稿は全て個人の意見であり、所属する組織の意見ではありません。",
+        "お問い合わせの際は、下記のリンク先からご連絡ください。",
+    ],
+    en: [
+        "Software engineer primarily focused on backend systems.",
+        "Previously worked at a social media curation company and a VTuber management company, and currently work at a B2B SaaS company.",
+        "This site is a personal knowledge base, and I do not guarantee the accuracy of its content.",
+        "All posts are personal opinions and do not represent the views of any organization I belong to.",
+        "For inquiries, please contact me through the links below.",
+    ],
+};
+
 const locale = getCurrentLocale(Astro.currentLocale);
-const [siteSections, posts] = await Promise.all([
-    getCollection("siteSections", ({ data }) => data.locale === locale && data.slug === HOME_ABOUT_SLUG),
-    getCollection("posts", ({ data }) => data.locale === locale),
-]);
-const about = siteSections[0] ?? null;
-const renderedAbout = about ? await render(about) : null;
-const AboutContent = renderedAbout?.Content;
+const posts = await getCollection("posts", ({ data }) => data.locale === locale);
+const aboutParagraphs = ABOUT_PARAGRAPHS_BY_LOCALE[locale];
 
 const sortedPosts = posts
     .filter((post) => post.data.slug.length > 0)
@@ -26,41 +43,22 @@ const sortedPosts = posts
         return dateB - dateA;
     });
 
-function isProfileLink(value: unknown): value is ProfileLink {
-    if (!value || typeof value !== "object") return false;
-    const link = value as Record<string, unknown>;
-    return typeof link.label === "string" && typeof link.url === "string";
-}
-
-const profileLinks = Array.isArray(about?.data.links) ? about.data.links.filter(isProfileLink) : [];
 const publicText = getPublicText(locale);
 ---
 
 <Base title={SITE_TITLE} path={getHomePath(locale)}>
   <main>
-    {
-      about && (
-        <section class="about" aria-label={publicText.aboutLabel}>
-          {AboutContent && <AboutContent />}
-          {
-            profileLinks.length > 0 && (
-              <ul class="profile-links">
-                {profileLinks.map((link) => (
-                  <li>
-                    <a href={link.url}>{link.label}</a>
-                  </li>
-                ))}
-              </ul>
-            )
-          }
-        </section>
-      )
-    }
-    {
-      about && (
-        <hr class="site-rule page-rule" />
-      )
-    }
+    <section class="about" aria-label={publicText.aboutLabel}>
+      {aboutParagraphs.map((paragraph) => <p>{paragraph}</p>)}
+      <ul class="profile-links">
+        {PROFILE_LINKS.map((link) => (
+          <li>
+            <a href={link.url}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+    <hr class="site-rule page-rule" />
     <section aria-label={publicText.postsLabel}>
       {
         sortedPosts.length === 0 ? (

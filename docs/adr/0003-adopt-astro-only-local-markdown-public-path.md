@@ -147,10 +147,10 @@ site:
   `src/content/posts/ja/<slug>.md` is the current Astro build projection.
 - Historical Japanese Markdown was recovered from git history and recorded in
   `docs/design/japanese-source-recovery.md`.
-- Published `home-about` site sections are exported to
-  `src/content/site-sections/<locale>/home-about.md`.
-- Public home and post detail rendering read Astro content collections instead
-  of runtime CMS APIs.
+- Static `home-about` copy is owned by the home page component with locale
+  branches because it shares links and is not independently authored content.
+- Public home and post detail rendering reads local Astro files and post content
+  collections instead of runtime CMS APIs.
 - The Astro config uses the Cloudflare adapter directly. The Node adapter,
   EmDash package dependency, seed/bootstrap/deploy/export scripts, patches, and
   EmDash environment variables are removed from the deployable target.

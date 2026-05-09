@@ -39,8 +39,6 @@ export const PUBLIC_TEXT_BY_LOCALE = {
   },
 } as const;
 
-export const HOME_ABOUT_SLUG = "home-about";
-
 export type PublicText = (typeof PUBLIC_TEXT_BY_LOCALE)[Locale];
 
 export function getCurrentLocale(locale: string | undefined): Locale {

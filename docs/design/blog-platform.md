@@ -20,10 +20,10 @@ Current implementation baseline:
 - Published posts are repository-local Markdown files under
   `src/content/posts/<locale>/<slug>.md` as the current migration projection,
   not as the final author-source contract.
-- Stable home/profile sections are repository-local Markdown files under
-  `src/content/site-sections/<locale>/`.
+- Stable home/profile copy is component-owned locale content because it is not
+  independently authored or CMS-managed.
 - The site renders the home page, localized home pages, and localized post
-  detail pages from Astro content collections instead of EmDash runtime reads.
+  detail pages from local Astro files instead of EmDash runtime reads.
 - The site has Japanese public post routes. English post routes remain reserved
   for future generated translations, but generated English post files and the
   English generation pipeline are intentionally outside the current cutover.
@@ -190,7 +190,7 @@ The requirements use EARS notation.
 | Custom fields and content modeling | Advanced Custom Fields | Add structured editorial fields without hardcoding theme behavior | Add structured generated fields only when they drive rendering or editorial decisions, and keep them out of author source |
 | Taxonomy and internal discovery | WordPress categories/tags, related/popular post plugins | Help readers and the author traverse old posts | Generate flat tags and optional series after writing before asking for manual upkeep |
 | Multilingual publishing | WPML, Polylang, TranslatePress | Keep translated versions discoverable without making every translation a separate manual project | After the EmDash-free cutover, generate English source/projection outputs from Japanese source posts and expose locale-specific URLs and OGP images |
-| Table of contents | TOC block/plugin family | Derive navigation from headings for long-form posts | Generate TOC from rendered Markdown headings in `PostArticle.astro` or a focused component |
+| Table of contents | TOC block/plugin family | Derive navigation from headings for long-form posts | Generate TOC from rendered Markdown headings in `PostPage.astro` or a focused component |
 | Redirect and 404 maintenance | Redirection | Preserve old links and surface broken URLs | Start with local redirect config or Cloudflare rules; add editor support only if manual maintenance becomes frequent |
 | Popular posts and stats | WP Popular Posts, Jetpack Stats | Show what is being referenced | Use Cloudflare telemetry as the source of truth; optionally map paths to posts, tags, and series into generated state for editorial interpretation |
 

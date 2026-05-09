@@ -35,7 +35,8 @@
 - This is an Astro local-source site, not a Next.js app.
 - The target content contract keeps blog author source as title/body Markdown under root `posts/*.md`; derive slug from the extensionless filename and do not store slug in source frontmatter.
 - Keep `src/content/posts/` as the Astro build projection only. Generated projection frontmatter may contain derived metadata needed by Astro/public rendering, but it is not the authoring contract.
-- Public posts and site sections may project into Astro content collections under `src/content/posts/` and `src/content/site-sections/`; preserve `/posts/<slug>`. `/en/posts/<slug>` is reserved for future generated translations but is not required for the current cutover.
+- Public posts project into Astro content collections under `src/content/posts/`; preserve `/posts/<slug>`. `/en/posts/<slug>` is reserved for future generated translations but is not required for the current cutover.
+- Static home/profile copy is component-owned locale content, not an Astro content collection.
 - Public content routes should prerender from local files and must not query a CMS at render time.
 - Do not treat a branch that needs CMS runtime/admin surfaces as deployable for the current cutover.
 - Historical CMS export/deploy/bootstrap/seed code has been removed from the deployable target; use git history, not live CMS state, for migration evidence.

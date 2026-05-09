@@ -1,6 +1,6 @@
 ---
 import { type CollectionEntry, getCollection } from "astro:content";
-import LocalPostArticle from "../../components/LocalPostArticle.astro";
+import PostPage from "../../components/PostPage.astro";
 import { DEFAULT_LOCALE } from "../../lib/i18n";
 
 export const prerender = true;
@@ -21,4 +21,4 @@ export async function getStaticPaths() {
 const { post } = Astro.props as Props;
 ---
 
-<LocalPostArticle post={post} />
+<PostPage post={post} />

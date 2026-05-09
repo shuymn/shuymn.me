@@ -30,6 +30,12 @@
       "tailwindDirectives": true
     }
   },
+  "html": {
+    "formatter": {
+      "enabled": true
+    },
+    "experimentalFullSupportEnabled": true
+  },
   "assist": {
     "enabled": true,
     "actions": {
@@ -45,7 +51,8 @@
         "rules": {
           "correctness": {
             "noUnusedImports": "off",
-            "noUnusedVariables": "off"
+            "noUnusedVariables": "off",
+            "useJsxKeyInIterable": "off"
           }
         }
       }

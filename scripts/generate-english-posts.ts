@@ -41,7 +41,6 @@ import {
 } from "../src/lib/englishGeneration.ts";
 import {
   createEmDashClient,
-  type EmDashConnectionCliValues,
   type EmDashConnectionOptions,
   emdashConnectionArgs,
   readOptionalString,
@@ -73,23 +72,7 @@ type CliOptions = EmDashConnectionOptions & {
   temperature?: number;
 };
 
-type EnglishGenerationCliValues = EmDashConnectionCliValues &
-  ArgValues<typeof englishGenerationArgs> & {
-    providerApiKey?: string;
-    cfAigAccountId?: string;
-    cfAigGateway?: string;
-    cfAigToken?: string;
-    model?: string;
-    editModel?: string;
-    reviewModel?: string;
-    source?: string;
-    limit?: number;
-    maxFixAttempts?: number;
-    regenerate?: boolean;
-    force?: boolean;
-    dryRun?: boolean;
-    temperature?: number;
-  };
+type EnglishGenerationCliValues = ArgValues<typeof englishGenerationArgs>;
 
 type EnglishGenerationProvider = {
   translationModel: LanguageModel;
@@ -404,7 +387,7 @@ export async function processSourcePost({
 }
 
 function parseArgs(args: string[], env: NodeJS.ProcessEnv): CliOptions {
-  return resolveOptions(resolveHostCliValues(englishGenerationArgs, args) as EnglishGenerationCliValues, env);
+  return resolveOptions(resolveHostCliValues(englishGenerationArgs, args), env);
 }
 
 function resolveOptions(values: EnglishGenerationCliValues, env: NodeJS.ProcessEnv): CliOptions {

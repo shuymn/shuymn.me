@@ -6,6 +6,7 @@ import {
   parseArgs as parseGunshiArgs,
   resolveArgs,
 } from "gunshi";
+import { kebabnize } from "gunshi/utils";
 
 export function resolveHostCliValues<A extends Args>(schema: A, argv: string[]): ArgValues<A> {
   const tokens = parseGunshiArgs(normalizeScriptArgv(argv));
@@ -42,7 +43,7 @@ function assertKnownOptions(schema: Args, tokens: ArgToken[]): void {
   const knownShortOptions = new Set<string>();
   for (const [name, arg] of Object.entries(schema)) {
     knownLongOptions.add(name);
-    knownLongOptions.add(toKebabCase(name));
+    knownLongOptions.add(kebabnize(name));
     if (isArgSchema(arg) && arg.short) {
       knownShortOptions.add(arg.short);
     }
@@ -70,8 +71,4 @@ function formatAggregateError(error: AggregateError): string {
 
 function isArgSchema(value: unknown): value is ArgSchema {
   return Boolean(value && typeof value === "object" && "type" in value);
-}
-
-function toKebabCase(value: string): string {
-  return value.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 }

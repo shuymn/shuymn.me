@@ -39,11 +39,9 @@ export type EmDashConnectionOptions = {
   headers: Record<string, string>;
 };
 
-type Environment = Record<string, string | undefined>;
-
 export function resolveEmDashConnectionOptions(
   values: EmDashConnectionCliValues,
-  env: Environment = process.env,
+  env: NodeJS.ProcessEnv = process.env,
 ): EmDashConnectionOptions {
   const baseUrl = stripTrailingSlash(
     readOptionalString(values.baseUrl) ?? readOptionalString(env.EMDASH_BASE_URL) ?? DEFAULT_EMDASH_BASE_URL,

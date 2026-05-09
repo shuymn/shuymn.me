@@ -47,8 +47,9 @@ The content architecture is authoring-first:
 - Post-scoped recall metadata is generated into projection frontmatter.
 - Cross-post public data such as indexes may be generated into separate artifacts
   when needed for efficient public surfaces.
-- Deploy-time public data such as `updatedAt` may be generated into separate
-  artifacts when the value depends on post-commit repository history.
+- Generated metadata is schema-bound. Fields outside the documented contract
+  must be rejected; if revision visibility is useful later, prefer linking to
+  the canonical GitHub file history over adding revision metadata.
 - Commit/deploy is the acceptance boundary for generated public metadata.
 - Astro projection is generated under `src/content/posts/<locale>/<slug>.md`.
 - Generated projection frontmatter is implementation output, not the authoring
@@ -72,7 +73,7 @@ specific missing signal proves it necessary.
 The baseline blog platform should eventually include:
 
 - durable post rendering with title, body, date-prefixed slugs, and SEO metadata
-- recall surfaces such as tags, archives, search entry points, RSS/sitemap
+- recall surfaces such as tags, search entry points, RSS/sitemap
   validation, and deterministic related navigation
 - thought-continuity surfaces such as series, table of contents, and explicit
   status notes

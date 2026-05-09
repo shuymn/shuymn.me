@@ -12,7 +12,6 @@ export const postSchema = z
     locale: postLocaleSchema,
     title: z.string().min(1),
     publishedAt: z.coerce.date(),
-    updatedAt: z.coerce.date().optional(),
     tags: z.array(z.string().min(1)).default([]),
     series: z
       .object({

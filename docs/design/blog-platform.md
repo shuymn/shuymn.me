@@ -92,12 +92,13 @@ Generated public data artifacts:
 
 Deploy-time public data artifacts:
 
-- may be added when metadata cannot be computed accurately before the source
-  commit exists
-- include `updatedAt` if it is generated from the latest git commit that changes
-  `posts/<slug>.md`
+- may be added when data cannot be computed accurately before the source commit
+  exists
 - must be produced by documented CD/deploy workflow steps and treated as
   regenerable public output
+- must reject fields outside the documented public metadata contract; if
+  revision visibility becomes useful, prefer a link to the canonical GitHub
+  history for `posts/<slug>.md` instead of adding ad hoc revision metadata
 
 ## Goals
 
@@ -141,16 +142,17 @@ The requirements use EARS notation.
   navigate the series.
 - When tooling generates editorial metadata candidates, the candidates shall
   remain outside public metadata until written into projection frontmatter or
-  another documented generated public data artifact and committed, or until a
-  deploy workflow writes a documented publish-time public artifact.
+  another documented generated public data artifact and committed.
 - When a reader wants prior thinking on a topic, the system shall expose search,
-  tags, archives, and related posts before relying on external search engines.
+  tags, and related posts before relying on external search engines. Date
+  archives are not part of the baseline unless future post volume or real usage
+  justifies them.
 - When a post is long-form, the system shall expose a table of contents derived
   from headings without requiring duplicated manual markup.
 - When a post needs a visible lifecycle note, the system shall use an explicit
-  status note and shall display an update date only when a deploy workflow writes
-  `updatedAt` from the latest git commit that changes the canonical
-  `posts/<slug>.md` source file.
+  status note. Revision history is not tracked as generated metadata; if
+  revision visibility becomes useful, a later layout task may add a link to the
+  canonical GitHub history for `posts/<slug>.md`.
 - When a post is shared externally, the system shall provide a post-specific OGP
   image generated from durable post metadata.
 - When a Japanese post is published and not explicitly excluded, the system shall
@@ -194,8 +196,8 @@ Baseline capabilities:
   and localized routes
 - retrieval backbone: tags, archive, search entry point, RSS/sitemap checks, and
   simple related navigation based on deterministic signals
-- generated projection metadata for tags, series, workflow-derived updated dates,
-  status notes, and related-post input slugs
+- generated projection metadata for tags, series, status notes, and related-post
+  input slugs
 - editorial automation state for temporary metadata candidates, summaries,
   English versions, OGP inputs, and publish-check results
 - deterministic OGP generation from a base image and durable text, with
@@ -236,9 +238,10 @@ index artifacts, and UI behavior:
 - `tags`: shape and public meaning are part of this contract; generation,
   normalization, tag index artifacts, archive routes, and tag URLs belong to
   `shuymn_me-1er.2.2`.
-- `updatedAt`: shape and canonical-source git commit basis are part of this
-  contract; the deploy-time artifact shape, source-commit lookup, and
-  date-display behavior belong to `shuymn_me-1er.2.3`.
+- Non-contract metadata: fields outside the documented contract, including
+  revision or update-date fields, must be rejected by schema validation.
+  Date-display behavior belongs to `shuymn_me-1er.2.3`; optional GitHub history
+  links for revision visibility belong to `shuymn_me-dfo`.
 - `relatedPostSlugs`: shape and deterministic-input meaning are part of this
   contract; signal selection and generation belong to `shuymn_me-1er.2.6`.
 - `series` and `statusNote`: shape and projection location are part of this
@@ -283,8 +286,7 @@ Use a layered automation approach:
 LLM-generated editorial metadata is proposed metadata, not hidden authority. It
 may live as generated state while being evaluated, but it becomes public
 metadata only when the workflow writes it into projection frontmatter or another
-documented generated public data artifact, or when the deploy workflow writes a
-documented publish-time public artifact.
+documented generated public data artifact.
 
 ## OGP Image Generation
 
@@ -387,7 +389,7 @@ Next product work:
 
 - Rebaseline open bd issues that still mention EmDash or rich-frontmatter
   assumptions.
-- Add recall backbone features: tags, archives, search entry point, RSS/sitemap
+- Add recall backbone features: tags, search entry point, RSS/sitemap
   verification, and deterministic related navigation.
 - Add thought-continuity features: series support, table of contents, visible
   update/status notes, and related posts from deterministic signals.

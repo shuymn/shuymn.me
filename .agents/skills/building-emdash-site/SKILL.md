@@ -2,9 +2,9 @@
 description: Build and customize EmDash CMS sites on Astro. Use when creating pages, defining collections, writing seed files, querying content, rendering Portable Text, setting up menus/taxonomies/widgets, configuring deployment, or any task involving an EmDash-powered Astro site. Assumes basic Astro knowledge but provides all EmDash-specific patterns.
 metadata:
     github-path: skills/building-emdash-site
-    github-ref: refs/tags/@emdash-cms/blocks@0.7.0
+    github-ref: refs/tags/@emdash-cms/plugin-forms@0.2.1
     github-repo: https://github.com/emdash-cms/emdash
-    github-tree-sha: ffdc2a30429240e99f442bc4ae066515c229fae4
+    github-tree-sha: 3750da8003604a48db0db020cf1a3640ee8ac7de
 name: building-emdash-site
 ---
 # Building an EmDash Site
@@ -63,11 +63,7 @@ Read **[references/site-features.md](references/site-features.md)** for site set
 
 ### 5. Create the seed file
 
-Write `seed/seed.json` with collections, fields, taxonomies, menus, widgets, and sample content. Validate with:
-
-```bash
-npx emdash seed seed/seed.json --validate
-```
+Write `seed/seed.json` with collections, fields, taxonomies, menus, widgets, and sample content.
 
 ### 6. Run and verify
 
@@ -104,7 +100,7 @@ import {
 } from "emdash";
 
 // Bylines (standalone queries -- usually not needed since entries have bylines attached)
-import { getEntryBylines, getBylinesForEntries, getByline, getBylineBySlug } from "emdash";
+import { getByline, getBylineBySlug } from "emdash";
 
 // UI components
 import {

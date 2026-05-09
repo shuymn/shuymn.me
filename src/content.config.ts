@@ -6,7 +6,7 @@ const postLocaleSchema = z.enum(["ja", "en"]);
 
 const optionalTextSchema = z.string().min(1).optional();
 
-export const localPostSchema = z
+export const postSchema = z
   .object({
     slug: z.string().min(1),
     locale: postLocaleSchema,
@@ -46,7 +46,7 @@ const posts = defineCollection({
     pattern: "**/*.md",
     generateId: ({ entry }) => entry.replace(/\.md$/, ""),
   }),
-  schema: localPostSchema,
+  schema: postSchema,
 });
 
 export const collections = { posts };

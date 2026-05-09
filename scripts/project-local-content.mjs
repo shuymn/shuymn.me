@@ -62,19 +62,23 @@ export async function projectLocalContent(options) {
   projections.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
 
   if (options.check) {
-    const stale = [];
-    for (const projection of projections) {
-      const current = await readOptionalFile(projection.filePath);
-      if (current !== projection.content) stale.push(projection.relativePath);
-    }
+    const staleResults = await Promise.all(
+      projections.map(async (projection) => {
+        const current = await readOptionalFile(projection.filePath);
+        return current === projection.content ? null : projection.relativePath;
+      }),
+    );
+    const stale = staleResults.filter((entry) => entry !== null);
     if (stale.length > 0) {
       throw new Error(`local content projection is stale: ${stale.join(", ")}`);
     }
   } else {
-    for (const projection of projections) {
-      await mkdir(dirname(projection.filePath), { recursive: true });
-      await writeFile(projection.filePath, projection.content);
-    }
+    await Promise.all(
+      projections.map(async (projection) => {
+        await mkdir(dirname(projection.filePath), { recursive: true });
+        await writeFile(projection.filePath, projection.content);
+      }),
+    );
   }
 
   return {

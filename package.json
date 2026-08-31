@@ -39,7 +39,7 @@
     "@types/node": "25.9.5",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
-    "lefthook": "2.1.10",
+    "lefthook": "2.1.12",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
     "wrangler": "4.127.0"

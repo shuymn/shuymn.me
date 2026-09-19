@@ -18,7 +18,7 @@
     "test:local-content": "node --test scripts/project-local-content.test.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^13.1.7",
+    "@astrojs/cloudflare": "^14.0.0",
     "@astrojs/react": "^5.0.0",
     "@astrojs/sitemap": "^3.7.2",
     "astro": "^6.0.1",

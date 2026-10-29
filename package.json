@@ -42,7 +42,7 @@
     "lefthook": "2.2.2",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "wrangler": "4.152.0"
+    "wrangler": "4.153.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
